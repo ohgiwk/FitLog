@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp } from "../icons";
 import { Preset, Workout } from "../types";
-import { number } from "../utils";
+import { isRepsMeasurement, number } from "../utils";
 import { HomeSetRow } from "../components/HomeSetRow";
 
 export function HomeScreen({ selectedDate, selectedWorkouts, presets, currentPreset, onMoveDate, onSelectPreset, onStartPreset, onOpenPresets, onOpenSelect, onOpenDetail, onMoveWorkout, onAddSet }: {
@@ -18,6 +18,12 @@ export function HomeScreen({ selectedDate, selectedWorkouts, presets, currentPre
   onAddSet: (workoutId: string) => void;
 }) {
   const sets = selectedWorkouts.flatMap((workout) => workout.sets);
+  const totalReps = selectedWorkouts.reduce((sum, workout) =>
+    sum + (isRepsMeasurement(workout.measurementType) ? workout.sets.reduce((setSum, set) => setSum + number(set.recordValue), 0) : 0), 0);
+  const totalSeconds = selectedWorkouts.reduce((sum, workout) =>
+    sum + (workout.measurementType === "seconds" ? workout.sets.reduce((setSum, set) => setSum + number(set.recordValue), 0) : 0), 0);
+  const totalVolume = selectedWorkouts.reduce((sum, workout) =>
+    sum + (isRepsMeasurement(workout.measurementType) ? workout.sets.reduce((setSum, set) => setSum + number(set.weight) * number(set.recordValue), 0) : 0), 0);
 
   return (
     <section className="screen active detail-screen">
@@ -34,8 +40,9 @@ export function HomeScreen({ selectedDate, selectedWorkouts, presets, currentPre
         <div className="stats">
           <div className="stat"><span>合計種目数</span><strong>{selectedWorkouts.length}</strong></div>
           <div className="stat"><span>合計セット数</span><strong>{sets.length}</strong></div>
-          <div className="stat"><span>合計レップ数</span><strong>{sets.reduce((sum, set) => sum + number(set.reps), 0)}</strong></div>
-          <div className="stat"><span>合計負荷量</span><strong>{Math.round(sets.reduce((sum, set) => sum + number(set.weight) * number(set.reps), 0))}</strong></div>
+          <div className="stat"><span>合計レップ数</span><strong>{totalReps}</strong></div>
+          <div className="stat"><span>合計秒数</span><strong>{totalSeconds}</strong></div>
+          <div className="stat"><span>合計負荷量</span><strong>{Math.round(totalVolume)}</strong></div>
         </div>
       </header>
       <div className="preset-start">
@@ -66,8 +73,8 @@ export function HomeScreen({ selectedDate, selectedWorkouts, presets, currentPre
                 <button className="chev" type="button" aria-label="下へ移動" disabled={index === selectedWorkouts.length - 1} onClick={() => onMoveWorkout(workout.id, 1)}><ChevronDown /></button>
               </header>
               <table className="set-table">
-                <thead><tr><th>セット</th><th>重さ</th><th></th><th>回数</th><th>RM</th></tr></thead>
-                <tbody>{workout.sets.map((set, setIndex) => <HomeSetRow key={set.id} set={set} index={setIndex} />)}</tbody>
+                <thead><tr><th>セット</th><th>重さ</th><th></th><th>記録</th><th>RM</th></tr></thead>
+                <tbody>{workout.sets.map((set, setIndex) => <HomeSetRow key={set.id} set={set} index={setIndex} measurementType={workout.measurementType} />)}</tbody>
               </table>
               <button className="add-set" type="button" aria-label="セットを追加" onClick={() => onAddSet(workout.id)}><span className="plus-muted">+</span></button>
             </article>

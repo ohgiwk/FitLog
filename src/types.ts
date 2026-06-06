@@ -1,15 +1,18 @@
 export type Screen = "home" | "select" | "detail" | "exerciseHistory" | "preset" | "presetEdit" | "history";
 
+export type MeasurementType = "reps" | "seconds";
+
 export type Exercise = {
   id: string;
   part: string;
   name: string;
+  measurementType: MeasurementType;
 };
 
 export type WorkoutSet = {
   id: string;
   weight: string | number;
-  reps: string | number;
+  recordValue: string | number;
 };
 
 export type Workout = {
@@ -18,6 +21,7 @@ export type Workout = {
   date: string;
   name: string;
   part: string;
+  measurementType: MeasurementType;
   sets: WorkoutSet[];
 };
 

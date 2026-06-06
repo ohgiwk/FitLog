@@ -1,5 +1,5 @@
 import { starterCatalogVersion, starterExercises } from "./data/starterExercises";
-import { Preset, State } from "./types";
+import { MeasurementType, Preset, State, WorkoutSet } from "./types";
 import { uid } from "./utils";
 
 export const storeKey = "fit-log-v2";
@@ -12,7 +12,7 @@ export function loadState(): State {
       const exercises = normalizeExercises(saved.exercises);
       return {
         exercises: catalogVersion < starterCatalogVersion ? mergeStarterExercises(exercises) : exercises,
-        workouts: saved.workouts,
+        workouts: normalizeWorkouts(saved.workouts),
         presets: normalizePresets(saved.presets),
         catalogVersion: starterCatalogVersion,
       };
@@ -38,8 +38,56 @@ function normalizeExercises(exercises: unknown): State["exercises"] {
     if (!exercise || typeof exercise !== "object") return [];
     const item = exercise as Record<string, unknown>;
     if (typeof item.id !== "string" || typeof item.part !== "string" || typeof item.name !== "string") return [];
-    return [{ id: item.id, part: item.part, name: item.name }];
+    return [{ id: item.id, part: item.part, name: item.name, measurementType: normalizeMeasurementType(item.measurementType) }];
   });
+}
+
+function normalizeWorkouts(workouts: unknown): State["workouts"] {
+  if (!Array.isArray(workouts)) return [];
+  return workouts.flatMap((workout) => {
+    if (!workout || typeof workout !== "object") return [];
+    const item = workout as Record<string, unknown>;
+    if (
+      typeof item.id !== "string" ||
+      typeof item.exerciseId !== "string" ||
+      typeof item.date !== "string" ||
+      typeof item.name !== "string" ||
+      typeof item.part !== "string"
+    ) {
+      return [];
+    }
+    return [{
+      id: item.id,
+      exerciseId: item.exerciseId,
+      date: item.date,
+      name: item.name,
+      part: item.part,
+      measurementType: normalizeMeasurementType(item.measurementType),
+      sets: normalizeSets(item.sets),
+    }];
+  });
+}
+
+function normalizeSets(sets: unknown): WorkoutSet[] {
+  if (!Array.isArray(sets)) return [];
+  return sets.flatMap((set) => {
+    if (!set || typeof set !== "object") return [];
+    const item = set as Record<string, unknown>;
+    if (typeof item.id !== "string") return [];
+    return [{
+      id: item.id,
+      weight: normalizeSetValue(item.weight),
+      recordValue: normalizeSetValue(item.recordValue ?? item.reps),
+    }];
+  });
+}
+
+function normalizeSetValue(value: unknown) {
+  return typeof value === "string" || typeof value === "number" ? value : "";
+}
+
+function normalizeMeasurementType(value: unknown): MeasurementType {
+  return value === "seconds" ? "seconds" : "reps";
 }
 
 function mergeStarterExercises(exercises: State["exercises"]) {

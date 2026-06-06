@@ -42,6 +42,7 @@ export function App() {
             addFormOpen={fitLog.addFormOpen}
             partInput={fitLog.partInput}
             nameInput={fitLog.nameInput}
+            measurementTypeInput={fitLog.measurementTypeInput}
             expandedParts={fitLog.expandedParts}
             draggingExerciseId={fitLog.draggingExerciseId}
             onBack={() => actions.setScreen("home")}
@@ -52,6 +53,7 @@ export function App() {
             onToggleAddForm={() => actions.setAddFormOpen(!fitLog.addFormOpen)}
             onPartInput={actions.setPartInput}
             onNameInput={actions.setNameInput}
+            onMeasurementTypeInput={actions.setMeasurementTypeInput}
             onAddCustomExercise={actions.addCustomExercise}
             onAddExercise={actions.addExerciseToToday}
             onStartDrag={actions.startPointerExerciseDrag}
@@ -60,6 +62,7 @@ export function App() {
               actions.setDraggingExerciseId(null);
             }}
             onDeleteExercise={actions.deleteExercise}
+            onUpdateExerciseMeasurementType={actions.updateExerciseMeasurementType}
             onTogglePartExpanded={actions.togglePartExpanded}
             onSetPartAndOpenForm={(part) => {
               actions.setPartInput(part);

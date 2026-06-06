@@ -1,5 +1,5 @@
 import { Workout } from "../types";
-import { formatWeight, number } from "../utils";
+import { formatWeight, measurementUnit, number } from "../utils";
 
 export function LastRecord({ workout, selectedDate, workouts }: { workout: Workout; selectedDate: string; workouts: Workout[] }) {
   const lastRecord = workouts
@@ -10,7 +10,7 @@ export function LastRecord({ workout, selectedDate, workouts }: { workout: Worko
     <div className="detail-summary">
       <strong>Last Record : {lastRecord.date.replaceAll("-", "/")}</strong>
       {lastRecord.sets.map((set, index) => (
-        <div key={set.id}>{index + 1}　{formatWeight(set.weight)} kg ×　{number(set.reps)} reps</div>
+        <div key={set.id}>{index + 1}　{formatWeight(set.weight)} kg ×　{number(set.recordValue)} {measurementUnit(lastRecord.measurementType)}</div>
       ))}
     </div>
   );

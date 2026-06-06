@@ -1,6 +1,6 @@
 import { FormEvent, PointerEvent, useEffect, useMemo, useState } from "react";
 import { loadState, storeKey } from "../storage";
-import { Exercise, Preset, Screen, State, Workout } from "../types";
+import { Exercise, MeasurementType, Preset, Screen, State, Workout } from "../types";
 import { dragAfterElement, groupExercises, isBlank, localDate, newSet, parseDate, uid } from "../utils";
 
 export function useFitLog() {
@@ -15,6 +15,7 @@ export function useFitLog() {
   const [addFormOpen, setAddFormOpen] = useState(false);
   const [partInput, setPartInput] = useState("");
   const [nameInput, setNameInput] = useState("");
+  const [measurementTypeInput, setMeasurementTypeInput] = useState<MeasurementType>("reps");
   const [toast, setToast] = useState("");
   const [draggingExerciseId, setDraggingExerciseId] = useState<string | null>(null);
 
@@ -61,7 +62,7 @@ export function useFitLog() {
     saveState((prev) => {
       const workout = prev.workouts.find((item) => item.id === currentWorkout.id);
       if (!workout) return prev;
-      const nextSets = workout.sets.filter((set) => !isBlank(set.weight) || !isBlank(set.reps));
+      const nextSets = workout.sets.filter((set) => !isBlank(set.weight) || !isBlank(set.recordValue));
       if (nextSets.length === workout.sets.length && nextSets.length) return prev;
       const workouts = nextSets.length
         ? prev.workouts.map((item) => (item.id === workout.id ? { ...item, sets: nextSets } : item))
@@ -110,11 +111,12 @@ export function useFitLog() {
     const name = nameInput.trim();
     if (!name) return showToast("種目名を入力してください");
 
-    const exercise: Exercise = { id: uid(), part, name };
+    const exercise: Exercise = { id: uid(), part, name, measurementType: measurementTypeInput };
     const workout = createWorkout(exercise, selectedDate);
     saveState((prev) => ({ ...prev, exercises: [exercise, ...prev.exercises], workouts: [...prev.workouts, workout] }));
     setCurrentWorkoutId(workout.id);
     setNameInput("");
+    setMeasurementTypeInput("reps");
     setAddFormOpen(false);
     showScreen("detail");
   }
@@ -130,13 +132,22 @@ export function useFitLog() {
     showScreen("detail");
   }
 
-  function updateSet(setId: string, field: "weight" | "reps", value: string) {
+  function updateSet(setId: string, field: "weight" | "recordValue", value: string) {
     saveState((prev) => ({
       ...prev,
       workouts: prev.workouts.map((workout) => ({
         ...workout,
         sets: workout.sets.map((set) => (set.id === setId ? { ...set, [field]: value } : set)),
       })),
+    }));
+  }
+
+  function updateExerciseMeasurementType(exerciseId: string, measurementType: MeasurementType) {
+    saveState((prev) => ({
+      ...prev,
+      exercises: prev.exercises.map((exercise) =>
+        exercise.id === exerciseId ? { ...exercise, measurementType } : exercise
+      ),
     }));
   }
 
@@ -280,7 +291,7 @@ export function useFitLog() {
   }
 
   function startPointerExerciseDrag(event: PointerEvent<HTMLDivElement>) {
-    if ((event.target as HTMLElement).closest("[data-delete-exercise]")) return;
+    if ((event.target as HTMLElement).closest("[data-row-action]")) return;
     const row = event.currentTarget;
     let moved = false;
     setDraggingExerciseId(row.dataset.exerciseRow || null);
@@ -331,6 +342,7 @@ export function useFitLog() {
     expandedParts,
     groupedExercises,
     nameInput,
+    measurementTypeInput,
     partInput,
     screen,
     selectedDate,
@@ -360,12 +372,14 @@ export function useFitLog() {
       setCurrentWorkoutId,
       setDraggingExerciseId,
       setNameInput,
+      setMeasurementTypeInput,
       setPartInput,
       setScreen: showScreen,
       setEditMode,
       startPointerExerciseDrag,
       startPreset,
       togglePartExpanded,
+      updateExerciseMeasurementType,
       updateSet,
     },
   };
@@ -388,6 +402,7 @@ function createWorkout(exercise: Exercise, date: string): Workout {
     date,
     name: exercise.name,
     part: exercise.part,
+    measurementType: exercise.measurementType,
     sets: Array.from({ length: 5 }, () => newSet()),
   };
 }

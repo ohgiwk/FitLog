@@ -1,4 +1,4 @@
-import { CalendarCell, Exercise, WorkoutSet } from "./types";
+import { CalendarCell, Exercise, MeasurementType, WorkoutSet } from "./types";
 
 export function groupExercises(exercises: Exercise[]) {
   return exercises.reduce((groups, exercise) => {
@@ -31,12 +31,24 @@ export function calendarCells(year: number, month: number): CalendarCell[] {
 }
 
 export function newSet(): WorkoutSet {
-  return { id: uid(), weight: "", reps: "" };
+  return { id: uid(), weight: "", recordValue: "" };
 }
 
 export function calcRm(weight: number, reps: number) {
   if (!weight || !reps) return "0.0";
   return (weight * (1 + reps / 30)).toFixed(reps > 3 ? 1 : 2);
+}
+
+export function measurementUnit(measurementType: MeasurementType) {
+  return measurementType === "seconds" ? "秒" : "回";
+}
+
+export function measurementLabel(measurementType: MeasurementType) {
+  return measurementType === "seconds" ? "秒数" : "回数";
+}
+
+export function isRepsMeasurement(measurementType: MeasurementType) {
+  return measurementType === "reps";
 }
 
 export function number(value: string | number) {

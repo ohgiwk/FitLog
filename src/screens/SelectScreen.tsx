@@ -1,13 +1,14 @@
 import { FormEvent, PointerEvent } from "react";
 import { DragHandle, TrashIcon } from "../icons";
-import { Exercise } from "../types";
+import { Exercise, MeasurementType } from "../types";
 
-export function SelectScreen({ groupedExercises, editMode, addFormOpen, partInput, nameInput, expandedParts, draggingExerciseId, onBack, onToggleEditMode, onToggleAddForm, onPartInput, onNameInput, onAddCustomExercise, onAddExercise, onStartDrag, onCommitOrder, onDeleteExercise, onTogglePartExpanded, onSetPartAndOpenForm }: {
+export function SelectScreen({ groupedExercises, editMode, addFormOpen, partInput, nameInput, measurementTypeInput, expandedParts, draggingExerciseId, onBack, onToggleEditMode, onToggleAddForm, onPartInput, onNameInput, onMeasurementTypeInput, onAddCustomExercise, onAddExercise, onStartDrag, onCommitOrder, onDeleteExercise, onUpdateExerciseMeasurementType, onTogglePartExpanded, onSetPartAndOpenForm }: {
   groupedExercises: Map<string, Exercise[]>;
   editMode: boolean;
   addFormOpen: boolean;
   partInput: string;
   nameInput: string;
+  measurementTypeInput: MeasurementType;
   expandedParts: Set<string>;
   draggingExerciseId: string | null;
   onBack: () => void;
@@ -15,11 +16,13 @@ export function SelectScreen({ groupedExercises, editMode, addFormOpen, partInpu
   onToggleAddForm: () => void;
   onPartInput: (value: string) => void;
   onNameInput: (value: string) => void;
+  onMeasurementTypeInput: (value: MeasurementType) => void;
   onAddCustomExercise: (event: FormEvent) => void;
   onAddExercise: (exerciseId: string) => void;
   onStartDrag: (event: PointerEvent<HTMLDivElement>) => void;
   onCommitOrder: (rows: HTMLElement[]) => void;
   onDeleteExercise: (exerciseId: string) => void;
+  onUpdateExerciseMeasurementType: (exerciseId: string, measurementType: MeasurementType) => void;
   onTogglePartExpanded: (part: string) => void;
   onSetPartAndOpenForm: (part: string) => void;
 }) {
@@ -39,6 +42,10 @@ export function SelectScreen({ groupedExercises, editMode, addFormOpen, partInpu
         <form className="add-form" onSubmit={onAddCustomExercise}>
           <label>部位<input maxLength={12} placeholder="胸" value={partInput} onChange={(event) => onPartInput(event.target.value)} /></label>
           <label>種目名<input maxLength={30} value={nameInput} onChange={(event) => onNameInput(event.target.value)} /></label>
+          <div className="form-field">
+            <div className="form-label">記録単位</div>
+            <MeasurementToggle value={measurementTypeInput} onChange={onMeasurementTypeInput} />
+          </div>
           <button className="primary" type="submit">追加して記録へ</button>
         </form>
       )}
@@ -67,7 +74,12 @@ export function SelectScreen({ groupedExercises, editMode, addFormOpen, partInpu
                     >
                       <span className="drag-handle" aria-hidden="true"><DragHandle /></span>
                       <span className="exercise-name">{exercise.name}</span>
-                      <button className="delete-exercise" data-delete-exercise type="button" aria-label="種目を削除" onClick={() => onDeleteExercise(exercise.id)}><TrashIcon /></button>
+                      <MeasurementToggle
+                        value={exercise.measurementType}
+                        compact
+                        onChange={(measurementType) => onUpdateExerciseMeasurementType(exercise.id, measurementType)}
+                      />
+                      <button className="delete-exercise" data-row-action type="button" aria-label="種目を削除" onClick={() => onDeleteExercise(exercise.id)}><TrashIcon /></button>
                     </div>
                   ) : (
                     <button className="exercise-option" key={exercise.id} type="button" onClick={() => onAddExercise(exercise.id)}>{exercise.name}</button>
@@ -85,5 +97,14 @@ export function SelectScreen({ groupedExercises, editMode, addFormOpen, partInpu
         })}
       </div>
     </section>
+  );
+}
+
+function MeasurementToggle({ value, compact = false, onChange }: { value: MeasurementType; compact?: boolean; onChange: (value: MeasurementType) => void }) {
+  return (
+    <div className={`measurement-toggle ${compact ? "compact" : ""}`} data-row-action>
+      <button className={value === "reps" ? "active" : ""} type="button" onClick={() => onChange("reps")}>回数</button>
+      <button className={value === "seconds" ? "active" : ""} type="button" onClick={() => onChange("seconds")}>秒数</button>
+    </div>
   );
 }
