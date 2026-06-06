@@ -4,8 +4,6 @@ export type Exercise = {
   id: string;
   part: string;
   name: string;
-  weight: number;
-  reps: number;
 };
 
 export type WorkoutSet = {
@@ -33,6 +31,7 @@ export type State = {
   exercises: Exercise[];
   workouts: Workout[];
   presets: Preset[];
+  catalogVersion: number;
 };
 
 export type CalendarCell = {

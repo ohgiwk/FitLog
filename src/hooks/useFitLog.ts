@@ -110,7 +110,7 @@ export function useFitLog() {
     const name = nameInput.trim();
     if (!name) return showToast("種目名を入力してください");
 
-    const exercise: Exercise = { id: uid(), part, name, weight: 0, reps: 10 };
+    const exercise: Exercise = { id: uid(), part, name };
     const workout = createWorkout(exercise, selectedDate);
     saveState((prev) => ({ ...prev, exercises: [exercise, ...prev.exercises], workouts: [...prev.workouts, workout] }));
     setCurrentWorkoutId(workout.id);
