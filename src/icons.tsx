@@ -6,6 +6,14 @@ export function ChevronDown() {
   return <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>;
 }
 
+export function ChevronLeft() {
+  return <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>;
+}
+
+export function ChevronRight() {
+  return <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg>;
+}
+
 export function TrashIcon() {
   return <svg viewBox="0 0 24 24"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M6 6l1 16h10l1-16" /></svg>;
 }

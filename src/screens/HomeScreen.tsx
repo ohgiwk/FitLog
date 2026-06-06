@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp } from "../icons";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "../icons";
 import { Preset, Workout } from "../types";
 import { isRepsMeasurement, number } from "../utils";
 import { HomeSetRow } from "../components/HomeSetRow";
@@ -30,11 +30,11 @@ export function HomeScreen({ selectedDate, selectedWorkouts, presets, currentPre
       <header className="topbar">
         <div className="bar-row">
           <button className="bar-btn" type="button" aria-label="前の日" onClick={() => onMoveDate(-1)}>
-            &lt;
+            <ChevronLeft />
           </button>
           <div className="bar-title">{selectedDate.replaceAll("-", "/")}</div>
           <button className="bar-btn right" type="button" aria-label="次の日" onClick={() => onMoveDate(1)}>
-            &gt;
+            <ChevronRight />
           </button>
         </div>
         <div className="stats">
