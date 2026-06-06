@@ -1,0 +1,198 @@
+.history-wrap {
+  min-height: calc(100vh - 146px);
+  background: #fff;
+  padding: 0 0 24px;
+}
+
+.exercise-history-wrap {
+  min-height: calc(100vh - 146px);
+  padding: 28px 11px 26px;
+  background: #e2e2e3;
+}
+
+.history-card {
+  overflow: hidden;
+  margin-bottom: 26px;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.history-card-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 8px;
+  min-height: 48px;
+  padding: 8px 12px 7px;
+  background: var(--red);
+  color: #fff;
+}
+
+.history-card-date {
+  font-size: 25px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.history-card-total {
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.history-set-table td {
+  height: 58px;
+  border-top: 1px solid var(--line);
+  padding: 0 5px;
+  font-size: 22px;
+  font-weight: 900;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.history-set-table .history-num {
+  width: 44px;
+  font-weight: 500;
+}
+
+.history-set-table .history-weight {
+  width: 108px;
+}
+
+.history-set-table .history-reps {
+  width: 74px;
+  white-space: nowrap;
+}
+
+.history-set-table .history-rm,
+.history-set-table .history-assist {
+  color: #111;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.history-set-table small {
+  color: #777;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.muscle-tabs {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(62px, 1fr));
+  overflow-x: auto;
+  border-top: 1px solid #adadb1;
+  border-bottom: 2px solid var(--red);
+  background: #fff;
+  scrollbar-width: none;
+}
+
+.muscle-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.muscle-tab {
+  min-height: 42px;
+  border-right: 1px solid #adadb1;
+  color: var(--red);
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.muscle-tab.active {
+  background: var(--red);
+  color: #fff;
+}
+
+.calendar-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: min(210px, 62%);
+  height: 42px;
+  margin: 32px auto 26px;
+  border-radius: 10px;
+  background: #ededf0;
+  padding: 3px;
+}
+
+.calendar-mode button {
+  border-radius: 8px;
+  color: #111;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.calendar-mode button.active {
+  background: #fff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, .12);
+}
+
+.calendar-head {
+  display: grid;
+  grid-template-columns: 56px 1fr 56px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px 12px;
+}
+
+.calendar-month {
+  color: var(--red);
+  font-size: 22px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.month-btn {
+  min-height: 38px;
+  color: rgba(239, 35, 49, .32);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 14px;
+  padding: 0 20px;
+}
+
+.weekday {
+  color: var(--red);
+  font-size: 17px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.day-cell {
+  display: grid;
+  min-height: 44px;
+  place-items: center;
+  color: #111;
+}
+
+.day-cell.other {
+  color: #aaa;
+}
+
+.day-btn {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 50%;
+  color: inherit;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.day-btn.trained {
+  background: var(--red);
+  color: #fff;
+}
+
+.day-btn.selected {
+  background: #5842c4;
+  color: #fff;
+}

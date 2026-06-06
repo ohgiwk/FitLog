@@ -1,0 +1,88 @@
+.detail-summary {
+  margin: 0 14px;
+  border-radius: 12px 12px 0 0;
+  padding: 10px 14px;
+  background: #cfcfd1;
+  color: #57575b;
+  font-size: 16px;
+}
+
+.detail-summary strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #111;
+  font-size: 18px;
+}
+
+.detail-table {
+  margin: 0 14px 18px;
+  background: #fff;
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: 34px 1fr 1fr 62px 36px;
+  gap: 8px;
+  align-items: start;
+  min-height: 92px;
+  border-bottom: 1px solid #cfcfd2;
+  padding: 11px 8px 9px;
+}
+
+.detail-row .num {
+  padding-top: 8px;
+  font-size: 22px;
+  text-align: center;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 5px;
+  min-width: 0;
+}
+
+.field input {
+  min-width: 0;
+  height: 38px;
+  font-size: 23px;
+}
+
+.unit {
+  padding-bottom: 7px;
+  color: #666;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.note {
+  grid-column: 2 / 5;
+  height: 30px;
+  border-bottom: 2px solid #727276;
+  color: #b9b9bd;
+  text-align: center;
+}
+
+.rm-value {
+  padding-top: 12px;
+  color: #aaa;
+  font-size: 14px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.check {
+  width: 34px;
+  height: 42px;
+  color: #111;
+}
+
+.history-btn {
+  justify-self: end;
+  width: 48px;
+  height: 42px;
+  border-radius: 8px;
+  color: #fff;
+}

@@ -1,0 +1,126 @@
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--red);
+  color: #fff;
+  padding: max(18px, env(safe-area-inset-top)) 14px 12px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 72px 1fr 72px;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+}
+
+.bar-title {
+  overflow: hidden;
+  font-size: 20px;
+  font-weight: 900;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar-btn {
+  min-height: 42px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.bar-btn.right {
+  text-align: right;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.stat {
+  min-height: 54px;
+  border: 1.5px solid rgba(255, 255, 255, .92);
+  border-radius: 8px;
+  padding: 7px 4px;
+  text-align: center;
+}
+
+.stat span {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.stat strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.bottom-nav {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 15;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 480px;
+  min-height: calc(70px + env(safe-area-inset-bottom));
+  margin: 0 auto;
+  border-top: 1px solid #c9c9cc;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--tab);
+}
+
+.nav-item {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 3px;
+  color: #4f4f52;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.nav-item.active {
+  color: var(--red);
+}
+
+.nav-item svg {
+  width: 25px;
+  height: 25px;
+  fill: currentColor;
+}
+
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: calc(86px + env(safe-area-inset-bottom));
+  left: 16px;
+  z-index: 30;
+  max-width: 440px;
+  margin: 0 auto;
+  transform: translateY(60px);
+  opacity: 0;
+  transition: transform .18s ease, opacity .18s ease;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, .8);
+  color: #fff;
+  text-align: center;
+  pointer-events: none;
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}

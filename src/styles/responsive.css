@@ -1,0 +1,27 @@
+@media (max-width: 370px) {
+  .stats {
+    gap: 6px;
+  }
+
+  .stat span {
+    font-size: 11px;
+  }
+
+  .exercise-head h2 {
+    font-size: 17px;
+  }
+
+  .set-table .weight,
+  .set-table .reps {
+    font-size: 18px;
+  }
+
+  .set-table .lbs {
+    display: none;
+  }
+
+  .detail-row {
+    grid-template-columns: 30px 1fr 1fr 50px 32px;
+    gap: 5px;
+  }
+}
