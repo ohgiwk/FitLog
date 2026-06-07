@@ -90,18 +90,13 @@ export function useFitLog() {
   function addExerciseToToday(exerciseId: string) {
     const exercise = state.exercises.find((item) => item.id === exerciseId);
     if (!exercise) return;
-    let nextWorkoutId = "";
+    const existing = state.workouts.find((item) => item.date === selectedDate && item.exerciseId === exerciseId);
+    const workout = existing || createWorkout(exercise, selectedDate);
     saveState((prev) => {
-      const existing = prev.workouts.find((item) => item.date === selectedDate && item.exerciseId === exerciseId);
-      if (existing) {
-        nextWorkoutId = existing.id;
-        return prev;
-      }
-      const workout = createWorkout(exercise, selectedDate);
-      nextWorkoutId = workout.id;
+      if (existing) return prev;
       return { ...prev, workouts: [...prev.workouts, workout] };
     });
-    setCurrentWorkoutId(nextWorkoutId);
+    setCurrentWorkoutId(workout.id);
     showScreen("detail");
   }
 
@@ -386,9 +381,10 @@ export function useFitLog() {
 }
 
 function findCurrentWorkout(workouts: Workout[], currentWorkoutId: string | null, selectedDate: string, selectedWorkouts: Workout[]) {
+  if (!currentWorkoutId) return null;
   const current = workouts.find((workout) => workout.id === currentWorkoutId);
   if (current?.date === selectedDate) return current;
-  return selectedWorkouts[0] || null;
+  return selectedWorkouts.find((workout) => workout.id === currentWorkoutId) || null;
 }
 
 function findCurrentPreset(presets: Preset[], currentPresetId: string | null) {
