@@ -1,15 +1,17 @@
 import { HistoryIcon, TrashIcon } from "../icons";
-import { Workout } from "../types";
-import { calcRm, isRepsMeasurement, measurementUnit, number } from "../utils";
+import { SetIntensity, Workout } from "../types";
+import { calcRm, intensityOptions, isRepsMeasurement, measurementUnit, number } from "../utils";
 import { LastRecord } from "../components/LastRecord";
+import { IntensityIcon } from "../components/IntensityIcon";
 
-export function DetailScreen({ workout, selectedDate, workouts, onBack, onOpenHistory, onUpdateSet, onDeleteSet, onAddSet }: {
+export function DetailScreen({ workout, selectedDate, workouts, onBack, onOpenHistory, onUpdateSet, onUpdateSetIntensity, onDeleteSet, onAddSet }: {
   workout: Workout;
   selectedDate: string;
   workouts: Workout[];
   onBack: () => void;
   onOpenHistory: () => void;
-  onUpdateSet: (setId: string, field: "weight" | "recordValue", value: string) => void;
+  onUpdateSet: (setId: string, field: "weight" | "recordValue" | "note", value: string) => void;
+  onUpdateSetIntensity: (setId: string, intensity?: SetIntensity) => void;
   onDeleteSet: (setId: string) => void;
   onAddSet: (workoutId: string) => void;
 }) {
@@ -34,7 +36,20 @@ export function DetailScreen({ workout, selectedDate, workouts, onBack, onOpenHi
               <label className="field"><input type="number" step="1" min="0" inputMode="numeric" value={set.recordValue} onChange={(event) => onUpdateSet(set.id, "recordValue", event.target.value)} /><span className="unit">{unit}</span></label>
               <div className="rm-value">{isReps ? `${calcRm(number(set.weight), number(set.recordValue))} kg` : "-"}</div>
               <button className="check" type="button" aria-label="セット削除" onClick={() => onDeleteSet(set.id)}><TrashIcon /></button>
-              <div className="note">メモ</div>
+              <div className="intensity-picker" aria-label={`${index + 1}セット目の強度`}>
+                {intensityOptions.map((option) => (
+                  <button
+                    className={`intensity-button intensity-button-${option.value}${set.intensity === option.value ? " active" : ""}`}
+                    key={option.value}
+                    type="button"
+                    aria-label={option.label}
+                    aria-pressed={set.intensity === option.value}
+                    onClick={() => onUpdateSetIntensity(set.id, set.intensity === option.value ? undefined : option.value)}
+                  >
+                    <IntensityIcon intensity={option.value} />
+                  </button>
+                ))}
+              </div>
             </div>
           ))}
         </div>

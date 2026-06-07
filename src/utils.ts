@@ -1,4 +1,4 @@
-import { CalendarCell, Exercise, MeasurementType, WorkoutSet } from "./types";
+import { CalendarCell, Exercise, MeasurementType, SetIntensity, WorkoutSet } from "./types";
 
 export function groupExercises(exercises: Exercise[]) {
   return exercises.reduce((groups, exercise) => {
@@ -31,8 +31,16 @@ export function calendarCells(year: number, month: number): CalendarCell[] {
 }
 
 export function newSet(): WorkoutSet {
-  return { id: uid(), weight: "", recordValue: "" };
+  return { id: uid(), weight: "", recordValue: "", note: "" };
 }
+
+export const intensityOptions: { value: SetIntensity; label: string }[] = [
+  { value: 1, label: "余裕" },
+  { value: 2, label: "普通" },
+  { value: 3, label: "きつい" },
+  { value: 4, label: "かなりきつい" },
+  { value: 5, label: "限界" },
+];
 
 export function calcRm(weight: number, reps: number) {
   if (!weight || !reps) return "0.0";

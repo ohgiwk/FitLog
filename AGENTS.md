@@ -80,7 +80,7 @@ http://<MacのローカルIP>:5173/FitLog/
 ## データ方針
 
 - `Exercise` は種目マスタです。`id`、`part`、`name`、`measurementType` の軽いデータとして扱います。
-- 実際に記録した重量と回数または秒数は `WorkoutSet` の `weight`、`recordValue` に保存します。
+- 実際に記録した重量、回数または秒数、強度、メモは `WorkoutSet` の `weight`、`recordValue`、`intensity`、`note` に保存します。
 - 新しいトレーニングを開始するとき、セットは空白で作成します。ただしユーザーが明示的に初期値を求めた場合はその指示を優先します。
 - 初期種目は部位ごとに整理し、一般的な筋トレ種目を中心にしてください。
 

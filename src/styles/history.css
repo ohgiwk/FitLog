@@ -72,6 +72,10 @@
   font-weight: 800;
 }
 
+.history-set-table .history-assist .intensity-face {
+  margin: 0 auto;
+}
+
 .history-set-table small {
   color: #777;
   font-size: 15px;

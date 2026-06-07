@@ -29,6 +29,14 @@
     gap: 5px;
   }
 
+  .intensity-picker {
+    gap: 4px;
+  }
+
+  .intensity-picker button {
+    font-size: 13px;
+  }
+
   .exercise-option.edit-row {
     grid-template-columns: 32px 1fr auto 36px;
     gap: 5px;

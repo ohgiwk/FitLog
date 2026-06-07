@@ -1,4 +1,5 @@
 import { Workout, WorkoutSet } from "../types";
+import { IntensityIcon } from "../components/IntensityIcon";
 import { calcRm, isRepsMeasurement, measurementLabel, measurementUnit, number } from "../utils";
 
 export function ExerciseHistoryScreen({ workout, workouts, onBack }: { workout: Workout; workouts: Workout[]; onBack: () => void }) {
@@ -18,7 +19,7 @@ export function ExerciseHistoryScreen({ workout, workouts, onBack }: { workout: 
               <article className="history-card" key={item.id}>
                 <header className="history-card-head"><div className="history-card-date">{item.date.replaceAll("-", "/")}</div><div className="history-card-total">{isReps ? `TOTAL : ${total.toFixed(1)}Kg MAX 1RM : ${maxRm.toFixed(1)}Kg` : `TOTAL : ${total}秒 MAX 1RM : -`}</div></header>
                 <table className="history-set-table">
-                  <thead><tr><th>セット</th><th>重さ</th><th>{measurementLabel(item.measurementType)}</th><th>RM</th><th>補助</th></tr></thead>
+                  <thead><tr><th>セット</th><th>重さ</th><th>{measurementLabel(item.measurementType)}</th><th>RM</th><th>強度</th></tr></thead>
                   <tbody>{item.sets.map((set, index) => <ExerciseHistorySetRow key={set.id} set={set} index={index} measurementType={item.measurementType} />)}</tbody>
                 </table>
               </article>
@@ -40,7 +41,7 @@ function ExerciseHistorySetRow({ set, index, measurementType }: { set: WorkoutSe
       <td className="history-weight">{weight ? <>{weight.toFixed(1)}<small> kg</small></> : "自重"}</td>
       <td className="history-reps">{recordValue}<small> {measurementUnit(measurementType)}</small></td>
       <td className="history-rm">{isReps && weight ? `${calcRm(weight, recordValue)}kg` : "-"}</td>
-      <td className="history-assist">-</td>
+      <td className="history-assist"><IntensityIcon intensity={set.intensity} /></td>
     </tr>
   );
 }

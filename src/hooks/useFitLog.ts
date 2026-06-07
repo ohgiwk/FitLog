@@ -1,6 +1,6 @@
 import { FormEvent, PointerEvent, useEffect, useMemo, useState } from "react";
 import { loadState, storeKey } from "../storage";
-import { Exercise, MeasurementType, Preset, Screen, State, Workout } from "../types";
+import { Exercise, MeasurementType, Preset, Screen, SetIntensity, State, Workout } from "../types";
 import { dragAfterElement, groupExercises, isBlank, localDate, newSet, parseDate, uid } from "../utils";
 
 export function useFitLog() {
@@ -127,12 +127,30 @@ export function useFitLog() {
     showScreen("detail");
   }
 
-  function updateSet(setId: string, field: "weight" | "recordValue", value: string) {
+  function updateSet(setId: string, field: "weight" | "recordValue" | "note", value: string) {
     saveState((prev) => ({
       ...prev,
       workouts: prev.workouts.map((workout) => ({
         ...workout,
         sets: workout.sets.map((set) => (set.id === setId ? { ...set, [field]: value } : set)),
+      })),
+    }));
+  }
+
+  function updateSetIntensity(setId: string, intensity?: SetIntensity) {
+    saveState((prev) => ({
+      ...prev,
+      workouts: prev.workouts.map((workout) => ({
+        ...workout,
+        sets: workout.sets.map((set) => {
+          if (set.id !== setId) return set;
+          if (!intensity) {
+            const nextSet = { ...set };
+            delete nextSet.intensity;
+            return nextSet;
+          }
+          return { ...set, intensity };
+        }),
       })),
     }));
   }
@@ -376,6 +394,7 @@ export function useFitLog() {
       togglePartExpanded,
       updateExerciseMeasurementType,
       updateSet,
+      updateSetIntensity,
     },
   };
 }

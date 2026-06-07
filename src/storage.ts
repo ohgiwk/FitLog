@@ -1,5 +1,5 @@
 import { starterCatalogVersion, starterExercises } from "./data/starterExercises";
-import { MeasurementType, Preset, State, WorkoutSet } from "./types";
+import { MeasurementType, Preset, SetIntensity, State, WorkoutSet } from "./types";
 import { uid } from "./utils";
 
 export const storeKey = "fit-log-v2";
@@ -78,6 +78,8 @@ function normalizeSets(sets: unknown): WorkoutSet[] {
       id: item.id,
       weight: normalizeSetValue(item.weight),
       recordValue: normalizeSetValue(item.recordValue ?? item.reps),
+      intensity: normalizeIntensity(item.intensity),
+      note: typeof item.note === "string" ? item.note : "",
     }];
   });
 }
@@ -88,6 +90,10 @@ function normalizeSetValue(value: unknown) {
 
 function normalizeMeasurementType(value: unknown): MeasurementType {
   return value === "seconds" ? "seconds" : "reps";
+}
+
+function normalizeIntensity(value: unknown): SetIntensity | undefined {
+  return value === 1 || value === 2 || value === 3 || value === 4 || value === 5 ? value : undefined;
 }
 
 function mergeStarterExercises(exercises: State["exercises"]) {

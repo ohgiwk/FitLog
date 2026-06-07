@@ -79,6 +79,7 @@ export function App() {
             onBack={() => actions.setScreen("home")}
             onOpenHistory={() => actions.setScreen("exerciseHistory")}
             onUpdateSet={actions.updateSet}
+            onUpdateSetIntensity={actions.updateSetIntensity}
             onDeleteSet={actions.deleteSet}
             onAddSet={actions.addSet}
           />
