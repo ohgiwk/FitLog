@@ -1,12 +1,13 @@
 import { Workout, WorkoutSet } from "../types";
 import { IntensityIcon } from "../components/IntensityIcon";
+import { ChevronLeft } from "../icons";
 import { calcRm, isRepsMeasurement, measurementLabel, measurementUnit, number } from "../utils";
 
 export function ExerciseHistoryScreen({ workout, workouts, onBack }: { workout: Workout; workouts: Workout[]; onBack: () => void }) {
   const histories = workouts.filter((item) => item.exerciseId === workout.exerciseId).sort((a, b) => b.date.localeCompare(a.date));
   return (
     <section className="screen active">
-      <header className="topbar"><div className="bar-row"><button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}>&lt;</button><div className="bar-title">{workout.name}</div><span /></div></header>
+      <header className="topbar"><div className="bar-row"><button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}><ChevronLeft /></button><div className="bar-title">{workout.name}</div><span /></div></header>
       <div className="exercise-history-wrap">
         {!histories.length ? (
           <div className="empty"><div><strong>この種目の履歴はまだありません</strong><span>記録するとここに日別のセット履歴が表示されます。</span></div></div>

@@ -1,5 +1,5 @@
 import { FormEvent, PointerEvent } from "react";
-import { DragHandle, TrashIcon } from "../icons";
+import { ChevronLeft, DragHandle, TrashIcon } from "../icons";
 import { Exercise, MeasurementType } from "../types";
 
 export function SelectScreen({ groupedExercises, editMode, addFormOpen, partInput, nameInput, measurementTypeInput, expandedParts, draggingExerciseId, onBack, onToggleEditMode, onToggleAddForm, onPartInput, onNameInput, onMeasurementTypeInput, onAddCustomExercise, onAddExercise, onStartDrag, onCommitOrder, onDeleteExercise, onUpdateExerciseMeasurementType, onTogglePartExpanded, onSetPartAndOpenForm }: {
@@ -30,7 +30,7 @@ export function SelectScreen({ groupedExercises, editMode, addFormOpen, partInpu
     <section className="screen active">
       <header className="topbar">
         <div className="bar-row">
-          <button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}>&lt;</button>
+          <button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}><ChevronLeft /></button>
           <div className="bar-title">種目を選択</div>
           <button className="bar-btn right" type="button" onClick={onToggleEditMode}>{editMode ? "Done" : "Edit"}</button>
         </div>
