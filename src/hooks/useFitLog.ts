@@ -24,6 +24,10 @@ export function useFitLog() {
     [selectedDate, state.workouts]
   );
   const groupedExercises = useMemo(() => groupExercises(state.exercises), [state.exercises]);
+  const partRecentLabels = useMemo(
+    () => buildPartRecentLabels(groupedExercises, state.workouts, selectedDate),
+    [groupedExercises, selectedDate, state.workouts]
+  );
   const currentWorkout = useMemo(() => findCurrentWorkout(state.workouts, currentWorkoutId, selectedDate, selectedWorkouts), [currentWorkoutId, selectedDate, selectedWorkouts, state.workouts]);
   const currentPreset = useMemo(() => findCurrentPreset(state.presets, currentPresetId), [currentPresetId, state.presets]);
   const editingPreset = useMemo(() => state.presets.find((preset) => preset.id === currentEditingPresetId) || null, [currentEditingPresetId, state.presets]);
@@ -354,6 +358,7 @@ export function useFitLog() {
     editingPreset,
     expandedParts,
     groupedExercises,
+    partRecentLabels,
     nameInput,
     measurementTypeInput,
     partInput,
@@ -408,6 +413,30 @@ function findCurrentWorkout(workouts: Workout[], currentWorkoutId: string | null
 
 function findCurrentPreset(presets: Preset[], currentPresetId: string | null) {
   return presets.find((preset) => preset.id === currentPresetId) || presets[0] || null;
+}
+
+function buildPartRecentLabels(groupedExercises: Map<string, Exercise[]>, workouts: Workout[], selectedDate: string) {
+  const selectedTime = parseDate(selectedDate).getTime();
+  const labels = new Map<string, string>();
+  groupedExercises.forEach((exercises, part) => {
+    const exerciseIds = new Set(exercises.map((exercise) => exercise.id));
+    const latest = workouts
+      .filter((workout) =>
+        exerciseIds.has(workout.exerciseId) &&
+        workout.date <= selectedDate &&
+        workout.sets.some((set) => !isBlank(set.weight) || !isBlank(set.recordValue))
+      )
+      .sort((a, b) => b.date.localeCompare(a.date))[0];
+
+    if (!latest) {
+      labels.set(part, "履歴なし");
+      return;
+    }
+
+    const daysAgo = Math.max(0, Math.round((selectedTime - parseDate(latest.date).getTime()) / 86400000));
+    labels.set(part, daysAgo === 0 ? "今日" : `${daysAgo}日前`);
+  });
+  return labels;
 }
 
 function createWorkout(exercise: Exercise, date: string): Workout {

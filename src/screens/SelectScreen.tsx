@@ -2,8 +2,9 @@ import { FormEvent, PointerEvent } from "react";
 import { ChevronLeft, DragHandle, TrashIcon } from "../icons";
 import { Exercise, MeasurementType } from "../types";
 
-export function SelectScreen({ groupedExercises, editMode, addFormOpen, partInput, nameInput, measurementTypeInput, expandedParts, draggingExerciseId, onBack, onToggleEditMode, onToggleAddForm, onPartInput, onNameInput, onMeasurementTypeInput, onAddCustomExercise, onAddExercise, onStartDrag, onCommitOrder, onDeleteExercise, onUpdateExerciseMeasurementType, onTogglePartExpanded, onSetPartAndOpenForm }: {
+export function SelectScreen({ groupedExercises, partRecentLabels, editMode, addFormOpen, partInput, nameInput, measurementTypeInput, expandedParts, draggingExerciseId, onBack, onToggleEditMode, onToggleAddForm, onPartInput, onNameInput, onMeasurementTypeInput, onAddCustomExercise, onAddExercise, onStartDrag, onCommitOrder, onDeleteExercise, onUpdateExerciseMeasurementType, onTogglePartExpanded, onSetPartAndOpenForm }: {
   groupedExercises: Map<string, Exercise[]>;
+  partRecentLabels: Map<string, string>;
   editMode: boolean;
   addFormOpen: boolean;
   partInput: string;
@@ -55,7 +56,7 @@ export function SelectScreen({ groupedExercises, editMode, addFormOpen, partInpu
           const visibleExercises = editMode || expanded ? exercises : exercises.slice(0, 4);
           return (
             <section className="part-card" key={part}>
-              <div className="part-title">{part}{editMode ? "" : " - 最近"}</div>
+              <div className="part-title">{part}{editMode ? "" : ` - ${partRecentLabels.get(part) || "履歴なし"}`}</div>
               <div className="exercise-list" data-part-list={part}>
                 {visibleExercises.map((exercise) =>
                   editMode ? (

@@ -38,6 +38,7 @@ export function App() {
         {fitLog.screen === "select" && (
           <SelectScreen
             groupedExercises={fitLog.groupedExercises}
+            partRecentLabels={fitLog.partRecentLabels}
             editMode={fitLog.editMode}
             addFormOpen={fitLog.addFormOpen}
             partInput={fitLog.partInput}
