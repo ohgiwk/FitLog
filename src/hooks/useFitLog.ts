@@ -48,7 +48,7 @@ export function useFitLog() {
   }
 
   function showScreen(next: Screen) {
-    if (next !== "detail") cleanupBlankDetailSets();
+    if (next !== "detail" && next !== "exerciseHistory") cleanupBlankDetailSets();
     if (next !== "select") setEditMode(false);
     setScreen(next);
   }
