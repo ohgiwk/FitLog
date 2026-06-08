@@ -1,5 +1,5 @@
 import { starterCatalogVersion, starterExercises } from "./data/starterExercises";
-import { MeasurementType, Preset, SetIntensity, State, WorkoutSet } from "./types";
+import { MeasurementType, Preset, SetIntensity, State, TrainingPlanMode, WorkoutSet } from "./types";
 import { uid } from "./utils";
 
 export const storeKey = "fit-log-v2";
@@ -21,13 +21,15 @@ export function loadState(): State {
         exercises: catalogVersion < starterCatalogVersion ? mergeStarterExercises(exercises) : exercises,
         workouts: normalizeWorkouts(saved.workouts),
         presets: normalizePresets(saved.presets),
+        trainingDays: normalizeTrainingDays(saved.trainingDays),
+        trainingPlans: normalizeTrainingPlans(saved.trainingPlans),
         catalogVersion: starterCatalogVersion,
       };
     }
   } catch {
     localStorage.removeItem(storeKey);
   }
-  return { exercises: starterExercises, workouts: [], presets: defaultPresets, catalogVersion: starterCatalogVersion };
+  return { exercises: starterExercises, workouts: [], presets: defaultPresets, trainingDays: [], trainingPlans: [], catalogVersion: starterCatalogVersion };
 }
 
 function normalizePresets(presets: unknown): Preset[] {
@@ -38,6 +40,63 @@ function normalizePresets(presets: unknown): Preset[] {
     exerciseIds: Array.isArray(preset.exerciseIds) ? preset.exerciseIds.filter((id: unknown): id is string => typeof id === "string") : [],
   }));
   return mergeDefaultPresets(normalizedPresets);
+}
+
+function normalizeTrainingDays(trainingDays: unknown): State["trainingDays"] {
+  if (!Array.isArray(trainingDays)) return [];
+  const byDate = new Map<string, Set<string>>();
+  trainingDays.forEach((trainingDay) => {
+    if (!trainingDay || typeof trainingDay !== "object") return;
+    const item = trainingDay as Record<string, unknown>;
+    if (typeof item.date !== "string") return;
+    const parts = normalizeParts(item.parts ?? item.part);
+    if (!parts.length) return;
+    const existingParts = byDate.get(item.date) || new Set<string>();
+    parts.forEach((part) => existingParts.add(part));
+    byDate.set(item.date, existingParts);
+  });
+  return [...byDate].map(([date, parts]) => ({ date, parts: [...parts] }));
+}
+
+function normalizeParts(value: unknown) {
+  const values = Array.isArray(value) ? value : [value];
+  return [...new Set(values.flatMap((item) => {
+    if (typeof item !== "string") return [];
+    const part = item.trim();
+    return part ? [part] : [];
+  }))];
+}
+
+function normalizeTrainingPlans(trainingPlans: unknown): State["trainingPlans"] {
+  if (!Array.isArray(trainingPlans)) return [];
+  return trainingPlans.flatMap((trainingPlan) => {
+    if (!trainingPlan || typeof trainingPlan !== "object") return [];
+    const item = trainingPlan as Record<string, unknown>;
+    const part = typeof item.part === "string" ? item.part.trim() : "";
+    if (!part) return [];
+    return [{
+      id: typeof item.id === "string" ? item.id : uid(),
+      part,
+      mode: normalizeTrainingPlanMode(item.mode),
+      weekdays: normalizeWeekdays(item.weekdays),
+      intervalDays: normalizeIntervalDays(item.intervalDays),
+      startDate: typeof item.startDate === "string" ? item.startDate : "",
+    }];
+  });
+}
+
+function normalizeTrainingPlanMode(value: unknown): TrainingPlanMode {
+  return value === "interval" ? "interval" : "weekly";
+}
+
+function normalizeWeekdays(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter((day): day is number => Number.isInteger(day) && day >= 0 && day <= 6))].sort();
+}
+
+function normalizeIntervalDays(value: unknown) {
+  const days = Number(value);
+  return Number.isFinite(days) && days > 0 ? Math.round(days) : 1;
 }
 
 function mergeDefaultPresets(presets: Preset[]) {

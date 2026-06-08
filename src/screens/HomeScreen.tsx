@@ -3,9 +3,12 @@ import { Preset, Workout } from "../types";
 import { isRepsMeasurement, number } from "../utils";
 import { HomeSetRow } from "../components/HomeSetRow";
 
-export function HomeScreen({ selectedDate, selectedWorkouts, presets, currentPreset, onMoveDate, onSelectPreset, onStartPreset, onOpenPresets, onOpenSelect, onOpenDetail, onMoveWorkout, onAddSet }: {
+const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
+
+export function HomeScreen({ selectedDate, selectedWorkouts, selectedPlannedParts, presets, currentPreset, onMoveDate, onSelectPreset, onStartPreset, onOpenPresets, onOpenSelect, onOpenDetail, onMoveWorkout, onAddSet }: {
   selectedDate: string;
   selectedWorkouts: Workout[];
+  selectedPlannedParts: string[];
   presets: Preset[];
   currentPreset: Preset | null;
   onMoveDate: (days: number) => void;
@@ -17,6 +20,8 @@ export function HomeScreen({ selectedDate, selectedWorkouts, presets, currentPre
   onMoveWorkout: (workoutId: string, direction: number) => void;
   onAddSet: (workoutId: string) => void;
 }) {
+  const date = new Date(`${selectedDate}T00:00:00`);
+  const dateLabel = `${selectedDate.replaceAll("-", "/")} (${weekdayLabels[date.getDay()]})`;
   const sets = selectedWorkouts.flatMap((workout) => workout.sets);
   const totalReps = selectedWorkouts.reduce((sum, workout) =>
     sum + (isRepsMeasurement(workout.measurementType) ? workout.sets.reduce((setSum, set) => setSum + number(set.recordValue), 0) : 0), 0);
@@ -32,7 +37,7 @@ export function HomeScreen({ selectedDate, selectedWorkouts, presets, currentPre
           <button className="bar-btn" type="button" aria-label="前の日" onClick={() => onMoveDate(-1)}>
             <ChevronLeft />
           </button>
-          <div className="bar-title">{selectedDate.replaceAll("-", "/")}</div>
+          <div className="bar-title">{dateLabel}</div>
           <button className="bar-btn right" type="button" aria-label="次の日" onClick={() => onMoveDate(1)}>
             <ChevronRight />
           </button>
@@ -61,6 +66,11 @@ export function HomeScreen({ selectedDate, selectedWorkouts, presets, currentPre
         <button className="small-primary" disabled={!currentPreset} type="button" onClick={() => onStartPreset(currentPreset?.id || "")}>開始</button>
         <button className="small-outline" type="button" onClick={onOpenPresets}>管理</button>
       </div>
+      {!!selectedPlannedParts.length && (
+        <div className="planned-day">
+          <span>予定: {selectedPlannedParts.join(" / ")}</span>
+        </div>
+      )}
       <div className="content">
         {!selectedWorkouts.length ? (
           <div className="empty"><div><strong>この日の種目はまだありません</strong><span>右下の＋から種目を選択して、詳細画面でセットを入力できます。</span></div></div>

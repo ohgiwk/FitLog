@@ -19,6 +19,7 @@ export function App() {
           <HomeScreen
             selectedDate={fitLog.selectedDate}
             selectedWorkouts={fitLog.selectedWorkouts}
+            selectedPlannedParts={fitLog.selectedPlannedParts}
             presets={fitLog.state.presets}
             currentPreset={fitLog.currentPreset}
             onMoveDate={actions.moveDate}
@@ -122,20 +123,26 @@ export function App() {
           <HistoryScreen
             selectedDate={fitLog.selectedDate}
             workouts={fitLog.state.workouts}
-            onBack={() => actions.setScreen("home")}
+            trainingDays={fitLog.state.trainingDays}
+            trainingPlans={fitLog.state.trainingPlans}
+            splitPartOptions={fitLog.splitPartOptions}
+            partFilter={fitLog.historyPartFilter}
+            onPartFilter={actions.setHistoryPartFilter}
             onSelectDate={(date) => {
               actions.selectDate(date);
               actions.setCurrentWorkoutId(null);
               actions.setScreen("home");
             }}
             onMoveMonth={actions.moveMonth}
+            onAddTrainingPlan={actions.addTrainingPlan}
+            onDeleteTrainingPlan={actions.deleteTrainingPlan}
           />
         )}
       </main>
 
       <nav className="bottom-nav">
         <button className={`nav-item ${fitLog.screen === "home" ? "active" : ""}`} type="button" onClick={() => actions.setScreen("home")}><HomeIcon /><span>ホーム</span></button>
-        <button className={`nav-item ${fitLog.screen === "history" ? "active" : ""}`} type="button" onClick={() => actions.setScreen("history")}><CalendarIcon /><span>履歴/分析</span></button>
+        <button className={`nav-item ${fitLog.screen === "history" ? "active" : ""}`} type="button" onClick={() => actions.setScreen("history")}><CalendarIcon /><span>履歴/計画</span></button>
       </nav>
       <div className={`toast ${fitLog.toast ? "show" : ""}`} role="status" aria-live="polite">{fitLog.toast}</div>
     </>

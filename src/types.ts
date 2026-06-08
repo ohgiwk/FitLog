@@ -35,10 +35,28 @@ export type Preset = {
   exerciseIds: string[];
 };
 
+export type TrainingDay = {
+  date: string;
+  parts: string[];
+};
+
+export type TrainingPlanMode = "weekly" | "interval";
+
+export type TrainingPlan = {
+  id: string;
+  part: string;
+  mode: TrainingPlanMode;
+  weekdays: number[];
+  intervalDays: number;
+  startDate: string;
+};
+
 export type State = {
   exercises: Exercise[];
   workouts: Workout[];
   presets: Preset[];
+  trainingDays: TrainingDay[];
+  trainingPlans: TrainingPlan[];
   catalogVersion: number;
 };
 

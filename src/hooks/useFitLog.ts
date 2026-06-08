@@ -1,6 +1,6 @@
 import { FormEvent, PointerEvent, useEffect, useMemo, useState } from "react";
 import { loadState, storeKey } from "../storage";
-import { Exercise, MeasurementType, Preset, Screen, SetIntensity, State, Workout } from "../types";
+import { Exercise, MeasurementType, Preset, Screen, SetIntensity, State, TrainingPlanMode, Workout } from "../types";
 import { dragAfterElement, groupExercises, isBlank, localDate, newSet, parseDate, uid } from "../utils";
 
 export function useFitLog() {
@@ -10,6 +10,7 @@ export function useFitLog() {
   const [currentWorkoutId, setCurrentWorkoutId] = useState<string | null>(null);
   const [currentPresetId, setCurrentPresetId] = useState<string | null>(null);
   const [currentEditingPresetId, setCurrentEditingPresetId] = useState<string | null>(null);
+  const [historyPartFilter, setHistoryPartFilter] = useState("ALL");
   const [editMode, setEditMode] = useState(false);
   const [expandedParts, setExpandedParts] = useState<Set<string>>(() => new Set());
   const [addFormOpen, setAddFormOpen] = useState(false);
@@ -24,6 +25,8 @@ export function useFitLog() {
     [selectedDate, state.workouts]
   );
   const groupedExercises = useMemo(() => groupExercises(state.exercises), [state.exercises]);
+  const splitPartOptions = useMemo(() => buildSplitPartOptions(state.exercises, state.workouts, state.trainingDays, state.trainingPlans), [state.exercises, state.trainingDays, state.trainingPlans, state.workouts]);
+  const selectedPlannedParts = useMemo(() => plannedPartsForDate(selectedDate, state.trainingPlans), [selectedDate, state.trainingPlans]);
   const partRecentLabels = useMemo(
     () => buildPartRecentLabels(groupedExercises, state.workouts, selectedDate),
     [groupedExercises, selectedDate, state.workouts]
@@ -89,6 +92,33 @@ export function useFitLog() {
     next.setMonth(next.getMonth() + delta, 1);
     setSelectedDate(localDate(next));
     setCurrentWorkoutId(null);
+  }
+
+  function addTrainingPlan(part: string, mode: TrainingPlanMode, weekdays: number[], intervalDays: number, startDate: string) {
+    const normalizedPart = part.trim();
+    if (!normalizedPart) return showToast("部位を選択してください");
+    if (mode === "weekly" && !weekdays.length) return showToast("曜日を選択してください");
+    if (mode === "interval" && (!intervalDays || intervalDays < 1)) return showToast("間隔を入力してください");
+    const plan = {
+      id: uid(),
+      part: normalizedPart,
+      mode,
+      weekdays: mode === "weekly" ? [...new Set(weekdays)].sort() : [],
+      intervalDays: mode === "interval" ? Math.max(1, Math.round(intervalDays)) : 1,
+      startDate: startDate || selectedDate,
+    };
+    saveState((prev) => {
+      const existing = prev.trainingPlans.find((item) => item.part === normalizedPart);
+      const trainingPlans = existing
+        ? prev.trainingPlans.map((item) => (item.id === existing.id ? { ...plan, id: existing.id } : item))
+        : [plan, ...prev.trainingPlans];
+      return { ...prev, trainingPlans };
+    });
+    showToast("計画を保存しました");
+  }
+
+  function deleteTrainingPlan(planId: string) {
+    saveState((prev) => ({ ...prev, trainingPlans: prev.trainingPlans.filter((plan) => plan.id !== planId) }));
   }
 
   function addExerciseToToday(exerciseId: string) {
@@ -358,13 +388,16 @@ export function useFitLog() {
     editingPreset,
     expandedParts,
     groupedExercises,
+    historyPartFilter,
     partRecentLabels,
     nameInput,
     measurementTypeInput,
     partInput,
     screen,
     selectedDate,
+    selectedPlannedParts,
     selectedWorkouts,
+    splitPartOptions,
     state,
     toast,
     actions: {
@@ -377,6 +410,7 @@ export function useFitLog() {
       deleteExercise,
       deletePreset,
       deleteSet,
+      deleteTrainingPlan,
       moveDate,
       moveMonth,
       movePresetExercise,
@@ -389,6 +423,7 @@ export function useFitLog() {
       setCurrentEditingPresetId,
       setCurrentWorkoutId,
       setDraggingExerciseId,
+      setHistoryPartFilter,
       setNameInput,
       setMeasurementTypeInput,
       setPartInput,
@@ -396,6 +431,7 @@ export function useFitLog() {
       setEditMode,
       startPointerExerciseDrag,
       startPreset,
+      addTrainingPlan,
       togglePartExpanded,
       updateExerciseMeasurementType,
       updateSet,
@@ -413,6 +449,27 @@ function findCurrentWorkout(workouts: Workout[], currentWorkoutId: string | null
 
 function findCurrentPreset(presets: Preset[], currentPresetId: string | null) {
   return presets.find((preset) => preset.id === currentPresetId) || presets[0] || null;
+}
+
+function buildSplitPartOptions(exercises: Exercise[], workouts: Workout[], trainingDays: State["trainingDays"], trainingPlans: State["trainingPlans"]) {
+  const parts = new Set<string>();
+  exercises.forEach((exercise) => parts.add(exercise.part));
+  workouts.forEach((workout) => parts.add(workout.part));
+  trainingDays.forEach((day) => day.parts.forEach((part) => parts.add(part)));
+  trainingPlans.forEach((plan) => parts.add(plan.part));
+  parts.delete("");
+  return [...parts].sort((a, b) => a.localeCompare(b, "ja"));
+}
+
+function plannedPartsForDate(date: string, trainingPlans: State["trainingPlans"]) {
+  const target = parseDate(date);
+  const weekday = target.getDay();
+  return [...new Set(trainingPlans.flatMap((plan) => {
+    if (plan.mode === "weekly") return plan.weekdays.includes(weekday) ? [plan.part] : [];
+    const start = plan.startDate ? parseDate(plan.startDate) : target;
+    const days = Math.floor((target.getTime() - start.getTime()) / 86400000);
+    return days >= 0 && days % plan.intervalDays === 0 ? [plan.part] : [];
+  }))];
 }
 
 function buildPartRecentLabels(groupedExercises: Map<string, Exercise[]>, workouts: Workout[], selectedDate: string) {
