@@ -14,18 +14,21 @@
   display: grid;
   gap: 12px;
   margin-bottom: 24px;
+  border: 1px solid var(--red-border-soft);
+  border-left: 4px solid var(--red);
   border-radius: 14px;
   padding: 14px;
-  background: var(--red);
-  color: var(--surface);
+  background: var(--surface);
+  color: var(--ink);
   box-shadow: 0 8px 18px var(--shadow-medium);
 }
 
 .best-record-label {
   width: fit-content;
-  border: 1.5px solid var(--white-border-strong);
+  border: 1.5px solid var(--red-border-soft);
   border-radius: 999px;
   padding: 3px 10px;
+  color: var(--red);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: .04em;
@@ -39,7 +42,7 @@
 .best-record-main span,
 .best-record-main small,
 .best-record-chip span {
-  color: var(--white-muted);
+  color: var(--text-secondary);
   font-weight: 900;
 }
 
@@ -64,9 +67,10 @@
 
 .best-record-chip {
   min-width: 0;
+  border: 1px solid var(--border-faint);
   border-radius: 9px;
   padding: 8px 7px;
-  background: var(--white-surface-muted);
+  background: var(--surface-muted);
 }
 
 .best-record-chip span {
@@ -90,7 +94,7 @@
 .history-card {
   overflow: hidden;
   margin-bottom: 26px;
-  border-radius: 14px;
+  border-radius: 0;
   background: var(--surface);
 }
 
@@ -100,9 +104,11 @@
   align-items: end;
   gap: 8px;
   min-height: 48px;
+  border-left: 4px solid var(--red);
+  border-bottom: 1px solid var(--line);
   padding: 8px 12px 7px;
-  background: var(--red);
-  color: var(--surface);
+  background: var(--surface-muted);
+  color: var(--ink);
 }
 
 .history-card-date {
@@ -184,7 +190,7 @@
 
 .muscle-tab.active {
   background: var(--red);
-  color: var(--surface);
+  color: var(--text-on-primary);
 }
 
 .calendar-mode {
@@ -270,10 +276,10 @@
 
 .day-btn.trained {
   background: var(--red);
-  color: var(--surface);
+  color: var(--text-on-primary);
 }
 
 .day-btn.selected {
   background: var(--history-purple);
-  color: var(--surface);
+  color: var(--text-on-primary);
 }

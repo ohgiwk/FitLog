@@ -1,7 +1,7 @@
 .exercise-card {
   overflow: hidden;
   margin-bottom: 14px;
-  border-radius: 12px;
+  border-radius: 0;
   background: var(--panel);
 }
 
@@ -11,9 +11,11 @@
   align-items: center;
   gap: 8px;
   min-height: 45px;
+  border-left: 4px solid var(--red);
+  border-bottom: 1px solid var(--line);
   padding: 0 12px;
-  background: var(--red);
-  color: var(--surface);
+  background: var(--surface-muted);
+  color: var(--ink);
 }
 
 .exercise-head h2,
@@ -40,7 +42,7 @@
 .chev {
   width: 36px;
   height: 36px;
-  color: var(--surface);
+  color: var(--text-secondary);
 }
 
 .chev:disabled {

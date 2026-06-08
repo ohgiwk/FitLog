@@ -5,7 +5,7 @@
 .preset-card {
   overflow: hidden;
   margin-bottom: 16px;
-  border-radius: 12px;
+  border-radius: 0;
   background: var(--surface);
 }
 
@@ -52,8 +52,10 @@
 .preset-card-head {
   grid-template-columns: 1fr 42px;
   gap: 8px;
+  border-left: 4px solid var(--red);
+  border-bottom: 1px solid var(--line);
   padding: 10px 12px;
-  background: var(--red);
+  background: var(--surface-muted);
 }
 
 .preset-name-input {
@@ -77,7 +79,7 @@
 }
 
 .preset-delete {
-  color: var(--surface);
+  color: var(--red);
 }
 
 .preset-row {
@@ -188,7 +190,7 @@
   border-radius: 8px;
   padding: 0 14px;
   background: var(--red);
-  color: var(--surface);
+  color: var(--text-on-primary);
   font-size: 16px;
   font-weight: 900;
 }

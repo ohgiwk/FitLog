@@ -2,9 +2,11 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--red);
-  color: var(--surface);
+  border-bottom: 1px solid var(--red-border-soft);
+  background: var(--panel);
+  color: var(--ink);
   padding: max(18px, env(safe-area-inset-top)) 14px 12px;
+  box-shadow: 0 4px 16px var(--shadow-soft);
 }
 
 .bar-row {
@@ -26,7 +28,7 @@
 
 .bar-btn {
   min-height: 42px;
-  color: var(--surface);
+  color: var(--ink);
   font-size: 18px;
   font-weight: 800;
   text-align: left;
@@ -59,7 +61,7 @@
 
 .stat {
   min-height: 54px;
-  border: 1.5px solid var(--white-border);
+  border: 1.5px solid var(--border-strong);
   border-radius: 8px;
   padding: 7px 4px;
   text-align: center;
@@ -129,7 +131,7 @@
   border-radius: 8px;
   padding: 12px 14px;
   background: var(--toast-bg);
-  color: var(--surface);
+  color: var(--text-on-primary);
   text-align: center;
   pointer-events: none;
 }

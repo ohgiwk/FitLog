@@ -7,15 +7,17 @@
 .part-card {
   overflow: hidden;
   margin-bottom: 16px;
-  border-radius: 12px;
+  border-radius: 0;
   background: var(--panel);
 }
 
 .part-title {
   min-height: 42px;
+  border-left: 4px solid var(--red);
+  border-bottom: 1px solid var(--line);
   padding: 8px 16px;
-  background: var(--red);
-  color: var(--surface);
+  background: var(--surface-muted);
+  color: var(--ink);
   font-size: 20px;
   font-weight: 900;
 }
