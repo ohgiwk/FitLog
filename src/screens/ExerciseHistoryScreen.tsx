@@ -5,7 +5,7 @@ import { calcRm, isBlank, isRepsMeasurement, measurementLabel, measurementUnit, 
 
 export function ExerciseHistoryScreen({ workout, workouts, onBack }: { workout: Workout; workouts: Workout[]; onBack: () => void }) {
   const histories = workouts
-    .filter((item) => item.exerciseId === workout.exerciseId && item.sets.some((set) => !isBlank(set.weight) || !isBlank(set.recordValue)))
+    .filter((item) => item.exerciseId === workout.exerciseId && item.sets.some(hasRecordedValue))
     .sort((a, b) => b.date.localeCompare(a.date));
   const bestRecord = buildBestRecord(histories, workout.measurementType);
   return (
@@ -19,14 +19,15 @@ export function ExerciseHistoryScreen({ workout, workouts, onBack }: { workout: 
             {bestRecord && <BestRecordSummary bestRecord={bestRecord} />}
             {histories.map((item) => {
               const isReps = isRepsMeasurement(item.measurementType);
-              const total = item.sets.reduce((sum, set) => sum + (isReps ? number(set.weight) * number(set.recordValue) : number(set.recordValue)), 0);
-              const maxRm = isReps ? item.sets.reduce((max, set) => Math.max(max, Number(calcRm(number(set.weight), number(set.recordValue)))), 0) : 0;
+              const recordedSets = item.sets.filter(hasRecordedValue);
+              const total = recordedSets.reduce((sum, set) => sum + (isReps ? number(set.weight) * number(set.recordValue) : number(set.recordValue)), 0);
+              const maxRm = isReps ? recordedSets.reduce((max, set) => Math.max(max, Number(calcRm(number(set.weight), number(set.recordValue)))), 0) : 0;
               return (
                 <article className="history-card" key={item.id}>
                   <header className="history-card-head"><div className="history-card-date">{item.date.replaceAll("-", "/")}</div><div className="history-card-total">{isReps ? `TOTAL : ${total.toFixed(1)}Kg MAX 1RM : ${maxRm.toFixed(1)}Kg` : `TOTAL : ${total}秒 MAX 1RM : -`}</div></header>
                   <table className="history-set-table">
                     <thead><tr><th>セット</th><th>重さ</th><th>{measurementLabel(item.measurementType)}</th><th>RM</th><th>強度</th></tr></thead>
-                    <tbody>{item.sets.map((set, index) => <ExerciseHistorySetRow key={set.id} set={set} index={index} measurementType={item.measurementType} />)}</tbody>
+                    <tbody>{recordedSets.map((set, index) => <ExerciseHistorySetRow key={set.id} set={set} index={index} measurementType={item.measurementType} />)}</tbody>
                   </table>
                 </article>
               );
@@ -36,6 +37,10 @@ export function ExerciseHistoryScreen({ workout, workouts, onBack }: { workout: 
       </div>
     </section>
   );
+}
+
+function hasRecordedValue(set: WorkoutSet) {
+  return !isBlank(set.weight) || !isBlank(set.recordValue) ? number(set.weight) > 0 || number(set.recordValue) > 0 : false;
 }
 
 type BestRecord = {
@@ -67,7 +72,7 @@ function BestRecordSummary({ bestRecord }: { bestRecord: BestRecord }) {
 }
 
 function buildBestRecord(histories: Workout[], measurementType: Workout["measurementType"]): BestRecord | null {
-  const sets = histories.flatMap((item) => item.sets.map((set) => ({ date: item.date, set })));
+  const sets = histories.flatMap((item) => item.sets.filter(hasRecordedValue).map((set) => ({ date: item.date, set })));
   if (!sets.length) return null;
 
   if (isRepsMeasurement(measurementType)) {
@@ -78,7 +83,7 @@ function buildBestRecord(histories: Workout[], measurementType: Workout["measure
     const maxWeight = sets.reduce((max, item) => Math.max(max, number(item.set.weight)), 0);
     const maxReps = sets.reduce((max, item) => Math.max(max, number(item.set.recordValue)), 0);
     const maxVolume = histories.reduce((max, item) => {
-      const total = item.sets.reduce((sum, set) => sum + number(set.weight) * number(set.recordValue), 0);
+      const total = item.sets.filter(hasRecordedValue).reduce((sum, set) => sum + number(set.weight) * number(set.recordValue), 0);
       return Math.max(max, total);
     }, 0);
     return {
@@ -99,7 +104,7 @@ function buildBestRecord(histories: Workout[], measurementType: Workout["measure
   }, { date: histories[0].date, value: 0 });
   const maxWeight = sets.reduce((max, item) => Math.max(max, number(item.set.weight)), 0);
   const maxTotalSeconds = histories.reduce((max, item) => {
-    const total = item.sets.reduce((sum, set) => sum + number(set.recordValue), 0);
+    const total = item.sets.filter(hasRecordedValue).reduce((sum, set) => sum + number(set.recordValue), 0);
     return Math.max(max, total);
   }, 0);
   return {
