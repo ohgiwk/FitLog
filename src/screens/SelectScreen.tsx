@@ -33,7 +33,7 @@ export function SelectScreen({ groupedExercises, partRecentLabels, editMode, add
         <div className="bar-row">
           <button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}><ChevronLeft /></button>
           <div className="bar-title">種目を選択</div>
-          <button className="bar-btn right" type="button" onClick={onToggleEditMode}>{editMode ? "Done" : "Edit"}</button>
+          <button className="bar-btn right" type="button" onClick={onToggleEditMode}>{editMode ? "完了" : "編集"}</button>
         </div>
       </header>
       <div className="select-actions">
