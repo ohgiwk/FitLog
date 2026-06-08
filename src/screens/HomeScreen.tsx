@@ -39,6 +39,10 @@ export function HomeScreen({ selectedDate, selectedWorkouts, selectedPlannedPart
 
   function requestDelete(event: MouseEvent<HTMLButtonElement>, workout: Workout) {
     event.stopPropagation();
+    if (isUnstartedWorkout(workout)) {
+      onDeleteWorkout(workout.id);
+      return;
+    }
     setDeleteTarget(workout);
   }
 
