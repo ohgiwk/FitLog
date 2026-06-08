@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, TrashIcon } from "../icons";
+import { ChevronDown, ChevronLeft, ChevronUp, TrashIcon } from "../icons";
 import { Exercise, Preset } from "../types";
 
 export function PresetEditScreen({ preset, exercises, groupedExercises, onBack, onRename, onDelete, onAdd, onRemove, onMove }: {
@@ -14,7 +14,7 @@ export function PresetEditScreen({ preset, exercises, groupedExercises, onBack, 
 }) {
   return (
     <section className="screen active">
-      <header className="topbar"><div className="bar-row"><button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}>&lt;</button><div className="bar-title">プリセット編集</div><span /></div></header>
+      <header className="topbar"><div className="bar-row"><button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}><ChevronLeft /></button><div className="bar-title">プリセット編集</div><span /></div></header>
       <div className="preset-wrap">
         {!preset ? (
           <div className="empty"><div><strong>編集するプリセットを選択してください</strong><span>プリセット管理画面から編集できます。</span></div></div>

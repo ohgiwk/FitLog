@@ -1,4 +1,4 @@
-import { TrashIcon } from "../icons";
+import { ChevronLeft, TrashIcon } from "../icons";
 import { Exercise, Preset } from "../types";
 
 export function PresetListScreen({ presets, exercises, onBack, onCreate, onEdit, onDelete }: {
@@ -11,7 +11,7 @@ export function PresetListScreen({ presets, exercises, onBack, onCreate, onEdit,
 }) {
   return (
     <section className="screen active">
-      <header className="topbar"><div className="bar-row"><button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}>&lt;</button><div className="bar-title">プリセット管理</div><button className="bar-btn right" type="button" onClick={onCreate}>追加</button></div></header>
+      <header className="topbar"><div className="bar-row"><button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}><ChevronLeft /></button><div className="bar-title">プリセット管理</div><button className="bar-btn right" type="button" onClick={onCreate}>追加</button></div></header>
       <div className="preset-wrap">
         {!presets.length ? (
           <div className="empty"><div><strong>プリセットはまだありません</strong><span>右上の追加から分割法メニューを作成できます。</span></div></div>
