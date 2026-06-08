@@ -18,7 +18,7 @@ export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPl
   onDeleteTrainingPlan: (planId: string) => void;
 }) {
   const [activeView, setActiveView] = useState<"history" | "plan">("history");
-  const [planPart, setPlanPart] = useState(splitPartOptions[0] || "レスト");
+  const [planPart, setPlanPart] = useState(splitPartOptions[0] || "");
   const [planMode, setPlanMode] = useState<TrainingPlanMode>("weekly");
   const [planWeekdays, setPlanWeekdays] = useState<number[]>([]);
   const [planIntervalDays, setPlanIntervalDays] = useState("3");
@@ -26,8 +26,8 @@ export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPl
   const monthDate = parseDate(selectedDate);
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
-  const partTabs = ["ALL", ...splitPartOptions.filter((part) => part !== "レスト"), "レスト"];
-  const planParts = [...new Set([...splitPartOptions, "レスト"])];
+  const partTabs = ["ALL", ...splitPartOptions.filter((part) => part !== "レスト")];
+  const planParts = [...new Set(splitPartOptions.filter((part) => part !== "レスト"))];
   const trainingDayByDate = new Map(trainingDays.map((day) => [day.date, day.parts]));
   const visibleHistory = buildVisibleHistory(workouts, trainingDays, partFilter);
   const trainedDates = new Set(visibleHistory.map((day) => day.date));
@@ -60,7 +60,7 @@ export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPl
   }
 
   return (
-    <section className="screen active">
+    <section className="screen active history-screen">
       <header className="topbar"><div className="bar-row"><span /><div className="bar-title">履歴 / 計画</div><span /></div></header>
       <div className="history-wrap">
         <div className="history-mode" aria-label="履歴と計画を切り替え">
@@ -105,6 +105,7 @@ export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPl
               onAddTrainingPlan(planPart, planMode, planWeekdays, Number(planIntervalDays), planStartDate);
             }}>
               <select aria-label="計画する部位" value={planPart} onChange={(event) => loadPlan(event.target.value)}>
+                <option value="">未選択</option>
                 {planParts.map((part) => <option key={part} value={part}>{part}</option>)}
               </select>
               <select aria-label="計画タイプ" value={planMode} onChange={(event) => setPlanMode(event.target.value as TrainingPlanMode)}>
