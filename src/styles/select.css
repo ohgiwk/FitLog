@@ -15,14 +15,14 @@
   min-height: 42px;
   padding: 8px 16px;
   background: var(--red);
-  color: #fff;
+  color: var(--surface);
   font-size: 20px;
   font-weight: 900;
 }
 
 .exercise-list {
   min-height: 54px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .exercise-option {
@@ -56,14 +56,14 @@
 }
 
 .exercise-list.drop-target {
-  outline: 2px solid rgba(239, 35, 49, .3);
+  outline: 2px solid var(--red-soft);
   outline-offset: -2px;
 }
 
 .drag-handle {
   width: 32px;
   height: 32px;
-  color: #777;
+  color: var(--text-secondary);
 }
 
 .exercise-name {
@@ -75,7 +75,7 @@
 .delete-exercise {
   width: 38px;
   height: 38px;
-  color: #777;
+  color: var(--text-secondary);
 }
 
 .delete-exercise:active {
@@ -88,7 +88,7 @@
   gap: 12px;
   min-height: 48px;
   padding: 0 16px;
-  color: #666;
+  color: var(--text-soft);
   font-size: 16px;
   font-weight: 700;
 }
@@ -99,13 +99,13 @@
   margin: 10px 11px 16px;
   border-radius: 12px;
   padding: 14px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .add-form label {
   display: grid;
   gap: 6px;
-  color: #68686d;
+  color: var(--text-form);
   font-size: 13px;
   font-weight: 800;
 }
@@ -116,7 +116,7 @@
 }
 
 .form-label {
-  color: #68686d;
+  color: var(--text-form);
   font-size: 13px;
   font-weight: 800;
 }
@@ -142,7 +142,7 @@
   min-height: 38px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #f2f2f3;
+  background: var(--surface-subtle);
   padding: 3px;
 }
 
@@ -153,7 +153,7 @@
 
 .measurement-toggle button {
   border-radius: 6px;
-  color: #606066;
+  color: var(--text-secondary-strong);
   font-size: 14px;
   font-weight: 900;
 }
@@ -163,7 +163,7 @@
 }
 
 .measurement-toggle button.active {
-  background: #fff;
+  background: var(--surface);
   color: var(--red);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .12);
+  box-shadow: 0 1px 4px var(--shadow-soft);
 }

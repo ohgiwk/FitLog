@@ -2,21 +2,21 @@
   margin: 0 14px;
   border-radius: 12px 12px 0 0;
   padding: 10px 14px;
-  background: #cfcfd1;
-  color: #57575b;
+  background: var(--detail-panel);
+  color: var(--detail-text);
   font-size: 16px;
 }
 
 .detail-summary strong {
   display: block;
   margin-bottom: 4px;
-  color: #111;
+  color: var(--ink);
   font-size: 18px;
 }
 
 .detail-table {
   margin: 0 14px 18px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .detail-row {
@@ -25,7 +25,7 @@
   gap: 8px;
   align-items: start;
   min-height: 134px;
-  border-bottom: 1px solid #cfcfd2;
+  border-bottom: 1px solid var(--detail-line);
   padding: 11px 8px 9px;
 }
 
@@ -51,7 +51,7 @@
 
 .unit {
   padding-bottom: 7px;
-  color: #666;
+  color: var(--text-soft);
   font-size: 14px;
   font-weight: 700;
   white-space: nowrap;
@@ -69,36 +69,36 @@
   display: grid;
   place-items: center;
   min-height: 34px;
-  border: 1px solid #d7d7dc;
+  border: 1px solid var(--control-line);
   border-radius: 8px;
-  background: #f7f7f8;
-  color: #777;
+  background: var(--surface-soft);
+  color: var(--text-secondary);
 }
 
 .intensity-picker button.active {
   border-color: transparent;
-  color: #fff;
+  color: var(--surface);
 }
 
 .intensity-button-1.active {
-  background: #2f9e44;
+  background: var(--intensity-easy);
 }
 
 .intensity-button-2.active {
-  background: #82c91e;
+  background: var(--intensity-normal);
 }
 
 .intensity-button-3.active {
-  background: #f2c94c;
-  color: #2f2b12;
+  background: var(--intensity-hard);
+  color: var(--intensity-hard-text);
 }
 
 .intensity-button-4.active {
-  background: #f08c00;
+  background: var(--intensity-very-hard);
 }
 
 .intensity-button-5.active {
-  background: #e03131;
+  background: var(--intensity-limit);
 }
 
 .intensity-face {
@@ -125,13 +125,13 @@
 }
 
 .intensity-empty {
-  color: #999;
+  color: var(--text-placeholder);
   font-weight: 800;
 }
 
 .rm-value {
   padding-top: 12px;
-  color: #aaa;
+  color: var(--text-tertiary);
   font-size: 14px;
   text-align: center;
   white-space: nowrap;
@@ -140,7 +140,7 @@
 .check {
   width: 34px;
   height: 42px;
-  color: #111;
+  color: var(--ink);
 }
 
 .history-btn {
@@ -148,7 +148,7 @@
   width: 48px;
   height: 42px;
   border-radius: 8px;
-  color: #fff;
+  color: var(--surface);
 }
 
 .rest-timer {
@@ -161,19 +161,19 @@
   align-items: center;
   gap: 6px;
   width: 196px;
-  border: 1px solid rgba(0, 0, 0, .08);
+  border: 1px solid var(--border-faint);
   border-radius: 10px;
   padding: 8px;
-  background: rgba(255, 255, 255, .96);
-  box-shadow: 0 5px 13px rgba(0, 0, 0, .18);
+  background: var(--surface-float);
+  box-shadow: 0 5px 13px var(--shadow-medium);
 }
 
 .rest-timer.running {
-  border-color: rgba(239, 35, 49, .35);
+  border-color: var(--red-border-soft);
 }
 
 .rest-timer {
-  color: #68686d;
+  color: var(--text-form);
   font-weight: 900;
 }
 
@@ -215,7 +215,7 @@
   border-radius: 7px;
   padding: 0 9px;
   background: var(--red);
-  color: #fff;
+  color: var(--surface);
   font-size: 12px;
   font-weight: 900;
   white-space: nowrap;

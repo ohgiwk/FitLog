@@ -13,7 +13,7 @@
   min-height: 45px;
   padding: 0 12px;
   background: var(--red);
-  color: #fff;
+  color: var(--surface);
 }
 
 .exercise-head h2,
@@ -40,7 +40,7 @@
 .chev {
   width: 36px;
   height: 36px;
-  color: #fff;
+  color: var(--surface);
 }
 
 .chev:disabled {
@@ -58,7 +58,7 @@
 .set-table th,
 .history-set-table th {
   height: 26px;
-  color: #b5b5ba;
+  color: var(--text-muted-light);
   font-size: 12px;
   font-weight: 700;
   text-align: center;
@@ -96,7 +96,7 @@
 
 .set-table .lbs,
 .set-table .rm {
-  color: #aaa;
+  color: var(--text-tertiary);
   font-size: 13px;
   white-space: nowrap;
 }
@@ -122,7 +122,7 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 0 10px;
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
   font-size: 16px;
   font-weight: 800;

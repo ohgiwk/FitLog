@@ -14,13 +14,13 @@
 .plus-muted,
 .fab {
   border-radius: 50%;
-  color: #fff;
+  color: var(--surface);
 }
 
 .plus-muted {
   width: 34px;
   height: 34px;
-  background: #e7e7e9;
+  background: var(--disabled-surface);
 }
 
 .fab {
@@ -31,7 +31,7 @@
   width: 58px;
   height: 58px;
   background: var(--green);
-  box-shadow: 0 5px 13px rgba(0, 0, 0, .25);
+  box-shadow: 0 5px 13px var(--shadow-strong);
 }
 
 .plus-muted svg,
@@ -62,17 +62,17 @@
 
 .small-primary {
   background: var(--red);
-  color: #fff;
+  color: var(--surface);
 }
 
 .small-primary:disabled {
-  background: #b9b9bd;
+  background: var(--disabled-bg);
   cursor: default;
 }
 
 .small-outline {
   border: 1.5px solid var(--red);
-  background: #fff;
+  background: var(--surface);
   color: var(--red);
 }
 
@@ -80,7 +80,7 @@
   min-height: 46px;
   border-radius: 8px;
   background: var(--red);
-  color: #fff;
+  color: var(--surface);
   font-weight: 900;
 }
 
@@ -89,7 +89,7 @@
   border: 1.5px solid var(--red);
   border-radius: 999px;
   padding: 0 22px;
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
   font-size: 18px;
   font-weight: 800;

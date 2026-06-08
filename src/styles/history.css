@@ -1,13 +1,13 @@
 .history-wrap {
   min-height: calc(100vh - 146px);
-  background: #fff;
+  background: var(--surface);
   padding: 0 0 24px;
 }
 
 .exercise-history-wrap {
   min-height: calc(100vh - 146px);
   padding: 28px 11px 26px;
-  background: #e2e2e3;
+  background: var(--history-bg);
 }
 
 .best-record {
@@ -17,13 +17,13 @@
   border-radius: 14px;
   padding: 14px;
   background: var(--red);
-  color: #fff;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, .18);
+  color: var(--surface);
+  box-shadow: 0 8px 18px var(--shadow-medium);
 }
 
 .best-record-label {
   width: fit-content;
-  border: 1.5px solid rgba(255, 255, 255, .9);
+  border: 1.5px solid var(--white-border-strong);
   border-radius: 999px;
   padding: 3px 10px;
   font-size: 12px;
@@ -39,7 +39,7 @@
 .best-record-main span,
 .best-record-main small,
 .best-record-chip span {
-  color: rgba(255, 255, 255, .82);
+  color: var(--white-muted);
   font-weight: 900;
 }
 
@@ -66,7 +66,7 @@
   min-width: 0;
   border-radius: 9px;
   padding: 8px 7px;
-  background: rgba(255, 255, 255, .16);
+  background: var(--white-surface-muted);
 }
 
 .best-record-chip span {
@@ -91,7 +91,7 @@
   overflow: hidden;
   margin-bottom: 26px;
   border-radius: 14px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .history-card-head {
@@ -102,7 +102,7 @@
   min-height: 48px;
   padding: 8px 12px 7px;
   background: var(--red);
-  color: #fff;
+  color: var(--surface);
 }
 
 .history-card-date {
@@ -144,7 +144,7 @@
 
 .history-set-table .history-rm,
 .history-set-table .history-assist {
-  color: #111;
+  color: var(--ink);
   font-size: 18px;
   font-weight: 800;
 }
@@ -154,7 +154,7 @@
 }
 
 .history-set-table small {
-  color: #777;
+  color: var(--text-secondary);
   font-size: 15px;
   font-weight: 800;
 }
@@ -163,9 +163,9 @@
   display: grid;
   grid-template-columns: repeat(7, minmax(62px, 1fr));
   overflow-x: auto;
-  border-top: 1px solid #adadb1;
+  border-top: 1px solid var(--border-strong);
   border-bottom: 2px solid var(--red);
-  background: #fff;
+  background: var(--surface);
   scrollbar-width: none;
 }
 
@@ -175,7 +175,7 @@
 
 .muscle-tab {
   min-height: 42px;
-  border-right: 1px solid #adadb1;
+  border-right: 1px solid var(--border-strong);
   color: var(--red);
   font-size: 16px;
   font-weight: 800;
@@ -184,7 +184,7 @@
 
 .muscle-tab.active {
   background: var(--red);
-  color: #fff;
+  color: var(--surface);
 }
 
 .calendar-mode {
@@ -194,20 +194,20 @@
   height: 42px;
   margin: 32px auto 26px;
   border-radius: 10px;
-  background: #ededf0;
+  background: var(--surface-calendar);
   padding: 3px;
 }
 
 .calendar-mode button {
   border-radius: 8px;
-  color: #111;
+  color: var(--ink);
   font-size: 17px;
   font-weight: 800;
 }
 
 .calendar-mode button.active {
-  background: #fff;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, .12);
+  background: var(--surface);
+  box-shadow: 0 1px 5px var(--shadow-soft);
 }
 
 .calendar-head {
@@ -227,7 +227,7 @@
 
 .month-btn {
   min-height: 38px;
-  color: rgba(239, 35, 49, .32);
+  color: var(--red-soft);
   font-size: 17px;
   font-weight: 900;
 }
@@ -250,11 +250,11 @@
   display: grid;
   min-height: 44px;
   place-items: center;
-  color: #111;
+  color: var(--ink);
 }
 
 .day-cell.other {
-  color: #aaa;
+  color: var(--text-tertiary);
 }
 
 .day-btn {
@@ -270,10 +270,10 @@
 
 .day-btn.trained {
   background: var(--red);
-  color: #fff;
+  color: var(--surface);
 }
 
 .day-btn.selected {
-  background: #5842c4;
-  color: #fff;
+  background: var(--history-purple);
+  color: var(--surface);
 }

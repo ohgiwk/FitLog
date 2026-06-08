@@ -6,7 +6,7 @@
   overflow: hidden;
   margin-bottom: 16px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .preset-list-row,
@@ -44,7 +44,7 @@
 
 .preset-list-count {
   margin-top: 4px;
-  color: #777;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 800;
 }
@@ -62,7 +62,7 @@
   border: 0;
   border-radius: 8px;
   padding: 0 10px;
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
   font-size: 18px;
   font-weight: 900;
@@ -73,11 +73,11 @@
 .preset-row-btn {
   width: 38px;
   height: 38px;
-  color: #777;
+  color: var(--text-secondary);
 }
 
 .preset-delete {
-  color: #fff;
+  color: var(--surface);
 }
 
 .preset-row {
@@ -104,7 +104,7 @@
 
 .preset-add-title {
   margin-bottom: 8px;
-  color: #68686d;
+  color: var(--text-form);
   font-size: 13px;
   font-weight: 900;
 }
@@ -131,15 +131,15 @@
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 0 11px;
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
   font-size: 14px;
   font-weight: 800;
 }
 
 .preset-add-options button:disabled {
-  background: #f1f1f2;
-  color: #aaa;
+  background: var(--surface-muted);
+  color: var(--text-tertiary);
   cursor: default;
 }
 
@@ -150,7 +150,7 @@
   display: grid;
   place-items: center;
   padding: 18px;
-  background: rgba(0, 0, 0, .45);
+  background: var(--overlay);
 }
 
 .confirm-dialog {
@@ -159,9 +159,9 @@
   width: min(100%, 340px);
   border-radius: 12px;
   padding: 18px;
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, .28);
+  box-shadow: 0 14px 30px var(--shadow-dialog);
 }
 
 .confirm-title {
@@ -171,7 +171,7 @@
 
 .confirm-dialog p {
   margin: 0;
-  color: #666;
+  color: var(--text-soft);
   font-size: 14px;
   font-weight: 750;
   line-height: 1.5;
@@ -188,7 +188,7 @@
   border-radius: 8px;
   padding: 0 14px;
   background: var(--red);
-  color: #fff;
+  color: var(--surface);
   font-size: 16px;
   font-weight: 900;
 }

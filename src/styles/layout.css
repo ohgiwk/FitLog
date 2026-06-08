@@ -3,7 +3,7 @@
   top: 0;
   z-index: 10;
   background: var(--red);
-  color: #fff;
+  color: var(--surface);
   padding: max(18px, env(safe-area-inset-top)) 14px 12px;
 }
 
@@ -26,7 +26,7 @@
 
 .bar-btn {
   min-height: 42px;
-  color: #fff;
+  color: var(--surface);
   font-size: 18px;
   font-weight: 800;
   text-align: left;
@@ -59,7 +59,7 @@
 
 .stat {
   min-height: 54px;
-  border: 1.5px solid rgba(255, 255, 255, .92);
+  border: 1.5px solid var(--white-border);
   border-radius: 8px;
   padding: 7px 4px;
   text-align: center;
@@ -90,7 +90,7 @@
   max-width: 480px;
   min-height: calc(70px + env(safe-area-inset-bottom));
   margin: 0 auto;
-  border-top: 1px solid #c9c9cc;
+  border-top: 1px solid var(--border-medium);
   padding-bottom: env(safe-area-inset-bottom);
   background: var(--tab);
 }
@@ -100,7 +100,7 @@
   place-items: center;
   align-content: center;
   gap: 3px;
-  color: #4f4f52;
+  color: var(--text-nav);
   font-size: 12px;
   font-weight: 800;
 }
@@ -128,8 +128,8 @@
   transition: transform .18s ease, opacity .18s ease;
   border-radius: 8px;
   padding: 12px 14px;
-  background: rgba(0, 0, 0, .8);
-  color: #fff;
+  background: var(--toast-bg);
+  color: var(--surface);
   text-align: center;
   pointer-events: none;
 }
