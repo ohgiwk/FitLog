@@ -3,6 +3,7 @@ import { SetIntensity, Workout } from "../types";
 import { calcRm, intensityOptions, isRepsMeasurement, measurementUnit, number } from "../utils";
 import { LastRecord } from "../components/LastRecord";
 import { IntensityIcon } from "../components/IntensityIcon";
+import { RestTimer } from "../components/RestTimer";
 
 export function DetailScreen({ workout, selectedDate, workouts, onBack, onOpenHistory, onUpdateSet, onUpdateSetIntensity, onDeleteSet, onAddSet }: {
   workout: Workout;
@@ -54,6 +55,7 @@ export function DetailScreen({ workout, selectedDate, workouts, onBack, onOpenHi
           ))}
         </div>
       </div>
+      <RestTimer />
       <button className="fab" type="button" aria-label="セットを追加" onClick={() => onAddSet(workout.id)}>+</button>
     </section>
   );
