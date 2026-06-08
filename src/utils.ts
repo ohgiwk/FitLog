@@ -1,4 +1,4 @@
-import { CalendarCell, Exercise, MeasurementType, SetIntensity, WorkoutSet } from "./types";
+import { CalendarCell, Exercise, MeasurementType, SetIntensity, Workout, WorkoutSet } from "./types";
 
 export function groupExercises(exercises: Exercise[]) {
   return exercises.reduce((groups, exercise) => {
@@ -69,6 +69,10 @@ export function isBlank(value: string | number) {
 
 export function formatWeight(value: string | number) {
   return number(value).toFixed(1);
+}
+
+export function isUnstartedWorkout(workout: Workout) {
+  return workout.sets.length === 5 && workout.sets.every((set) => number(set.weight) === 0 && number(set.recordValue) === 0);
 }
 
 export function localDate(date: Date) {

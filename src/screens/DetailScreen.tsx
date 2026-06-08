@@ -1,4 +1,4 @@
-import { HistoryIcon, PlusIcon, TrashIcon } from "../icons";
+import { ChevronLeft, HistoryIcon, PlusIcon, TrashIcon } from "../icons";
 import { SetIntensity, Workout } from "../types";
 import { calcRm, intensityOptions, isRepsMeasurement, measurementUnit, number } from "../utils";
 import { LastRecord } from "../components/LastRecord";
@@ -22,7 +22,7 @@ export function DetailScreen({ workout, selectedDate, workouts, onBack, onOpenHi
     <section className="screen active">
       <header className="topbar">
         <div className="bar-row">
-          <button className="bar-btn" type="button" onClick={onBack}>Back</button>
+          <button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}><ChevronLeft /></button>
           <div className="bar-title">{workout.name}</div>
           <button className="history-btn" type="button" aria-label="履歴" onClick={onOpenHistory}><HistoryIcon /></button>
         </div>

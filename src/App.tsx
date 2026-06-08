@@ -27,10 +27,7 @@ export function App() {
             onStartPreset={actions.startPreset}
             onOpenPresets={() => actions.setScreen("preset")}
             onOpenSelect={() => actions.setScreen("select")}
-            onOpenDetail={(workoutId) => {
-              actions.setCurrentWorkoutId(workoutId);
-              actions.setScreen("detail");
-            }}
+            onOpenDetail={actions.openWorkoutDetail}
             onDeleteWorkout={actions.deleteWorkout}
           />
         )}

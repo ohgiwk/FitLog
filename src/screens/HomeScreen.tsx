@@ -1,7 +1,7 @@
 import { KeyboardEvent, MouseEvent, useState } from "react";
 import { ChevronLeft, ChevronRight, PlusIcon, TrashIcon } from "../icons";
 import { Preset, Workout } from "../types";
-import { isRepsMeasurement, number } from "../utils";
+import { isRepsMeasurement, isUnstartedWorkout, number } from "../utils";
 import { HomeSetRow } from "../components/HomeSetRow";
 
 const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
@@ -99,10 +99,17 @@ export function HomeScreen({ selectedDate, selectedWorkouts, selectedPlannedPart
                 <h2>{workout.part} - {workout.name}</h2>
                 <button className="delete-workout" type="button" aria-label={`${workout.name}を削除`} onClick={(event) => requestDelete(event, workout)}><TrashIcon /></button>
               </header>
-              <table className="set-table">
-                <thead><tr><th>セット</th><th>重さ</th><th></th><th>記録</th><th>RM</th></tr></thead>
-                <tbody>{workout.sets.map((set, setIndex) => <HomeSetRow key={set.id} set={set} index={setIndex} measurementType={workout.measurementType} />)}</tbody>
-              </table>
+              <div className="exercise-body">
+                <table className="set-table">
+                  <thead><tr><th>セット</th><th>重さ</th><th></th><th>記録</th><th>RM</th></tr></thead>
+                  <tbody>{workout.sets.map((set, setIndex) => <HomeSetRow key={set.id} set={set} index={setIndex} measurementType={workout.measurementType} />)}</tbody>
+                </table>
+                {isUnstartedWorkout(workout) && (
+                  <div className="new-workout-overlay" aria-hidden="true">
+                    <div className="new-workout-overlay-icon"><PlusIcon /></div>
+                  </div>
+                )}
+              </div>
             </article>
           ))
         )}

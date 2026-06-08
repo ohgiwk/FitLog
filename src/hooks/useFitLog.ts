@@ -69,14 +69,27 @@ export function useFitLog() {
     saveState((prev) => {
       const workout = prev.workouts.find((item) => item.id === currentWorkout.id);
       if (!workout) return prev;
-      const nextSets = workout.sets.filter((set) => !isBlank(set.weight) || !isBlank(set.recordValue));
-      if (nextSets.length === workout.sets.length && nextSets.length) return prev;
-      const workouts = nextSets.length
-        ? prev.workouts.map((item) => (item.id === workout.id ? { ...item, sets: nextSets } : item))
-        : prev.workouts.filter((item) => item.id !== workout.id);
-      if (!nextSets.length) setCurrentWorkoutId(null);
+      const recordedSets = workout.sets.filter((set) => !isBlank(set.weight) || !isBlank(set.recordValue));
+      if (!recordedSets.length) return prev;
+      if (recordedSets.length === workout.sets.length) return prev;
+      const workouts = prev.workouts.map((item) => (item.id === workout.id ? { ...item, sets: recordedSets } : item));
       return { ...prev, workouts };
     });
+  }
+
+  function openWorkoutDetail(workoutId: string) {
+    saveState((prev) => ({
+      ...prev,
+      workouts: prev.workouts.map((workout) => {
+        if (workout.id !== workoutId || workout.sets.length >= 5) return workout;
+        return {
+          ...workout,
+          sets: [...workout.sets, ...Array.from({ length: 5 - workout.sets.length }, () => newSet())],
+        };
+      }),
+    }));
+    setCurrentWorkoutId(workoutId);
+    showScreen("detail");
   }
 
   function moveDate(days: number) {
@@ -130,8 +143,7 @@ export function useFitLog() {
       if (existing) return prev;
       return { ...prev, workouts: [...prev.workouts, workout] };
     });
-    setCurrentWorkoutId(workout.id);
-    showScreen("detail");
+    openWorkoutDetail(workout.id);
   }
 
   function addCustomExercise(event: FormEvent) {
@@ -303,7 +315,8 @@ export function useFitLog() {
       const hasExisting = preset.exerciseIds.some((exerciseId) => todayExerciseIds.has(exerciseId));
       return showToast(hasExisting ? "すでに追加されています" : "プリセットの種目が見つかりません");
     }
-    saveState((prev) => ({ ...prev, workouts: [...prev.workouts, ...exercisesToAdd.map((exercise) => createWorkout(exercise, selectedDate))] }));
+    const newWorkouts = exercisesToAdd.map((exercise) => createWorkout(exercise, selectedDate));
+    saveState((prev) => ({ ...prev, workouts: [...prev.workouts, ...newWorkouts] }));
     showScreen("home");
     showToast(`${exercisesToAdd.length}種目を追加しました`);
   }
@@ -423,6 +436,7 @@ export function useFitLog() {
       moveMonth,
       movePresetExercise,
       moveWorkout,
+      openWorkoutDetail,
       removeExerciseFromPreset,
       renamePreset,
       selectDate: setSelectedDate,
