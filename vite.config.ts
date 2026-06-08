@@ -17,6 +17,7 @@ export default defineConfig({
         start_url: "/FitLog/",
         scope: "/FitLog/",
         display: "standalone",
+        orientation: "portrait",
         background_color: "#0f1115",
         theme_color: "#ef2331",
         lang: "ja",
