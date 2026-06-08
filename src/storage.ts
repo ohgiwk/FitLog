@@ -4,6 +4,13 @@ import { uid } from "./utils";
 
 export const storeKey = "fit-log-v2";
 
+const defaultPresets: Preset[] = [
+  { id: "preset-chest-day", name: "胸の日", exerciseIds: [] },
+  { id: "preset-back-day", name: "背中の日", exerciseIds: [] },
+  { id: "preset-leg-day", name: "脚の日", exerciseIds: [] },
+  { id: "preset-shoulder-day", name: "肩の日", exerciseIds: [] },
+];
+
 export function loadState(): State {
   try {
     const saved = JSON.parse(localStorage.getItem(storeKey) || "null") as Partial<State> | null;
@@ -20,16 +27,23 @@ export function loadState(): State {
   } catch {
     localStorage.removeItem(storeKey);
   }
-  return { exercises: starterExercises, workouts: [], presets: [], catalogVersion: starterCatalogVersion };
+  return { exercises: starterExercises, workouts: [], presets: defaultPresets, catalogVersion: starterCatalogVersion };
 }
 
 function normalizePresets(presets: unknown): Preset[] {
-  if (!Array.isArray(presets)) return [];
-  return presets.map((preset) => ({
+  if (!Array.isArray(presets)) return defaultPresets;
+  const normalizedPresets = presets.map((preset) => ({
     id: typeof preset.id === "string" ? preset.id : uid(),
     name: typeof preset.name === "string" ? preset.name : "名称未設定",
     exerciseIds: Array.isArray(preset.exerciseIds) ? preset.exerciseIds.filter((id: unknown): id is string => typeof id === "string") : [],
   }));
+  return mergeDefaultPresets(normalizedPresets);
+}
+
+function mergeDefaultPresets(presets: Preset[]) {
+  const existingNames = new Set(presets.map((preset) => preset.name));
+  const additions = defaultPresets.filter((preset) => !existingNames.has(preset.name));
+  return [...presets, ...additions];
 }
 
 function normalizeExercises(exercises: unknown): State["exercises"] {
