@@ -142,3 +142,53 @@
   color: #aaa;
   cursor: default;
 }
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, .45);
+}
+
+.confirm-dialog {
+  display: grid;
+  gap: 14px;
+  width: min(100%, 340px);
+  border-radius: 12px;
+  padding: 18px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, .28);
+}
+
+.confirm-title {
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.confirm-dialog p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.danger-button {
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 0 14px;
+  background: var(--red);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+}

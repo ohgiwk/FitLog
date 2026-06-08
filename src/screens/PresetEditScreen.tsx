@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronUp, TrashIcon } from "../icons";
 import { Exercise, Preset } from "../types";
 
@@ -12,6 +13,14 @@ export function PresetEditScreen({ preset, exercises, groupedExercises, onBack, 
   onRemove: (presetId: string, exerciseId: string) => void;
   onMove: (presetId: string, exerciseId: string, direction: number) => void;
 }) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  function confirmDelete() {
+    if (!preset) return;
+    onDelete(preset.id);
+    setDeleteDialogOpen(false);
+  }
+
   return (
     <section className="screen active">
       <header className="topbar"><div className="bar-row"><button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}><ChevronLeft /></button><div className="bar-title">プリセット編集</div><span /></div></header>
@@ -22,7 +31,7 @@ export function PresetEditScreen({ preset, exercises, groupedExercises, onBack, 
           <article className="preset-card">
             <header className="preset-card-head">
               <input className="preset-name-input" maxLength={24} value={preset.name} aria-label="プリセット名" onChange={(event) => onRename(preset.id, event.target.value)} />
-              <button className="preset-delete" type="button" aria-label="プリセット削除" onClick={() => onDelete(preset.id)}><TrashIcon /></button>
+              <button className="preset-delete" type="button" aria-label="プリセット削除" onClick={() => setDeleteDialogOpen(true)}><TrashIcon /></button>
             </header>
             <div>
               {preset.exerciseIds.length ? preset.exerciseIds.map((exerciseId, index) => {
@@ -56,6 +65,18 @@ export function PresetEditScreen({ preset, exercises, groupedExercises, onBack, 
           </article>
         )}
       </div>
+      {preset && deleteDialogOpen && (
+        <div className="dialog-backdrop" role="presentation">
+          <div className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="preset-edit-delete-title">
+            <div id="preset-edit-delete-title" className="confirm-title">プリセットを削除しますか？</div>
+            <p>「{preset.name}」を削除します。この操作は元に戻せません。</p>
+            <div className="confirm-actions">
+              <button className="small-outline" type="button" onClick={() => setDeleteDialogOpen(false)}>キャンセル</button>
+              <button className="danger-button" type="button" onClick={confirmDelete}>削除</button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
