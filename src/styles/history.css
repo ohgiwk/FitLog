@@ -10,6 +10,83 @@
   background: #e2e2e3;
 }
 
+.best-record {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+  border-radius: 14px;
+  padding: 14px;
+  background: var(--red);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, .18);
+}
+
+.best-record-label {
+  width: fit-content;
+  border: 1.5px solid rgba(255, 255, 255, .9);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .04em;
+}
+
+.best-record-main {
+  display: grid;
+  gap: 3px;
+}
+
+.best-record-main span,
+.best-record-main small,
+.best-record-chip span {
+  color: rgba(255, 255, 255, .82);
+  font-weight: 900;
+}
+
+.best-record-main span {
+  font-size: 13px;
+}
+
+.best-record-main strong {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.best-record-main small {
+  font-size: 13px;
+}
+
+.best-record-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 8px;
+}
+
+.best-record-chip {
+  min-width: 0;
+  border-radius: 9px;
+  padding: 8px 7px;
+  background: rgba(255, 255, 255, .16);
+}
+
+.best-record-chip span {
+  display: block;
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.best-record-chip strong {
+  display: block;
+  margin-top: 4px;
+  overflow: hidden;
+  font-size: 16px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .history-card {
   overflow: hidden;
   margin-bottom: 26px;
