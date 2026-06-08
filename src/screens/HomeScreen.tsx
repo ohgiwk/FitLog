@@ -1,18 +1,20 @@
-import { KeyboardEvent, MouseEvent, useState } from "react";
+import { KeyboardEvent, MouseEvent, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, PlusIcon, TrashIcon } from "../icons";
 import { Preset, Workout } from "../types";
-import { isRepsMeasurement, isUnstartedWorkout, number } from "../utils";
+import { calendarCells, isRepsMeasurement, isUnstartedWorkout, localDate, number, parseDate } from "../utils";
 import { HomeSetRow } from "../components/HomeSetRow";
 
 const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
 
-export function HomeScreen({ selectedDate, selectedWorkouts, selectedPlannedParts, presets, currentPreset, onMoveDate, onSelectPreset, onStartPreset, onOpenPresets, onOpenSelect, onOpenDetail, onDeleteWorkout }: {
+export function HomeScreen({ selectedDate, workouts, selectedWorkouts, selectedPlannedParts, presets, currentPreset, onMoveDate, onSelectDate, onSelectPreset, onStartPreset, onOpenPresets, onOpenSelect, onOpenDetail, onDeleteWorkout }: {
   selectedDate: string;
+  workouts: Workout[];
   selectedWorkouts: Workout[];
   selectedPlannedParts: string[];
   presets: Preset[];
   currentPreset: Preset | null;
   onMoveDate: (days: number) => void;
+  onSelectDate: (date: string) => void;
   onSelectPreset: (presetId: string) => void;
   onStartPreset: (presetId: string) => void;
   onOpenPresets: () => void;
@@ -21,9 +23,15 @@ export function HomeScreen({ selectedDate, selectedWorkouts, selectedPlannedPart
   onDeleteWorkout: (workoutId: string) => void;
 }) {
   const [deleteTarget, setDeleteTarget] = useState<Workout | null>(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calendarMonthDate, setCalendarMonthDate] = useState(() => parseDate(selectedDate));
   const date = new Date(`${selectedDate}T00:00:00`);
   const dateLabel = `${selectedDate.replaceAll("-", "/")} (${weekdayLabels[date.getDay()]})`;
   const sets = selectedWorkouts.flatMap((workout) => workout.sets);
+  const calendarYear = calendarMonthDate.getFullYear();
+  const calendarMonth = calendarMonthDate.getMonth();
+  const trainedDates = useMemo(() => new Set(workouts.map((workout) => workout.date)), [workouts]);
+  const calendarDays = useMemo(() => calendarCells(calendarYear, calendarMonth), [calendarMonth, calendarYear]);
   const totalReps = selectedWorkouts.reduce((sum, workout) =>
     sum + (isRepsMeasurement(workout.measurementType) ? workout.sets.reduce((setSum, set) => setSum + number(set.recordValue), 0) : 0), 0);
   const totalSeconds = selectedWorkouts.reduce((sum, workout) =>
@@ -52,6 +60,33 @@ export function HomeScreen({ selectedDate, selectedWorkouts, selectedPlannedPart
     setDeleteTarget(null);
   }
 
+  function openCalendarDialog() {
+    setCalendarMonthDate(parseDate(selectedDate));
+    setCalendarOpen(true);
+  }
+
+  function closeCalendarDialog() {
+    setCalendarOpen(false);
+  }
+
+  function selectCalendarDate(nextDate: string) {
+    onSelectDate(nextDate);
+    setCalendarOpen(false);
+  }
+
+  function moveCalendarMonth(delta: number) {
+    const next = new Date(calendarMonthDate);
+    next.setMonth(next.getMonth() + delta, 1);
+    setCalendarMonthDate(next);
+  }
+
+  function jumpToToday() {
+    const today = localDate(new Date());
+    onSelectDate(today);
+    setCalendarMonthDate(parseDate(today));
+    setCalendarOpen(false);
+  }
+
   return (
     <section className="screen active detail-screen">
       <header className="topbar">
@@ -59,7 +94,7 @@ export function HomeScreen({ selectedDate, selectedWorkouts, selectedPlannedPart
           <button className="bar-btn" type="button" aria-label="前の日" onClick={() => onMoveDate(-1)}>
             <ChevronLeft />
           </button>
-          <div className="bar-title">{dateLabel}</div>
+          <button className="bar-title date-trigger" type="button" onClick={openCalendarDialog}>{dateLabel}</button>
           <button className="bar-btn right" type="button" aria-label="次の日" onClick={() => onMoveDate(1)}>
             <ChevronRight />
           </button>
@@ -127,6 +162,42 @@ export function HomeScreen({ selectedDate, selectedWorkouts, selectedPlannedPart
             <div className="confirm-actions">
               <button className="small-outline" type="button" onClick={() => setDeleteTarget(null)}>キャンセル</button>
               <button className="danger-button" type="button" onClick={confirmDelete}>削除</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {calendarOpen && (
+        <div className="dialog-backdrop" role="presentation">
+          <div className="calendar-dialog" role="dialog" aria-modal="true" aria-labelledby="home-calendar-title">
+            <div className="calendar-dialog-head">
+              <div className="confirm-title" id="home-calendar-title">日付を選択</div>
+              <div className="calendar-head compact">
+                <button className="month-btn icon" type="button" aria-label="前の月" onClick={() => moveCalendarMonth(-1)}>
+                  <ChevronLeft />
+                </button>
+                <div className="calendar-month">{calendarYear}年 {String(calendarMonth + 1).padStart(2, "0")}月</div>
+                <button className="month-btn icon" type="button" aria-label="次の月" onClick={() => moveCalendarMonth(1)}>
+                  <ChevronRight />
+                </button>
+              </div>
+            </div>
+            <div className="calendar-grid home-calendar-grid">
+              {weekdayLabels.map((day) => <div className="weekday" key={day}>{day}</div>)}
+              {calendarDays.map((cell) => {
+                const trained = trainedDates.has(cell.date);
+                const selected = cell.date === selectedDate;
+                return (
+                  <div className={`day-cell ${cell.inMonth ? "" : "other"}`} key={cell.date}>
+                    <button className={`day-btn ${trained ? "trained" : ""} ${selected ? "selected" : ""}`} type="button" onClick={() => selectCalendarDate(cell.date)}>
+                      {cell.day}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="confirm-actions">
+              <button className="small-primary" type="button" onClick={jumpToToday}>本日</button>
+              <button className="calendar-cancel" type="button" onClick={closeCalendarDialog}>キャンセル</button>
             </div>
           </div>
         </div>

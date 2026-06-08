@@ -18,11 +18,16 @@ export function App() {
         {fitLog.screen === "home" && (
           <HomeScreen
             selectedDate={fitLog.selectedDate}
+            workouts={fitLog.state.workouts}
             selectedWorkouts={fitLog.selectedWorkouts}
             selectedPlannedParts={fitLog.selectedPlannedParts}
             presets={fitLog.state.presets}
             currentPreset={fitLog.currentPreset}
             onMoveDate={actions.moveDate}
+            onSelectDate={(date) => {
+              actions.selectDate(date);
+              actions.setCurrentWorkoutId(null);
+            }}
             onSelectPreset={actions.selectPreset}
             onStartPreset={actions.startPreset}
             onOpenPresets={() => actions.setScreen("preset")}

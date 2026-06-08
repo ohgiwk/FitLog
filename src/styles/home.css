@@ -168,3 +168,58 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.date-trigger {
+  width: 100%;
+  color: inherit;
+}
+
+.calendar-dialog {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 360px);
+  padding: 16px 12px 14px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 14px 30px var(--shadow-dialog);
+}
+
+.calendar-dialog-head {
+  display: grid;
+  gap: 4px;
+}
+
+.calendar-head.compact {
+  padding: 4px 2px 6px;
+}
+
+.calendar-cancel {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: var(--surface-muted);
+  color: var(--text-secondary-strong);
+  font-size: 16px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.home-calendar-grid {
+  row-gap: 10px;
+  padding: 0 10px 6px;
+}
+
+.home-calendar-grid .weekday {
+  font-size: 14px;
+}
+
+.home-calendar-grid .day-cell {
+  min-height: 40px;
+}
+
+.home-calendar-grid .day-btn {
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+}
