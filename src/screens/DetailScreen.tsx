@@ -1,4 +1,4 @@
-import { HistoryIcon, TrashIcon } from "../icons";
+import { HistoryIcon, PlusIcon, TrashIcon } from "../icons";
 import { SetIntensity, Workout } from "../types";
 import { calcRm, intensityOptions, isRepsMeasurement, measurementUnit, number } from "../utils";
 import { LastRecord } from "../components/LastRecord";
@@ -56,7 +56,7 @@ export function DetailScreen({ workout, selectedDate, workouts, onBack, onOpenHi
         </div>
       </div>
       <RestTimer />
-      <button className="fab" type="button" aria-label="セットを追加" onClick={() => onAddSet(workout.id)}>+</button>
+      <button className="fab" type="button" aria-label="セットを追加" onClick={() => onAddSet(workout.id)}><PlusIcon /></button>
     </section>
   );
 }

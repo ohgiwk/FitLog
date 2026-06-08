@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "../icons";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, PlusIcon } from "../icons";
 import { Preset, Workout } from "../types";
 import { isRepsMeasurement, number } from "../utils";
 import { HomeSetRow } from "../components/HomeSetRow";
@@ -76,12 +76,12 @@ export function HomeScreen({ selectedDate, selectedWorkouts, presets, currentPre
                 <thead><tr><th>セット</th><th>重さ</th><th></th><th>記録</th><th>RM</th></tr></thead>
                 <tbody>{workout.sets.map((set, setIndex) => <HomeSetRow key={set.id} set={set} index={setIndex} measurementType={workout.measurementType} />)}</tbody>
               </table>
-              <button className="add-set" type="button" aria-label="セットを追加" onClick={() => onAddSet(workout.id)}><span className="plus-muted">+</span></button>
+              <button className="add-set" type="button" aria-label="セットを追加" onClick={() => onAddSet(workout.id)}><span className="plus-muted"><PlusIcon /></span></button>
             </article>
           ))
         )}
       </div>
-      <button className="fab" type="button" aria-label="種目を追加" onClick={onOpenSelect}>+</button>
+      <button className="fab" type="button" aria-label="種目を追加" onClick={onOpenSelect}><PlusIcon /></button>
     </section>
   );
 }

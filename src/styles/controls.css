@@ -15,9 +15,6 @@
 .fab {
   border-radius: 50%;
   color: #fff;
-  font-size: 42px;
-  font-weight: 200;
-  line-height: 1;
 }
 
 .plus-muted {
@@ -35,6 +32,22 @@
   height: 58px;
   background: var(--green);
   box-shadow: 0 5px 13px rgba(0, 0, 0, .25);
+}
+
+.plus-muted svg,
+.fab svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.fab svg {
+  width: 30px;
+  height: 30px;
 }
 
 .small-primary,
