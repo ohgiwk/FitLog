@@ -34,6 +34,7 @@ export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPl
   const cells = calendarCells(year, month);
   const currentPartLabel = partFilter === "ALL" ? "すべて" : partFilter;
   const selectedPlan = trainingPlans.find((plan) => plan.part === planPart);
+  const today = localDate(new Date());
 
   useEffect(() => {
     applyPlanToForm(planPart);
@@ -75,9 +76,9 @@ export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPl
               {["日", "月", "火", "水", "木", "金", "土"].map((day) => <div className="weekday" key={day}>{day}</div>)}
               {cells.map((cell) => {
                 const trained = trainedDates.has(cell.date);
-                const selected = trained && cell.date === selectedDate;
+                const isToday = cell.date === today;
                 const trainingParts = trainingDayByDate.get(cell.date);
-                return <div className={`day-cell ${cell.inMonth ? "" : "other"}`} key={cell.date}><button className={`day-btn ${trained ? "trained" : ""} ${selected ? "selected" : ""}`} type="button" title={trainingParts?.join(" / ") || undefined} onClick={() => onSelectDate(cell.date)}>{cell.day}</button></div>;
+                return <div className={`day-cell ${cell.inMonth ? "" : "other"}`} key={cell.date}><button className={`day-btn ${trained ? "trained" : ""} ${isToday ? "today" : ""}`} type="button" title={trainingParts?.join(" / ") || undefined} onClick={() => onSelectDate(cell.date)}>{cell.day}</button></div>;
               })}
             </div>
             <section className="part-history">

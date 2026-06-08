@@ -284,9 +284,9 @@
   color: var(--text-on-primary);
 }
 
-.day-btn.selected {
-  background: var(--history-purple);
-  color: var(--text-on-primary);
+.day-btn.today {
+  background: #fff;
+  color: #111;
 }
 
 .schedule-panel {
