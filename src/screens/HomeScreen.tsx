@@ -1,11 +1,12 @@
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, PlusIcon } from "../icons";
+import { KeyboardEvent, MouseEvent, useState } from "react";
+import { ChevronLeft, ChevronRight, PlusIcon, TrashIcon } from "../icons";
 import { Preset, Workout } from "../types";
 import { isRepsMeasurement, number } from "../utils";
 import { HomeSetRow } from "../components/HomeSetRow";
 
 const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
 
-export function HomeScreen({ selectedDate, selectedWorkouts, selectedPlannedParts, presets, currentPreset, onMoveDate, onSelectPreset, onStartPreset, onOpenPresets, onOpenSelect, onOpenDetail, onMoveWorkout, onAddSet }: {
+export function HomeScreen({ selectedDate, selectedWorkouts, selectedPlannedParts, presets, currentPreset, onMoveDate, onSelectPreset, onStartPreset, onOpenPresets, onOpenSelect, onOpenDetail, onDeleteWorkout }: {
   selectedDate: string;
   selectedWorkouts: Workout[];
   selectedPlannedParts: string[];
@@ -17,9 +18,9 @@ export function HomeScreen({ selectedDate, selectedWorkouts, selectedPlannedPart
   onOpenPresets: () => void;
   onOpenSelect: () => void;
   onOpenDetail: (workoutId: string) => void;
-  onMoveWorkout: (workoutId: string, direction: number) => void;
-  onAddSet: (workoutId: string) => void;
+  onDeleteWorkout: (workoutId: string) => void;
 }) {
+  const [deleteTarget, setDeleteTarget] = useState<Workout | null>(null);
   const date = new Date(`${selectedDate}T00:00:00`);
   const dateLabel = `${selectedDate.replaceAll("-", "/")} (${weekdayLabels[date.getDay()]})`;
   const sets = selectedWorkouts.flatMap((workout) => workout.sets);
@@ -29,6 +30,23 @@ export function HomeScreen({ selectedDate, selectedWorkouts, selectedPlannedPart
     sum + (workout.measurementType === "seconds" ? workout.sets.reduce((setSum, set) => setSum + number(set.recordValue), 0) : 0), 0);
   const totalVolume = selectedWorkouts.reduce((sum, workout) =>
     sum + (isRepsMeasurement(workout.measurementType) ? workout.sets.reduce((setSum, set) => setSum + number(set.weight) * number(set.recordValue), 0) : 0), 0);
+
+  function openDetailFromKey(event: KeyboardEvent<HTMLElement>, workoutId: string) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onOpenDetail(workoutId);
+  }
+
+  function requestDelete(event: MouseEvent<HTMLButtonElement>, workout: Workout) {
+    event.stopPropagation();
+    setDeleteTarget(workout);
+  }
+
+  function confirmDelete() {
+    if (!deleteTarget) return;
+    onDeleteWorkout(deleteTarget.id);
+    setDeleteTarget(null);
+  }
 
   return (
     <section className="screen active detail-screen">
@@ -75,23 +93,33 @@ export function HomeScreen({ selectedDate, selectedWorkouts, selectedPlannedPart
         {!selectedWorkouts.length ? (
           <div className="empty"><div><strong>この日の種目はまだありません</strong><span>右下の＋から種目を選択して、詳細画面でセットを入力できます。</span></div></div>
         ) : (
-          selectedWorkouts.map((workout, index) => (
-            <article className="exercise-card" key={workout.id}>
+          selectedWorkouts.map((workout) => (
+            <article className="exercise-card" key={workout.id} role="button" tabIndex={0} onClick={() => onOpenDetail(workout.id)} onKeyDown={(event) => openDetailFromKey(event, workout.id)}>
               <header className="exercise-head">
-                <h2><button className="title-open" type="button" onClick={() => onOpenDetail(workout.id)}>{workout.part} - {workout.name}</button></h2>
-                <button className="chev" type="button" aria-label="上へ移動" disabled={index === 0} onClick={() => onMoveWorkout(workout.id, -1)}><ChevronUp /></button>
-                <button className="chev" type="button" aria-label="下へ移動" disabled={index === selectedWorkouts.length - 1} onClick={() => onMoveWorkout(workout.id, 1)}><ChevronDown /></button>
+                <h2>{workout.part} - {workout.name}</h2>
+                <button className="delete-workout" type="button" aria-label={`${workout.name}を削除`} onClick={(event) => requestDelete(event, workout)}><TrashIcon /></button>
               </header>
               <table className="set-table">
                 <thead><tr><th>セット</th><th>重さ</th><th></th><th>記録</th><th>RM</th></tr></thead>
                 <tbody>{workout.sets.map((set, setIndex) => <HomeSetRow key={set.id} set={set} index={setIndex} measurementType={workout.measurementType} />)}</tbody>
               </table>
-              <button className="add-set" type="button" aria-label="セットを追加" onClick={() => onAddSet(workout.id)}><span className="plus-muted"><PlusIcon /></span></button>
             </article>
           ))
         )}
       </div>
       <button className="fab" type="button" aria-label="種目を追加" onClick={onOpenSelect}><PlusIcon /></button>
+      {deleteTarget && (
+        <div className="dialog-backdrop" role="presentation">
+          <div className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="workout-delete-title">
+            <div className="confirm-title" id="workout-delete-title">記録を削除しますか？</div>
+            <p>{deleteTarget.part} - {deleteTarget.name} の記録をこの日から削除します。</p>
+            <div className="confirm-actions">
+              <button className="small-outline" type="button" onClick={() => setDeleteTarget(null)}>キャンセル</button>
+              <button className="danger-button" type="button" onClick={confirmDelete}>削除</button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

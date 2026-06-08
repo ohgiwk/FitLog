@@ -31,8 +31,7 @@ export function App() {
               actions.setCurrentWorkoutId(workoutId);
               actions.setScreen("detail");
             }}
-            onMoveWorkout={actions.moveWorkout}
-            onAddSet={actions.addSet}
+            onDeleteWorkout={actions.deleteWorkout}
           />
         )}
 

@@ -3,6 +3,7 @@
 .chev,
 .drag-handle,
 .delete-exercise,
+.delete-workout,
 .preset-delete,
 .preset-row-btn,
 .check,
@@ -100,6 +101,7 @@
 .icon svg,
 .drag-handle svg,
 .delete-exercise svg,
+.delete-workout svg,
 .preset-delete svg,
 .preset-row-btn svg,
 .check svg,
@@ -123,7 +125,8 @@
 }
 
 .drag-handle svg,
-.delete-exercise svg {
+.delete-exercise svg,
+.delete-workout svg {
   width: 24px;
   height: 24px;
   stroke-width: 2.6;

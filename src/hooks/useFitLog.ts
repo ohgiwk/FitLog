@@ -208,6 +208,12 @@ export function useFitLog() {
     }));
   }
 
+  function deleteWorkout(workoutId: string) {
+    saveState((prev) => ({ ...prev, workouts: prev.workouts.filter((workout) => workout.id !== workoutId) }));
+    if (currentWorkoutId === workoutId) setCurrentWorkoutId(null);
+    showToast("種目の記録を削除しました");
+  }
+
   function moveWorkout(workoutId: string, direction: number) {
     const index = selectedWorkouts.findIndex((workout) => workout.id === workoutId);
     const nextIndex = index + direction;
@@ -283,22 +289,23 @@ export function useFitLog() {
   function startPreset(presetId: string) {
     const preset = state.presets.find((item) => item.id === presetId);
     if (!preset || !preset.exerciseIds.length) return showToast("プリセットに種目を追加してください");
-    let added = 0;
-    saveState((prev) => {
-      const todayExerciseIds = new Set(prev.workouts.filter((workout) => workout.date === selectedDate).map((workout) => workout.exerciseId));
-      const workouts = [...prev.workouts];
-      preset.exerciseIds.forEach((exerciseId) => {
-        if (todayExerciseIds.has(exerciseId)) return;
-        const exercise = prev.exercises.find((item) => item.id === exerciseId);
-        if (!exercise) return;
-        workouts.push(createWorkout(exercise, selectedDate));
-        todayExerciseIds.add(exerciseId);
-        added += 1;
-      });
-      return { ...prev, workouts };
+    const todayExerciseIds = new Set(state.workouts.filter((workout) => workout.date === selectedDate).map((workout) => workout.exerciseId));
+    const queuedExerciseIds = new Set<string>();
+    const exercisesToAdd = preset.exerciseIds.flatMap((exerciseId) => {
+      if (todayExerciseIds.has(exerciseId) || queuedExerciseIds.has(exerciseId)) return [];
+      const exercise = state.exercises.find((item) => item.id === exerciseId);
+      if (!exercise) return [];
+      queuedExerciseIds.add(exerciseId);
+      return [exercise];
     });
+    if (!exercisesToAdd.length) {
+      showScreen("home");
+      const hasExisting = preset.exerciseIds.some((exerciseId) => todayExerciseIds.has(exerciseId));
+      return showToast(hasExisting ? "すでに追加されています" : "プリセットの種目が見つかりません");
+    }
+    saveState((prev) => ({ ...prev, workouts: [...prev.workouts, ...exercisesToAdd.map((exercise) => createWorkout(exercise, selectedDate))] }));
     showScreen("home");
-    showToast(added ? `${added}種目を追加しました` : "すでに追加されています");
+    showToast(`${exercisesToAdd.length}種目を追加しました`);
   }
 
   function deleteExercise(exerciseId: string) {
@@ -411,6 +418,7 @@ export function useFitLog() {
       deletePreset,
       deleteSet,
       deleteTrainingPlan,
+      deleteWorkout,
       moveDate,
       moveMonth,
       movePresetExercise,
