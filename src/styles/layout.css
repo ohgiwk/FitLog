@@ -34,6 +34,8 @@
 
 .bar-btn.right {
   display: grid;
+  align-content: center;
+  align-items: center;
   justify-items: end;
   text-align: right;
 }
