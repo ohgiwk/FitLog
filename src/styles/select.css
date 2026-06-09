@@ -95,6 +95,10 @@
   font-weight: 700;
 }
 
+.part-foot button {
+  color: var(--text-on-primary);
+}
+
 .add-form {
   display: grid;
   gap: 12px;
