@@ -98,7 +98,7 @@ input {
 
 .app {
   width: min(100%, 480px);
-  min-height: 100vh;
+  min-height: calc(100vh - (76px + env(safe-area-inset-bottom)));
   margin: 0 auto;
   background: var(--bg);
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
@@ -106,7 +106,7 @@ input {
 
 .screen {
   display: none;
-  min-height: 100vh;
+  min-height: calc(100vh - (76px + env(safe-area-inset-bottom)));
 }
 
 .screen.active {
