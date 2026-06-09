@@ -4,6 +4,52 @@
   padding: 12px 0 24px;
 }
 
+.history-menu-wrap {
+  position: relative;
+  display: grid;
+  width: 100%;
+  justify-items: end;
+}
+
+.history-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 12;
+  display: grid;
+  min-width: 168px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 14px 30px var(--shadow-dialog);
+}
+
+.history-menu button {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  align-items: center;
+  column-gap: 10px;
+  min-height: 44px;
+  padding: 0 14px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.history-menu button svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.history-menu button + button {
+  border-top: 1px solid var(--line);
+}
+
 .history-screen .topbar {
   box-shadow: none;
 }

@@ -1,5 +1,5 @@
 import { FormEvent, PointerEvent, useEffect, useMemo, useState } from "react";
-import { loadState, storeKey } from "../storage";
+import { loadState, parseImportedState, storeKey } from "../storage";
 import { Exercise, MeasurementType, Preset, Screen, SetIntensity, State, TrainingPlanMode, Workout } from "../types";
 import { dragAfterElement, groupExercises, isBlank, localDate, newSet, parseDate, uid } from "../utils";
 
@@ -132,6 +132,35 @@ export function useFitLog() {
 
   function deleteTrainingPlan(planId: string) {
     saveState((prev) => ({ ...prev, trainingPlans: prev.trainingPlans.filter((plan) => plan.id !== planId) }));
+  }
+
+  function exportState() {
+    const data = JSON.stringify(state, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `fitlog-backup-${selectedDate}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    showToast("データをエクスポートしました");
+  }
+
+  async function importState(file: File) {
+    try {
+      const normalized = parseImportedState(await file.text());
+      if (!normalized) return showToast("インポートできるデータが見つかりません");
+      setState(normalized);
+      setCurrentWorkoutId(null);
+      setCurrentPresetId(normalized.presets[0]?.id || null);
+      setCurrentEditingPresetId(null);
+      setSelectedDate(localDate(new Date()));
+      showToast("データをインポートしました");
+    } catch {
+      showToast("JSONの読み込みに失敗しました");
+    }
   }
 
   function addExerciseToToday(exerciseId: string) {
@@ -432,6 +461,8 @@ export function useFitLog() {
       deleteSet,
       deleteTrainingPlan,
       deleteWorkout,
+      exportState,
+      importState,
       moveDate,
       moveMonth,
       movePresetExercise,

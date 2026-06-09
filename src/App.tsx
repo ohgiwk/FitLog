@@ -134,6 +134,8 @@ export function App() {
               actions.setCurrentWorkoutId(null);
               actions.setScreen("home");
             }}
+            onExport={actions.exportState}
+            onImport={actions.importState}
             onMoveMonth={actions.moveMonth}
             onAddTrainingPlan={actions.addTrainingPlan}
             onDeleteTrainingPlan={actions.deleteTrainingPlan}

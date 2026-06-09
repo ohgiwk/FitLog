@@ -5,6 +5,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tabler/icons-react": "^3.44.0",
     "@vitejs/plugin-react": "latest",
     "react": "latest",
     "react-dom": "latest",

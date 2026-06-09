@@ -14,22 +14,31 @@ const defaultPresets: Preset[] = [
 export function loadState(): State {
   try {
     const saved = JSON.parse(localStorage.getItem(storeKey) || "null") as Partial<State> | null;
-    if (saved?.exercises && saved?.workouts) {
-      const catalogVersion = typeof saved.catalogVersion === "number" ? saved.catalogVersion : 1;
-      const exercises = normalizeExercises(saved.exercises);
-      return {
-        exercises: catalogVersion < starterCatalogVersion ? mergeStarterExercises(exercises) : exercises,
-        workouts: normalizeWorkouts(saved.workouts),
-        presets: normalizePresets(saved.presets),
-        trainingDays: normalizeTrainingDays(saved.trainingDays),
-        trainingPlans: normalizeTrainingPlans(saved.trainingPlans),
-        catalogVersion: starterCatalogVersion,
-      };
-    }
+    const normalized = normalizeState(saved);
+    if (normalized) return normalized;
   } catch {
     localStorage.removeItem(storeKey);
   }
   return { exercises: starterExercises, workouts: [], presets: defaultPresets, trainingDays: [], trainingPlans: [], catalogVersion: starterCatalogVersion };
+}
+
+export function normalizeState(saved: Partial<State> | null | undefined): State | null {
+  if (!saved?.exercises || !saved?.workouts) return null;
+  const catalogVersion = typeof saved.catalogVersion === "number" ? saved.catalogVersion : 1;
+  const exercises = normalizeExercises(saved.exercises);
+  return {
+    exercises: catalogVersion < starterCatalogVersion ? mergeStarterExercises(exercises) : exercises,
+    workouts: normalizeWorkouts(saved.workouts),
+    presets: normalizePresets(saved.presets),
+    trainingDays: normalizeTrainingDays(saved.trainingDays),
+    trainingPlans: normalizeTrainingPlans(saved.trainingPlans),
+    catalogVersion: starterCatalogVersion,
+  };
+}
+
+export function parseImportedState(json: string): State | null {
+  const parsed = JSON.parse(json) as Partial<State> | null;
+  return normalizeState(parsed);
 }
 
 function normalizePresets(presets: unknown): Preset[] {

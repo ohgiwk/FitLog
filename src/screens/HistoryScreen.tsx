@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { TrainingDay, TrainingPlan, TrainingPlanMode, Workout } from "../types";
 import { calendarCells, localDate, nextMonthLabel, parseDate, prevMonthLabel } from "../utils";
+import { ExportIcon, ImportIcon, SettingsIcon } from "../icons";
 
 const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
 
-export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPlans, splitPartOptions, partFilter, onPartFilter, onSelectDate, onMoveMonth, onAddTrainingPlan, onDeleteTrainingPlan }: {
+export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPlans, splitPartOptions, partFilter, onPartFilter, onSelectDate, onExport, onImport, onMoveMonth, onAddTrainingPlan, onDeleteTrainingPlan }: {
   selectedDate: string;
   workouts: Workout[];
   trainingDays: TrainingDay[];
@@ -13,11 +14,14 @@ export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPl
   partFilter: string;
   onPartFilter: (part: string) => void;
   onSelectDate: (date: string) => void;
+  onExport: () => void;
+  onImport: (file: File) => Promise<void>;
   onMoveMonth: (delta: number) => void;
   onAddTrainingPlan: (part: string, mode: TrainingPlanMode, weekdays: number[], intervalDays: number, startDate: string) => void;
   onDeleteTrainingPlan: (planId: string) => void;
 }) {
   const [activeView, setActiveView] = useState<"history" | "plan">("history");
+  const [menuOpen, setMenuOpen] = useState(false);
   const [planPart, setPlanPart] = useState(splitPartOptions[0] || "");
   const [planMode, setPlanMode] = useState<TrainingPlanMode>("weekly");
   const [planWeekdays, setPlanWeekdays] = useState<number[]>([]);
@@ -35,6 +39,7 @@ export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPl
   const currentPartLabel = partFilter === "ALL" ? "すべて" : partFilter;
   const selectedPlan = trainingPlans.find((plan) => plan.part === planPart);
   const today = localDate(new Date());
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     applyPlanToForm(planPart);
@@ -60,10 +65,43 @@ export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPl
     setPlanStartDate(plan.startDate || selectedDate);
   }
 
+  function openImport() {
+    setMenuOpen(false);
+    importInputRef.current?.click();
+  }
+
+  async function handleImport(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setMenuOpen(false);
+    await onImport(file);
+  }
+
   return (
     <section className="screen active history-screen">
-      <header className="topbar"><div className="bar-row"><span /><div className="bar-title">履歴 / 計画</div><span /></div></header>
+      <header className="topbar">
+        <div className="bar-row">
+          <span />
+          <div className="bar-title">履歴 / 計画</div>
+          <div className="history-menu-wrap">
+            <button className="bar-btn right" type="button" aria-label="設定" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>
+              <SettingsIcon />
+            </button>
+            {menuOpen && (
+              <div className="history-menu" role="menu" aria-label="データ設定">
+                <button type="button" role="menuitem" onClick={() => {
+                  setMenuOpen(false);
+                  onExport();
+                }}><ExportIcon /><span>記録を書き出す</span></button>
+                <button type="button" role="menuitem" onClick={openImport}><ImportIcon /><span>記録を読み込む</span></button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
       <div className="history-wrap">
+        <input ref={importInputRef} hidden accept="application/json,.json" type="file" onChange={handleImport} />
         <div className="history-mode" aria-label="履歴と計画を切り替え">
           <button className={activeView === "history" ? "active" : ""} type="button" onClick={() => setActiveView("history")}>履歴</button>
           <button className={activeView === "plan" ? "active" : ""} type="button" onClick={() => setActiveView("plan")}>計画</button>
