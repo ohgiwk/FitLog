@@ -119,11 +119,6 @@
   stroke-width: 2.4;
 }
 
-.intensity-face circle:not(:first-child),
-.intensity-face ellipse {
-  fill: currentColor;
-}
-
 .intensity-empty {
   color: var(--text-placeholder);
   font-weight: 800;
