@@ -1,7 +1,7 @@
-import { FormEvent, PointerEvent } from "react";
-import { Exercise, MeasurementType, Screen, State } from "../types";
-import { dragAfterElement, uid } from "../utils";
-import { createWorkout } from "../selectors/fitLogSelectors";
+import { FormEvent, PointerEvent } from 'react';
+import { Exercise, MeasurementType, Screen, State } from '../types';
+import { dragAfterElement, uid } from '../utils';
+import { createWorkout } from '../selectors/fitLogSelectors';
 
 type ExerciseActionsDeps = {
   state: State;
@@ -42,18 +42,22 @@ export function useExerciseActions({
    */
   function addCustomExercise(event: FormEvent) {
     event.preventDefault();
-    const part = partInput.trim() || "その他";
+    const part = partInput.trim() || 'その他';
     const name = nameInput.trim();
-    if (!name) return showToast("種目名を入力してください");
+    if (!name) return showToast('種目名を入力してください');
 
     const exercise: Exercise = { id: uid(), part, name, measurementType: measurementTypeInput };
     const workout = createWorkout(exercise, selectedDate);
-    saveState((prev) => ({ ...prev, exercises: [exercise, ...prev.exercises], workouts: [...prev.workouts, workout] }));
+    saveState((prev) => ({
+      ...prev,
+      exercises: [exercise, ...prev.exercises],
+      workouts: [...prev.workouts, workout],
+    }));
     setCurrentWorkoutId(workout.id);
-    setNameInput("");
-    setMeasurementTypeInput("reps");
+    setNameInput('');
+    setMeasurementTypeInput('reps');
     setAddFormOpen(false);
-    showScreen("detail");
+    showScreen('detail');
   }
 
   /**
@@ -63,7 +67,7 @@ export function useExerciseActions({
     saveState((prev) => ({
       ...prev,
       exercises: prev.exercises.map((exercise) =>
-        exercise.id === exerciseId ? { ...exercise, measurementType } : exercise
+        exercise.id === exerciseId ? { ...exercise, measurementType } : exercise,
       ),
     }));
   }
@@ -92,8 +96,8 @@ export function useExerciseActions({
     const byId = new Map(state.exercises.map((exercise) => [exercise.id, exercise]));
     const ordered: Exercise[] = [];
     rows.forEach((row) => {
-      const exercise = byId.get(row.dataset.exerciseRow || "");
-      const part = row.closest<HTMLElement>("[data-part-list]")?.dataset.partList;
+      const exercise = byId.get(row.dataset.exerciseRow || '');
+      const part = row.closest<HTMLElement>('[data-part-list]')?.dataset.partList;
       if (!exercise || !part) return;
       ordered.push({ ...exercise, part });
     });
@@ -114,21 +118,25 @@ export function useExerciseActions({
    * ポインタ操作で種目行のドラッグ並び替えを開始する
    */
   function startPointerExerciseDrag(event: PointerEvent<HTMLDivElement>) {
-    if ((event.target as HTMLElement).closest("[data-row-action]")) return;
+    if ((event.target as HTMLElement).closest('[data-row-action]')) return;
     const row = event.currentTarget;
     let moved = false;
     setDraggingExerciseId(row.dataset.exerciseRow || null);
     row.setPointerCapture(event.pointerId);
-    row.classList.add("dragging");
+    row.classList.add('dragging');
 
     /**
      * ドラッグ中に行を移動先のリスト・位置へ差し込む
      */
     const move = (moveEvent: globalThis.PointerEvent) => {
       moved = true;
-      const list = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest<HTMLElement>("[data-part-list]");
+      const list = document
+        .elementFromPoint(moveEvent.clientX, moveEvent.clientY)
+        ?.closest<HTMLElement>('[data-part-list]');
       if (!list) return;
-      document.querySelectorAll(".drop-target").forEach((item) => item.classList.toggle("drop-target", item === list));
+      document
+        .querySelectorAll('.drop-target')
+        .forEach((item) => item.classList.toggle('drop-target', item === list));
       const after = dragAfterElement(list, moveEvent.clientY);
       if (after) list.insertBefore(row, after);
       else list.appendChild(row);
@@ -138,18 +146,23 @@ export function useExerciseActions({
      * ドラッグ終了時に後片付けし、移動があれば並び順を確定する
      */
     const end = () => {
-      row.classList.remove("dragging");
-      document.querySelectorAll(".drop-target").forEach((list) => list.classList.remove("drop-target"));
-      row.removeEventListener("pointermove", move);
-      row.removeEventListener("pointerup", end);
-      row.removeEventListener("pointercancel", end);
-      if (moved) commitExerciseOrder(Array.from(document.querySelectorAll<HTMLElement>("[data-exercise-row]")));
+      row.classList.remove('dragging');
+      document
+        .querySelectorAll('.drop-target')
+        .forEach((list) => list.classList.remove('drop-target'));
+      row.removeEventListener('pointermove', move);
+      row.removeEventListener('pointerup', end);
+      row.removeEventListener('pointercancel', end);
+      if (moved)
+        commitExerciseOrder(
+          Array.from(document.querySelectorAll<HTMLElement>('[data-exercise-row]')),
+        );
       setDraggingExerciseId(null);
     };
 
-    row.addEventListener("pointermove", move);
-    row.addEventListener("pointerup", end);
-    row.addEventListener("pointercancel", end);
+    row.addEventListener('pointermove', move);
+    row.addEventListener('pointerup', end);
+    row.addEventListener('pointercancel', end);
   }
 
   return {

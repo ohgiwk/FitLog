@@ -1,12 +1,12 @@
-import { useBackup } from "./useBackup";
-import { useExerciseActions } from "./useExerciseActions";
-import { useFitLogCore } from "./useFitLogCore";
-import { useFitLogSelectors } from "./useFitLogSelectors";
-import { useFitLogUi } from "./useFitLogUi";
-import { useNavigation } from "./useNavigation";
-import { usePresetActions } from "./usePresetActions";
-import { useTrainingPlanActions } from "./useTrainingPlanActions";
-import { useWorkoutActions } from "./useWorkoutActions";
+import { useBackup } from './useBackup';
+import { useExerciseActions } from './useExerciseActions';
+import { useFitLogCore } from './useFitLogCore';
+import { useFitLogSelectors } from './useFitLogSelectors';
+import { useFitLogUi } from './useFitLogUi';
+import { useNavigation } from './useNavigation';
+import { usePresetActions } from './usePresetActions';
+import { useTrainingPlanActions } from './useTrainingPlanActions';
+import { useWorkoutActions } from './useWorkoutActions';
 
 /**
  * 各フックを束ね、画面に渡す state・派生値・操作(actions)をまとめる統合フック
@@ -14,7 +14,11 @@ import { useWorkoutActions } from "./useWorkoutActions";
 export function useFitLog() {
   const core = useFitLogCore();
   const ui = useFitLogUi();
-  const nav = useNavigation({ state: core.state, saveState: core.saveState, setEditMode: ui.setEditMode });
+  const nav = useNavigation({
+    state: core.state,
+    saveState: core.saveState,
+    setEditMode: ui.setEditMode,
+  });
   const selectors = useFitLogSelectors(core.state, nav.selectedDate);
 
   const presets = usePresetActions({

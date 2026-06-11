@@ -1,5 +1,4 @@
 import {
-  IconBarbell,
   IconCalendarMonth,
   IconChevronDown,
   IconChevronLeft,
@@ -13,7 +12,7 @@ import {
   IconSettings,
   IconTrash,
   IconUpload,
-} from "@tabler/icons-react";
+} from '@tabler/icons-react';
 
 export function ChevronUp() {
   return <IconChevronUp />;

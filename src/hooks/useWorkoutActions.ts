@@ -1,6 +1,6 @@
-import { Screen, SetIntensity, State, Workout } from "../types";
-import { newSet } from "../utils";
-import { createWorkout } from "../selectors/fitLogSelectors";
+import { Screen, SetIntensity, State, Workout } from '../types';
+import { newSet } from '../utils';
+import { createWorkout } from '../selectors/fitLogSelectors';
 
 type WorkoutActionsDeps = {
   state: State;
@@ -38,12 +38,15 @@ export function useWorkoutActions({
         if (workout.id !== workoutId || workout.sets.length >= 5) return workout;
         return {
           ...workout,
-          sets: [...workout.sets, ...Array.from({ length: 5 - workout.sets.length }, () => newSet())],
+          sets: [
+            ...workout.sets,
+            ...Array.from({ length: 5 - workout.sets.length }, () => newSet()),
+          ],
         };
       }),
     }));
     setCurrentWorkoutId(workoutId);
-    showScreen("detail");
+    showScreen('detail');
   }
 
   /**
@@ -52,7 +55,9 @@ export function useWorkoutActions({
   function addExerciseToToday(exerciseId: string) {
     const exercise = state.exercises.find((item) => item.id === exerciseId);
     if (!exercise) return;
-    const existing = state.workouts.find((item) => item.date === selectedDate && item.exerciseId === exerciseId);
+    const existing = state.workouts.find(
+      (item) => item.date === selectedDate && item.exerciseId === exerciseId,
+    );
     const workout = existing || createWorkout(exercise, selectedDate);
     saveState((prev) => {
       if (existing) return prev;
@@ -68,17 +73,17 @@ export function useWorkoutActions({
     saveState((prev) => ({
       ...prev,
       workouts: prev.workouts.map((workout) =>
-        workout.id === workoutId ? { ...workout, sets: [...workout.sets, newSet()] } : workout
+        workout.id === workoutId ? { ...workout, sets: [...workout.sets, newSet()] } : workout,
       ),
     }));
     setCurrentWorkoutId(workoutId);
-    showScreen("detail");
+    showScreen('detail');
   }
 
   /**
    * セットの重量・回数(秒数)・メモを更新する
    */
-  function updateSet(setId: string, field: "weight" | "recordValue" | "note", value: string) {
+  function updateSet(setId: string, field: 'weight' | 'recordValue' | 'note', value: string) {
     saveState((prev) => ({
       ...prev,
       workouts: prev.workouts.map((workout) => ({
@@ -117,7 +122,9 @@ export function useWorkoutActions({
     saveState((prev) => ({
       ...prev,
       workouts: prev.workouts.map((workout) =>
-        workout.id === currentWorkout.id ? { ...workout, sets: workout.sets.filter((set) => set.id !== setId) } : workout
+        workout.id === currentWorkout.id
+          ? { ...workout, sets: workout.sets.filter((set) => set.id !== setId) }
+          : workout,
       ),
     }));
   }
@@ -126,9 +133,12 @@ export function useWorkoutActions({
    * ワークアウト(種目の記録)ごと削除する
    */
   function deleteWorkout(workoutId: string) {
-    saveState((prev) => ({ ...prev, workouts: prev.workouts.filter((workout) => workout.id !== workoutId) }));
+    saveState((prev) => ({
+      ...prev,
+      workouts: prev.workouts.filter((workout) => workout.id !== workoutId),
+    }));
     if (currentWorkoutId === workoutId) setCurrentWorkoutId(null);
-    showToast("種目の記録を削除しました");
+    showToast('種目の記録を削除しました');
   }
 
   /**
@@ -139,10 +149,17 @@ export function useWorkoutActions({
     const nextIndex = index + direction;
     if (index < 0 || nextIndex < 0 || nextIndex >= selectedWorkouts.length) return;
     saveState((prev) => {
-      const currentGlobalIndex = prev.workouts.findIndex((workout) => workout.id === selectedWorkouts[index].id);
-      const nextGlobalIndex = prev.workouts.findIndex((workout) => workout.id === selectedWorkouts[nextIndex].id);
+      const currentGlobalIndex = prev.workouts.findIndex(
+        (workout) => workout.id === selectedWorkouts[index].id,
+      );
+      const nextGlobalIndex = prev.workouts.findIndex(
+        (workout) => workout.id === selectedWorkouts[nextIndex].id,
+      );
       const workouts = [...prev.workouts];
-      [workouts[currentGlobalIndex], workouts[nextGlobalIndex]] = [workouts[nextGlobalIndex], workouts[currentGlobalIndex]];
+      [workouts[currentGlobalIndex], workouts[nextGlobalIndex]] = [
+        workouts[nextGlobalIndex],
+        workouts[currentGlobalIndex],
+      ];
       return { ...prev, workouts };
     });
   }

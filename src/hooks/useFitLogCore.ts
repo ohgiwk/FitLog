@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
-import { loadState, storeKey } from "../storage";
-import { State } from "../types";
+import { useEffect, useState } from 'react';
+import { loadState, storeKey } from '../storage';
+import { State } from '../types';
 
 /**
  * アプリの保存対象データ(state)とトースト表示を一元管理する土台フック
  */
 export function useFitLogCore() {
   const [state, setState] = useState<State>(() => loadState());
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState('');
 
   /**
    * state が変わるたびに localStorage へ保存する
@@ -21,7 +21,7 @@ export function useFitLogCore() {
    */
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(() => setToast(""), 1800);
+    const timer = window.setTimeout(() => setToast(''), 1800);
     return () => window.clearTimeout(timer);
   }, [toast]);
 

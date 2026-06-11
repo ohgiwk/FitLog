@@ -97,7 +97,7 @@
 
 .preset-row-btn:disabled {
   cursor: default;
-  opacity: .35;
+  opacity: 0.35;
 }
 
 .preset-add {

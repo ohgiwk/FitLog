@@ -81,7 +81,7 @@
   color: var(--red);
   font-size: 12px;
   font-weight: 900;
-  letter-spacing: .04em;
+  letter-spacing: 0.04em;
 }
 
 .best-record-main {
@@ -392,7 +392,7 @@
 
 .interval-fields {
   display: grid;
-  grid-template-columns: .7fr 1.3fr;
+  grid-template-columns: 0.7fr 1.3fr;
   gap: 8px;
 }
 

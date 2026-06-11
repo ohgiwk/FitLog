@@ -1,12 +1,12 @@
-import { CalendarIcon, HomeIcon } from "./icons";
-import { useFitLog } from "./hooks/useFitLog";
-import { DetailScreen } from "./screens/DetailScreen";
-import { ExerciseHistoryScreen } from "./screens/ExerciseHistoryScreen";
-import { HistoryScreen } from "./screens/HistoryScreen";
-import { HomeScreen } from "./screens/HomeScreen";
-import { PresetEditScreen } from "./screens/PresetEditScreen";
-import { PresetListScreen } from "./screens/PresetListScreen";
-import { SelectScreen } from "./screens/SelectScreen";
+import { CalendarIcon, HomeIcon } from './icons';
+import { useFitLog } from './hooks/useFitLog';
+import { DetailScreen } from './screens/DetailScreen';
+import { ExerciseHistoryScreen } from './screens/ExerciseHistoryScreen';
+import { HistoryScreen } from './screens/HistoryScreen';
+import { HomeScreen } from './screens/HomeScreen';
+import { PresetEditScreen } from './screens/PresetEditScreen';
+import { PresetListScreen } from './screens/PresetListScreen';
+import { SelectScreen } from './screens/SelectScreen';
 
 export function App() {
   const fitLog = useFitLog();
@@ -15,7 +15,7 @@ export function App() {
   return (
     <>
       <main className="app">
-        {fitLog.screen === "home" && (
+        {fitLog.screen === 'home' && (
           <HomeScreen
             selectedDate={fitLog.selectedDate}
             workouts={fitLog.state.workouts}
@@ -30,14 +30,14 @@ export function App() {
             }}
             onSelectPreset={actions.selectPreset}
             onStartPreset={actions.startPreset}
-            onOpenPresets={() => actions.setScreen("preset")}
-            onOpenSelect={() => actions.setScreen("select")}
+            onOpenPresets={() => actions.setScreen('preset')}
+            onOpenSelect={() => actions.setScreen('select')}
             onOpenDetail={actions.openWorkoutDetail}
             onDeleteWorkout={actions.deleteWorkout}
           />
         )}
 
-        {fitLog.screen === "select" && (
+        {fitLog.screen === 'select' && (
           <SelectScreen
             groupedExercises={fitLog.groupedExercises}
             partRecentLabels={fitLog.partRecentLabels}
@@ -48,7 +48,7 @@ export function App() {
             measurementTypeInput={fitLog.measurementTypeInput}
             expandedParts={fitLog.expandedParts}
             draggingExerciseId={fitLog.draggingExerciseId}
-            onBack={() => actions.setScreen("home")}
+            onBack={() => actions.setScreen('home')}
             onToggleEditMode={() => {
               actions.setEditMode(!fitLog.editMode);
               if (!fitLog.editMode) actions.setAddFormOpen(false);
@@ -74,13 +74,13 @@ export function App() {
           />
         )}
 
-        {fitLog.screen === "detail" && fitLog.currentWorkout && (
+        {fitLog.screen === 'detail' && fitLog.currentWorkout && (
           <DetailScreen
             workout={fitLog.currentWorkout}
             selectedDate={fitLog.selectedDate}
             workouts={fitLog.state.workouts}
-            onBack={() => actions.setScreen("home")}
-            onOpenHistory={() => actions.setScreen("exerciseHistory")}
+            onBack={() => actions.setScreen('home')}
+            onOpenHistory={() => actions.setScreen('exerciseHistory')}
             onUpdateSet={actions.updateSet}
             onUpdateSetIntensity={actions.updateSetIntensity}
             onDeleteSet={actions.deleteSet}
@@ -88,30 +88,34 @@ export function App() {
           />
         )}
 
-        {fitLog.screen === "exerciseHistory" && fitLog.currentWorkout && (
-          <ExerciseHistoryScreen workout={fitLog.currentWorkout} workouts={fitLog.state.workouts} onBack={() => actions.setScreen("detail")} />
+        {fitLog.screen === 'exerciseHistory' && fitLog.currentWorkout && (
+          <ExerciseHistoryScreen
+            workout={fitLog.currentWorkout}
+            workouts={fitLog.state.workouts}
+            onBack={() => actions.setScreen('detail')}
+          />
         )}
 
-        {fitLog.screen === "preset" && (
+        {fitLog.screen === 'preset' && (
           <PresetListScreen
             presets={fitLog.state.presets}
             exercises={fitLog.state.exercises}
-            onBack={() => actions.setScreen("home")}
+            onBack={() => actions.setScreen('home')}
             onCreate={actions.createPreset}
             onEdit={(presetId) => {
               actions.setCurrentEditingPresetId(presetId);
-              actions.setScreen("presetEdit");
+              actions.setScreen('presetEdit');
             }}
             onDelete={actions.deletePreset}
           />
         )}
 
-        {fitLog.screen === "presetEdit" && (
+        {fitLog.screen === 'presetEdit' && (
           <PresetEditScreen
             preset={fitLog.editingPreset}
             exercises={fitLog.state.exercises}
             groupedExercises={fitLog.groupedExercises}
-            onBack={() => actions.setScreen("preset")}
+            onBack={() => actions.setScreen('preset')}
             onRename={actions.renamePreset}
             onDelete={actions.deletePreset}
             onAdd={actions.addExerciseToPreset}
@@ -120,7 +124,7 @@ export function App() {
           />
         )}
 
-        {fitLog.screen === "history" && (
+        {fitLog.screen === 'history' && (
           <HistoryScreen
             selectedDate={fitLog.selectedDate}
             workouts={fitLog.state.workouts}
@@ -132,7 +136,7 @@ export function App() {
             onSelectDate={(date) => {
               actions.selectDate(date);
               actions.setCurrentWorkoutId(null);
-              actions.setScreen("home");
+              actions.setScreen('home');
             }}
             onExport={actions.exportState}
             onImport={actions.importState}
@@ -144,10 +148,26 @@ export function App() {
       </main>
 
       <nav className="bottom-nav">
-        <button className={`nav-item ${fitLog.screen === "home" ? "active" : ""}`} type="button" onClick={() => actions.setScreen("home")}><HomeIcon /><span>ホーム</span></button>
-        <button className={`nav-item ${fitLog.screen === "history" ? "active" : ""}`} type="button" onClick={() => actions.setScreen("history")}><CalendarIcon /><span>履歴/計画</span></button>
+        <button
+          className={`nav-item ${fitLog.screen === 'home' ? 'active' : ''}`}
+          type="button"
+          onClick={() => actions.setScreen('home')}
+        >
+          <HomeIcon />
+          <span>ホーム</span>
+        </button>
+        <button
+          className={`nav-item ${fitLog.screen === 'history' ? 'active' : ''}`}
+          type="button"
+          onClick={() => actions.setScreen('history')}
+        >
+          <CalendarIcon />
+          <span>履歴/計画</span>
+        </button>
       </nav>
-      <div className={`toast ${fitLog.toast ? "show" : ""}`} role="status" aria-live="polite">{fitLog.toast}</div>
+      <div className={`toast ${fitLog.toast ? 'show' : ''}`} role="status" aria-live="polite">
+        {fitLog.toast}
+      </div>
     </>
   );
 }

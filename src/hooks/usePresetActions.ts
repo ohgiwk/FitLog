@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { Preset, Screen, State } from "../types";
-import { uid } from "../utils";
-import { createWorkout, findCurrentPreset } from "../selectors/fitLogSelectors";
+import { useEffect, useMemo, useState } from 'react';
+import { Preset, Screen, State } from '../types';
+import { uid } from '../utils';
+import { createWorkout, findCurrentPreset } from '../selectors/fitLogSelectors';
 
 type PresetActionsDeps = {
   state: State;
@@ -14,20 +14,29 @@ type PresetActionsDeps = {
 /**
  * プリセット(よく使う種目のまとまり)の選択・編集・実行を担うフック
  */
-export function usePresetActions({ state, saveState, showToast, showScreen, selectedDate }: PresetActionsDeps) {
+export function usePresetActions({
+  state,
+  saveState,
+  showToast,
+  showScreen,
+  selectedDate,
+}: PresetActionsDeps) {
   const [currentPresetId, setCurrentPresetId] = useState<string | null>(null);
   const [currentEditingPresetId, setCurrentEditingPresetId] = useState<string | null>(null);
 
   /**
    * 現在選択中のプリセット
    */
-  const currentPreset = useMemo(() => findCurrentPreset(state.presets, currentPresetId), [currentPresetId, state.presets]);
+  const currentPreset = useMemo(
+    () => findCurrentPreset(state.presets, currentPresetId),
+    [currentPresetId, state.presets],
+  );
   /**
    * 編集画面で対象になっているプリセット
    */
   const editingPreset = useMemo(
     () => state.presets.find((preset) => preset.id === currentEditingPresetId) || null,
-    [currentEditingPresetId, state.presets]
+    [currentEditingPresetId, state.presets],
   );
 
   /**
@@ -42,11 +51,11 @@ export function usePresetActions({ state, saveState, showToast, showScreen, sele
    * 新規プリセットを作成して編集画面へ進む
    */
   function createPreset() {
-    const preset: Preset = { id: uid(), name: "新規プリセット", exerciseIds: [] };
+    const preset: Preset = { id: uid(), name: '新規プリセット', exerciseIds: [] };
     saveState((prev) => ({ ...prev, presets: [preset, ...prev.presets] }));
     setCurrentPresetId(preset.id);
     setCurrentEditingPresetId(preset.id);
-    showScreen("presetEdit");
+    showScreen('presetEdit');
   }
 
   /**
@@ -56,7 +65,7 @@ export function usePresetActions({ state, saveState, showToast, showScreen, sele
     saveState((prev) => ({
       ...prev,
       presets: prev.presets.map((preset) =>
-        preset.id === presetId ? { ...preset, name: name.trim() || "名称未設定" } : preset
+        preset.id === presetId ? { ...preset, name: name.trim() || '名称未設定' } : preset,
       ),
     }));
   }
@@ -65,10 +74,13 @@ export function usePresetActions({ state, saveState, showToast, showScreen, sele
    * プリセットを削除し、選択・編集中の参照も解除する
    */
   function deletePreset(presetId: string) {
-    saveState((prev) => ({ ...prev, presets: prev.presets.filter((preset) => preset.id !== presetId) }));
+    saveState((prev) => ({
+      ...prev,
+      presets: prev.presets.filter((preset) => preset.id !== presetId),
+    }));
     if (currentPresetId === presetId) setCurrentPresetId(null);
     if (currentEditingPresetId === presetId) setCurrentEditingPresetId(null);
-    showScreen("preset");
+    showScreen('preset');
   }
 
   /**
@@ -80,7 +92,7 @@ export function usePresetActions({ state, saveState, showToast, showScreen, sele
       presets: prev.presets.map((preset) =>
         preset.id === presetId && !preset.exerciseIds.includes(exerciseId)
           ? { ...preset, exerciseIds: [...preset.exerciseIds, exerciseId] }
-          : preset
+          : preset,
       ),
     }));
   }
@@ -92,7 +104,9 @@ export function usePresetActions({ state, saveState, showToast, showScreen, sele
     saveState((prev) => ({
       ...prev,
       presets: prev.presets.map((preset) =>
-        preset.id === presetId ? { ...preset, exerciseIds: preset.exerciseIds.filter((id) => id !== exerciseId) } : preset
+        preset.id === presetId
+          ? { ...preset, exerciseIds: preset.exerciseIds.filter((id) => id !== exerciseId) }
+          : preset,
       ),
     }));
   }
@@ -120,8 +134,13 @@ export function usePresetActions({ state, saveState, showToast, showScreen, sele
    */
   function startPreset(presetId: string) {
     const preset = state.presets.find((item) => item.id === presetId);
-    if (!preset || !preset.exerciseIds.length) return showToast("プリセットに種目を追加してください");
-    const todayExerciseIds = new Set(state.workouts.filter((workout) => workout.date === selectedDate).map((workout) => workout.exerciseId));
+    if (!preset || !preset.exerciseIds.length)
+      return showToast('プリセットに種目を追加してください');
+    const todayExerciseIds = new Set(
+      state.workouts
+        .filter((workout) => workout.date === selectedDate)
+        .map((workout) => workout.exerciseId),
+    );
     const queuedExerciseIds = new Set<string>();
     const exercisesToAdd = preset.exerciseIds.flatMap((exerciseId) => {
       if (todayExerciseIds.has(exerciseId) || queuedExerciseIds.has(exerciseId)) return [];
@@ -131,13 +150,13 @@ export function usePresetActions({ state, saveState, showToast, showScreen, sele
       return [exercise];
     });
     if (!exercisesToAdd.length) {
-      showScreen("home");
+      showScreen('home');
       const hasExisting = preset.exerciseIds.some((exerciseId) => todayExerciseIds.has(exerciseId));
-      return showToast(hasExisting ? "すでに追加されています" : "プリセットの種目が見つかりません");
+      return showToast(hasExisting ? 'すでに追加されています' : 'プリセットの種目が見つかりません');
     }
     const newWorkouts = exercisesToAdd.map((exercise) => createWorkout(exercise, selectedDate));
     saveState((prev) => ({ ...prev, workouts: [...prev.workouts, ...newWorkouts] }));
-    showScreen("home");
+    showScreen('home');
     showToast(`${exercisesToAdd.length}種目を追加しました`);
   }
 

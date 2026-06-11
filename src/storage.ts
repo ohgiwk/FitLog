@@ -1,33 +1,48 @@
-import { starterCatalogVersion, starterExercises } from "./data/starterExercises";
-import { MeasurementType, Preset, SetIntensity, State, TrainingPlanMode, WorkoutSet } from "./types";
-import { uid } from "./utils";
+import { starterCatalogVersion, starterExercises } from './data/starterExercises';
+import {
+  MeasurementType,
+  Preset,
+  SetIntensity,
+  State,
+  TrainingPlanMode,
+  WorkoutSet,
+} from './types';
+import { uid } from './utils';
 
-export const storeKey = "fit-log-v2";
+export const storeKey = 'fit-log-v2';
 
 const defaultPresets: Preset[] = [
-  { id: "preset-chest-day", name: "胸の日", exerciseIds: [] },
-  { id: "preset-back-day", name: "背中の日", exerciseIds: [] },
-  { id: "preset-leg-day", name: "脚の日", exerciseIds: [] },
-  { id: "preset-shoulder-day", name: "肩の日", exerciseIds: [] },
+  { id: 'preset-chest-day', name: '胸の日', exerciseIds: [] },
+  { id: 'preset-back-day', name: '背中の日', exerciseIds: [] },
+  { id: 'preset-leg-day', name: '脚の日', exerciseIds: [] },
+  { id: 'preset-shoulder-day', name: '肩の日', exerciseIds: [] },
 ];
 
 export function loadState(): State {
   try {
-    const saved = JSON.parse(localStorage.getItem(storeKey) || "null") as Partial<State> | null;
+    const saved = JSON.parse(localStorage.getItem(storeKey) || 'null') as Partial<State> | null;
     const normalized = normalizeState(saved);
     if (normalized) return normalized;
   } catch {
     localStorage.removeItem(storeKey);
   }
-  return { exercises: starterExercises, workouts: [], presets: defaultPresets, trainingDays: [], trainingPlans: [], catalogVersion: starterCatalogVersion };
+  return {
+    exercises: starterExercises,
+    workouts: [],
+    presets: defaultPresets,
+    trainingDays: [],
+    trainingPlans: [],
+    catalogVersion: starterCatalogVersion,
+  };
 }
 
 export function normalizeState(saved: Partial<State> | null | undefined): State | null {
   if (!saved?.exercises || !saved?.workouts) return null;
-  const catalogVersion = typeof saved.catalogVersion === "number" ? saved.catalogVersion : 1;
+  const catalogVersion = typeof saved.catalogVersion === 'number' ? saved.catalogVersion : 1;
   const exercises = normalizeExercises(saved.exercises);
   return {
-    exercises: catalogVersion < starterCatalogVersion ? mergeStarterExercises(exercises) : exercises,
+    exercises:
+      catalogVersion < starterCatalogVersion ? mergeStarterExercises(exercises) : exercises,
     workouts: normalizeWorkouts(saved.workouts),
     presets: normalizePresets(saved.presets),
     trainingDays: normalizeTrainingDays(saved.trainingDays),
@@ -43,21 +58,26 @@ export function parseImportedState(json: string): State | null {
 
 function normalizePresets(presets: unknown): Preset[] {
   if (!Array.isArray(presets)) return defaultPresets;
-  const normalizedPresets = presets.map((preset) => ({
-    id: typeof preset.id === "string" ? preset.id : uid(),
-    name: typeof preset.name === "string" ? preset.name : "名称未設定",
-    exerciseIds: Array.isArray(preset.exerciseIds) ? preset.exerciseIds.filter((id: unknown): id is string => typeof id === "string") : [],
-  }));
+  const normalizedPresets = presets.map((preset) => {
+    const item = (preset ?? {}) as Record<string, unknown>;
+    return {
+      id: typeof item.id === 'string' ? item.id : uid(),
+      name: typeof item.name === 'string' ? item.name : '名称未設定',
+      exerciseIds: Array.isArray(item.exerciseIds)
+        ? item.exerciseIds.filter((id: unknown): id is string => typeof id === 'string')
+        : [],
+    };
+  });
   return mergeDefaultPresets(normalizedPresets);
 }
 
-function normalizeTrainingDays(trainingDays: unknown): State["trainingDays"] {
+function normalizeTrainingDays(trainingDays: unknown): State['trainingDays'] {
   if (!Array.isArray(trainingDays)) return [];
   const byDate = new Map<string, Set<string>>();
   trainingDays.forEach((trainingDay) => {
-    if (!trainingDay || typeof trainingDay !== "object") return;
+    if (!trainingDay || typeof trainingDay !== 'object') return;
     const item = trainingDay as Record<string, unknown>;
-    if (typeof item.date !== "string") return;
+    if (typeof item.date !== 'string') return;
     const parts = normalizeParts(item.parts ?? item.part);
     if (!parts.length) return;
     const existingParts = byDate.get(item.date) || new Set<string>();
@@ -69,38 +89,46 @@ function normalizeTrainingDays(trainingDays: unknown): State["trainingDays"] {
 
 function normalizeParts(value: unknown) {
   const values = Array.isArray(value) ? value : [value];
-  return [...new Set(values.flatMap((item) => {
-    if (typeof item !== "string") return [];
-    const part = item.trim();
-    return part ? [part] : [];
-  }))];
+  return [
+    ...new Set(
+      values.flatMap((item) => {
+        if (typeof item !== 'string') return [];
+        const part = item.trim();
+        return part ? [part] : [];
+      }),
+    ),
+  ];
 }
 
-function normalizeTrainingPlans(trainingPlans: unknown): State["trainingPlans"] {
+function normalizeTrainingPlans(trainingPlans: unknown): State['trainingPlans'] {
   if (!Array.isArray(trainingPlans)) return [];
   return trainingPlans.flatMap((trainingPlan) => {
-    if (!trainingPlan || typeof trainingPlan !== "object") return [];
+    if (!trainingPlan || typeof trainingPlan !== 'object') return [];
     const item = trainingPlan as Record<string, unknown>;
-    const part = typeof item.part === "string" ? item.part.trim() : "";
+    const part = typeof item.part === 'string' ? item.part.trim() : '';
     if (!part) return [];
-    return [{
-      id: typeof item.id === "string" ? item.id : uid(),
-      part,
-      mode: normalizeTrainingPlanMode(item.mode),
-      weekdays: normalizeWeekdays(item.weekdays),
-      intervalDays: normalizeIntervalDays(item.intervalDays),
-      startDate: typeof item.startDate === "string" ? item.startDate : "",
-    }];
+    return [
+      {
+        id: typeof item.id === 'string' ? item.id : uid(),
+        part,
+        mode: normalizeTrainingPlanMode(item.mode),
+        weekdays: normalizeWeekdays(item.weekdays),
+        intervalDays: normalizeIntervalDays(item.intervalDays),
+        startDate: typeof item.startDate === 'string' ? item.startDate : '',
+      },
+    ];
   });
 }
 
 function normalizeTrainingPlanMode(value: unknown): TrainingPlanMode {
-  return value === "interval" ? "interval" : "weekly";
+  return value === 'interval' ? 'interval' : 'weekly';
 }
 
 function normalizeWeekdays(value: unknown) {
   if (!Array.isArray(value)) return [];
-  return [...new Set(value.filter((day): day is number => Number.isInteger(day) && day >= 0 && day <= 6))].sort();
+  return [
+    ...new Set(value.filter((day): day is number => Number.isInteger(day) && day >= 0 && day <= 6)),
+  ].sort();
 }
 
 function normalizeIntervalDays(value: unknown) {
@@ -114,73 +142,95 @@ function mergeDefaultPresets(presets: Preset[]) {
   return [...presets, ...additions];
 }
 
-function normalizeExercises(exercises: unknown): State["exercises"] {
+function normalizeExercises(exercises: unknown): State['exercises'] {
   if (!Array.isArray(exercises)) return [];
   return exercises.flatMap((exercise) => {
-    if (!exercise || typeof exercise !== "object") return [];
+    if (!exercise || typeof exercise !== 'object') return [];
     const item = exercise as Record<string, unknown>;
-    if (typeof item.id !== "string" || typeof item.part !== "string" || typeof item.name !== "string") return [];
-    return [{ id: item.id, part: item.part, name: item.name, measurementType: normalizeMeasurementType(item.measurementType) }];
+    if (
+      typeof item.id !== 'string' ||
+      typeof item.part !== 'string' ||
+      typeof item.name !== 'string'
+    )
+      return [];
+    return [
+      {
+        id: item.id,
+        part: item.part,
+        name: item.name,
+        measurementType: normalizeMeasurementType(item.measurementType),
+      },
+    ];
   });
 }
 
-function normalizeWorkouts(workouts: unknown): State["workouts"] {
+function normalizeWorkouts(workouts: unknown): State['workouts'] {
   if (!Array.isArray(workouts)) return [];
   return workouts.flatMap((workout) => {
-    if (!workout || typeof workout !== "object") return [];
+    if (!workout || typeof workout !== 'object') return [];
     const item = workout as Record<string, unknown>;
     if (
-      typeof item.id !== "string" ||
-      typeof item.exerciseId !== "string" ||
-      typeof item.date !== "string" ||
-      typeof item.name !== "string" ||
-      typeof item.part !== "string"
+      typeof item.id !== 'string' ||
+      typeof item.exerciseId !== 'string' ||
+      typeof item.date !== 'string' ||
+      typeof item.name !== 'string' ||
+      typeof item.part !== 'string'
     ) {
       return [];
     }
-    return [{
-      id: item.id,
-      exerciseId: item.exerciseId,
-      date: item.date,
-      name: item.name,
-      part: item.part,
-      measurementType: normalizeMeasurementType(item.measurementType),
-      sets: normalizeSets(item.sets),
-    }];
+    return [
+      {
+        id: item.id,
+        exerciseId: item.exerciseId,
+        date: item.date,
+        name: item.name,
+        part: item.part,
+        measurementType: normalizeMeasurementType(item.measurementType),
+        sets: normalizeSets(item.sets),
+      },
+    ];
   });
 }
 
 function normalizeSets(sets: unknown): WorkoutSet[] {
   if (!Array.isArray(sets)) return [];
   return sets.flatMap((set) => {
-    if (!set || typeof set !== "object") return [];
+    if (!set || typeof set !== 'object') return [];
     const item = set as Record<string, unknown>;
-    if (typeof item.id !== "string") return [];
-    return [{
-      id: item.id,
-      weight: normalizeSetValue(item.weight),
-      recordValue: normalizeSetValue(item.recordValue ?? item.reps),
-      intensity: normalizeIntensity(item.intensity),
-      note: typeof item.note === "string" ? item.note : "",
-    }];
+    if (typeof item.id !== 'string') return [];
+    return [
+      {
+        id: item.id,
+        weight: normalizeSetValue(item.weight),
+        recordValue: normalizeSetValue(item.recordValue ?? item.reps),
+        intensity: normalizeIntensity(item.intensity),
+        note: typeof item.note === 'string' ? item.note : '',
+      },
+    ];
   });
 }
 
 function normalizeSetValue(value: unknown) {
-  return typeof value === "string" || typeof value === "number" ? value : "";
+  return typeof value === 'string' || typeof value === 'number' ? value : '';
 }
 
 function normalizeMeasurementType(value: unknown): MeasurementType {
-  return value === "seconds" ? "seconds" : "reps";
+  return value === 'seconds' ? 'seconds' : 'reps';
 }
 
 function normalizeIntensity(value: unknown): SetIntensity | undefined {
-  return value === 1 || value === 2 || value === 3 || value === 4 || value === 5 ? value : undefined;
+  return value === 1 || value === 2 || value === 3 || value === 4 || value === 5
+    ? value
+    : undefined;
 }
 
-function mergeStarterExercises(exercises: State["exercises"]) {
-  const existingKeys = new Set(exercises.map((exercise) => exerciseKey(exercise.part, exercise.name)));
-  const additions = starterExercises.filter((exercise) => !existingKeys.has(exerciseKey(exercise.part, exercise.name)));
+function mergeStarterExercises(exercises: State['exercises']) {
+  const existingKeys = new Set(
+    exercises.map((exercise) => exerciseKey(exercise.part, exercise.name)),
+  );
+  const additions = starterExercises.filter(
+    (exercise) => !existingKeys.has(exerciseKey(exercise.part, exercise.name)),
+  );
   return [...exercises, ...additions];
 }
 

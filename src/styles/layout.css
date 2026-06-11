@@ -131,7 +131,9 @@
   margin: 0 auto;
   transform: translateY(60px);
   opacity: 0;
-  transition: transform .18s ease, opacity .18s ease;
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
   border-radius: 8px;
   padding: 12px 14px;
   background: var(--toast-bg);

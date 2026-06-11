@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 const defaultSeconds = 60;
 
@@ -27,7 +27,7 @@ export function RestTimer() {
   }, [endTime]);
 
   function updateSeconds(value: string) {
-    const nextInput = value.replace(/[^\d]/g, "").slice(0, 3);
+    const nextInput = value.replace(/[^\d]/g, '').slice(0, 3);
     setSecondsInput(nextInput);
     if (!running && nextInput) setRemaining(clampSeconds(nextInput));
   }
@@ -48,7 +48,7 @@ export function RestTimer() {
   }
 
   return (
-    <div className={`rest-timer ${running ? "running" : ""}`} aria-label="レストタイマー">
+    <div className={`rest-timer ${running ? 'running' : ''}`} aria-label="レストタイマー">
       <TimerIcon />
       {running ? (
         <strong>{remaining}</strong>
@@ -64,7 +64,9 @@ export function RestTimer() {
         />
       )}
       <span>秒</span>
-      <button type="button" onClick={toggleTimer}>{running ? "STOP" : "START"}</button>
+      <button type="button" onClick={toggleTimer}>
+        {running ? 'STOP' : 'START'}
+      </button>
     </div>
   );
 }
@@ -96,7 +98,7 @@ function playAlert(context: AudioContext | null) {
     const time = start + index * 0.2;
     const oscillator = context.createOscillator();
     const gain = context.createGain();
-    oscillator.type = "triangle";
+    oscillator.type = 'triangle';
     oscillator.frequency.setValueAtTime(index % 2 ? 2093 : 1760, time);
     gain.gain.setValueAtTime(0.0001, time);
     gain.gain.exponentialRampToValueAtTime(0.13, time + 0.01);

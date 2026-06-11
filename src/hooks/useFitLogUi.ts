@@ -1,17 +1,17 @@
-import { useState } from "react";
-import { MeasurementType } from "../types";
+import { useState } from 'react';
+import { MeasurementType } from '../types';
 
 /**
  * 保存対象ではない、画面操作のための一時的な UI 状態をまとめるフック
  */
 export function useFitLogUi() {
-  const [historyPartFilter, setHistoryPartFilter] = useState("ALL");
+  const [historyPartFilter, setHistoryPartFilter] = useState('ALL');
   const [editMode, setEditMode] = useState(false);
   const [expandedParts, setExpandedParts] = useState<Set<string>>(() => new Set());
   const [addFormOpen, setAddFormOpen] = useState(false);
-  const [partInput, setPartInput] = useState("");
-  const [nameInput, setNameInput] = useState("");
-  const [measurementTypeInput, setMeasurementTypeInput] = useState<MeasurementType>("reps");
+  const [partInput, setPartInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [measurementTypeInput, setMeasurementTypeInput] = useState<MeasurementType>('reps');
   const [draggingExerciseId, setDraggingExerciseId] = useState<string | null>(null);
 
   /**

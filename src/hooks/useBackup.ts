@@ -1,6 +1,6 @@
-import { parseImportedState } from "../storage";
-import { State } from "../types";
-import { localDate } from "../utils";
+import { parseImportedState } from '../storage';
+import { State } from '../types';
+import { localDate } from '../utils';
 
 type BackupDeps = {
   state: State;
@@ -31,16 +31,16 @@ export function useBackup({
    */
   function exportState() {
     const data = JSON.stringify(state, null, 2);
-    const blob = new Blob([data], { type: "application/json" });
+    const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
+    const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = `fitlog-backup-${selectedDate}.json`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-    showToast("データをエクスポートしました");
+    showToast('データをエクスポートしました');
   }
 
   /**
@@ -49,15 +49,15 @@ export function useBackup({
   async function importState(file: File) {
     try {
       const normalized = parseImportedState(await file.text());
-      if (!normalized) return showToast("インポートできるデータが見つかりません");
+      if (!normalized) return showToast('インポートできるデータが見つかりません');
       setState(normalized);
       setCurrentWorkoutId(null);
       setCurrentPresetId(normalized.presets[0]?.id || null);
       setCurrentEditingPresetId(null);
       setSelectedDate(localDate(new Date()));
-      showToast("データをインポートしました");
+      showToast('データをインポートしました');
     } catch {
-      showToast("JSONの読み込みに失敗しました");
+      showToast('JSONの読み込みに失敗しました');
     }
   }
 

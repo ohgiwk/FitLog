@@ -1,6 +1,13 @@
-export type Screen = "home" | "select" | "detail" | "exerciseHistory" | "preset" | "presetEdit" | "history";
+export type Screen =
+  | 'home'
+  | 'select'
+  | 'detail'
+  | 'exerciseHistory'
+  | 'preset'
+  | 'presetEdit'
+  | 'history';
 
-export type MeasurementType = "reps" | "seconds";
+export type MeasurementType = 'reps' | 'seconds';
 
 export type SetIntensity = 1 | 2 | 3 | 4 | 5;
 
@@ -40,7 +47,7 @@ export type TrainingDay = {
   parts: string[];
 };
 
-export type TrainingPlanMode = "weekly" | "interval";
+export type TrainingPlanMode = 'weekly' | 'interval';
 
 export type TrainingPlan = {
   id: string;

@@ -4,8 +4,8 @@ import {
   IconMoodSmile,
   IconMoodSurprised,
   IconMoodWrrr,
-} from "@tabler/icons-react";
-import { SetIntensity } from "../types";
+} from '@tabler/icons-react';
+import { SetIntensity } from '../types';
 
 export function IntensityIcon({ intensity }: { intensity?: SetIntensity }) {
   if (!intensity) return <span className="intensity-empty">-</span>;

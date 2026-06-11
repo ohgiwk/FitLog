@@ -54,7 +54,7 @@
 }
 
 .exercise-option.dragging {
-  opacity: .45;
+  opacity: 0.45;
 }
 
 .exercise-list.drop-target {
