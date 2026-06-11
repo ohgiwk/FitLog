@@ -1,34 +1,45 @@
 import { ChevronLeft, HistoryIcon, PlusIcon, TrashIcon } from '../icons';
-import { SetIntensity, Workout } from '../types';
 import { calcRm, intensityOptions, isRepsMeasurement, measurementUnit, number } from '../utils';
 import { LastRecord } from '../components/LastRecord';
 import { IntensityIcon } from '../components/IntensityIcon';
 import { RestTimer } from '../components/RestTimer';
+import { useFitLogContext } from '../hooks/FitLogContext';
+
+/**
+ * 種目詳細画面が必要とする state・操作を Context から組み立てる view-model フック
+ */
+function useDetailScreenModel() {
+  const { currentWorkout, selectedDate, state, actions } = useFitLogContext();
+
+  return {
+    workout: currentWorkout,
+    selectedDate,
+    workouts: state.workouts,
+    onBack: () => actions.setScreen('home'),
+    onOpenHistory: () => actions.setScreen('exerciseHistory'),
+    onUpdateSet: actions.updateSet,
+    onUpdateSetIntensity: actions.updateSetIntensity,
+    onDeleteSet: actions.deleteSet,
+    onAddSet: actions.addSet,
+  };
+}
 
 /**
  * 種目詳細画面。各セットの重量・記録・強度の入力やレストタイマーを表示する
  */
-export function DetailScreen({
-  workout,
-  selectedDate,
-  workouts,
-  onBack,
-  onOpenHistory,
-  onUpdateSet,
-  onUpdateSetIntensity,
-  onDeleteSet,
-  onAddSet,
-}: {
-  workout: Workout;
-  selectedDate: string;
-  workouts: Workout[];
-  onBack: () => void;
-  onOpenHistory: () => void;
-  onUpdateSet: (setId: string, field: 'weight' | 'recordValue' | 'note', value: string) => void;
-  onUpdateSetIntensity: (setId: string, intensity?: SetIntensity) => void;
-  onDeleteSet: (setId: string) => void;
-  onAddSet: (workoutId: string) => void;
-}) {
+export function DetailScreen() {
+  const {
+    workout,
+    selectedDate,
+    workouts,
+    onBack,
+    onOpenHistory,
+    onUpdateSet,
+    onUpdateSetIntensity,
+    onDeleteSet,
+    onAddSet,
+  } = useDetailScreenModel();
+  if (!workout) return null;
   const isReps = isRepsMeasurement(workout.measurementType);
   const unit = measurementUnit(workout.measurementType);
   return (

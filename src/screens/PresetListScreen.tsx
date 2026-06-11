@@ -1,25 +1,35 @@
 import { useState } from 'react';
 import { ChevronLeft, TrashIcon } from '../icons';
-import { Exercise, Preset } from '../types';
+import { Preset } from '../types';
+import { useFitLogContext } from '../hooks/FitLogContext';
+
+/**
+ * プリセット管理画面が必要とする state・操作を Context から組み立てる view-model フック
+ */
+function usePresetListScreenModel() {
+  const { state, actions } = useFitLogContext();
+
+  return {
+    presets: state.presets,
+    exercises: state.exercises,
+    onBack: () => actions.setScreen('home'),
+    onCreate: actions.createPreset,
+    /**
+     * 編集対象のプリセットを設定し、編集画面へ遷移する
+     */
+    onEdit: (presetId: string) => {
+      actions.setCurrentEditingPresetId(presetId);
+      actions.setScreen('presetEdit');
+    },
+    onDelete: actions.deletePreset,
+  };
+}
 
 /**
  * プリセット管理画面。プリセットの一覧表示・作成・編集・削除を行う
  */
-export function PresetListScreen({
-  presets,
-  exercises,
-  onBack,
-  onCreate,
-  onEdit,
-  onDelete,
-}: {
-  presets: Preset[];
-  exercises: Exercise[];
-  onBack: () => void;
-  onCreate: () => void;
-  onEdit: (presetId: string) => void;
-  onDelete: (presetId: string) => void;
-}) {
+export function PresetListScreen() {
+  const { presets, exercises, onBack, onCreate, onEdit, onDelete } = usePresetListScreenModel();
   const [deleteTarget, setDeleteTarget] = useState<Preset | null>(null);
 
   /**

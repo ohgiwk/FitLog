@@ -1,6 +1,6 @@
 import { KeyboardEvent, MouseEvent, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, PlusIcon, TrashIcon } from '../icons';
-import { Preset, Workout } from '../types';
+import { Workout } from '../types';
 import {
   calendarCells,
   isRepsMeasurement,
@@ -10,43 +10,61 @@ import {
   parseDate,
 } from '../utils';
 import { HomeSetRow } from '../components/HomeSetRow';
+import { useFitLogContext } from '../hooks/FitLogContext';
 
 const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
 
 /**
+ * ホーム画面が必要とする state・派生値・操作を Context から組み立てる view-model フック
+ */
+function useHomeScreenModel() {
+  const { selectedDate, state, selectedWorkouts, selectedPlannedParts, currentPreset, actions } =
+    useFitLogContext();
+
+  return {
+    selectedDate,
+    workouts: state.workouts,
+    selectedWorkouts,
+    selectedPlannedParts,
+    presets: state.presets,
+    currentPreset,
+    onMoveDate: actions.moveDate,
+    /**
+     * 日付を選択し、開いていた種目詳細の選択を解除する
+     */
+    onSelectDate: (date: string) => {
+      actions.selectDate(date);
+      actions.setCurrentWorkoutId(null);
+    },
+    onSelectPreset: actions.selectPreset,
+    onStartPreset: actions.startPreset,
+    onOpenPresets: () => actions.setScreen('preset'),
+    onOpenSelect: () => actions.setScreen('select'),
+    onOpenDetail: actions.openWorkoutDetail,
+    onDeleteWorkout: actions.deleteWorkout,
+  };
+}
+
+/**
  * ホーム画面。選択日のトレーニング一覧・集計・プリセット開始・カレンダーを表示する
  */
-export function HomeScreen({
-  selectedDate,
-  workouts,
-  selectedWorkouts,
-  selectedPlannedParts,
-  presets,
-  currentPreset,
-  onMoveDate,
-  onSelectDate,
-  onSelectPreset,
-  onStartPreset,
-  onOpenPresets,
-  onOpenSelect,
-  onOpenDetail,
-  onDeleteWorkout,
-}: {
-  selectedDate: string;
-  workouts: Workout[];
-  selectedWorkouts: Workout[];
-  selectedPlannedParts: string[];
-  presets: Preset[];
-  currentPreset: Preset | null;
-  onMoveDate: (days: number) => void;
-  onSelectDate: (date: string) => void;
-  onSelectPreset: (presetId: string) => void;
-  onStartPreset: (presetId: string) => void;
-  onOpenPresets: () => void;
-  onOpenSelect: () => void;
-  onOpenDetail: (workoutId: string) => void;
-  onDeleteWorkout: (workoutId: string) => void;
-}) {
+export function HomeScreen() {
+  const {
+    selectedDate,
+    workouts,
+    selectedWorkouts,
+    selectedPlannedParts,
+    presets,
+    currentPreset,
+    onMoveDate,
+    onSelectDate,
+    onSelectPreset,
+    onStartPreset,
+    onOpenPresets,
+    onOpenSelect,
+    onOpenDetail,
+    onDeleteWorkout,
+  } = useHomeScreenModel();
   const [deleteTarget, setDeleteTarget] = useState<Workout | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [calendarMonthDate, setCalendarMonthDate] = useState(() => parseDate(selectedDate));

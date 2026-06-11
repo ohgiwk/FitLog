@@ -1,5 +1,5 @@
 import { CalendarIcon, HomeIcon } from './icons';
-import { useFitLog } from './hooks/useFitLog';
+import { FitLogProvider, useFitLogContext } from './hooks/FitLogContext';
 import { DetailScreen } from './screens/DetailScreen';
 import { ExerciseHistoryScreen } from './screens/ExerciseHistoryScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
@@ -9,147 +9,35 @@ import { PresetListScreen } from './screens/PresetListScreen';
 import { SelectScreen } from './screens/SelectScreen';
 
 export function App() {
-  const fitLog = useFitLog();
-  const { actions } = fitLog;
+  return (
+    <FitLogProvider>
+      <AppShell />
+    </FitLogProvider>
+  );
+}
+
+/**
+ * 画面の切り替えとボトムナビ・トーストを担当する外枠。
+ * 各画面に渡す値は Context から各画面が自分で取得するため props は持たせない
+ */
+function AppShell() {
+  const { screen, currentWorkout, toast, actions } = useFitLogContext();
 
   return (
     <>
       <main className="app">
-        {fitLog.screen === 'home' && (
-          <HomeScreen
-            selectedDate={fitLog.selectedDate}
-            workouts={fitLog.state.workouts}
-            selectedWorkouts={fitLog.selectedWorkouts}
-            selectedPlannedParts={fitLog.selectedPlannedParts}
-            presets={fitLog.state.presets}
-            currentPreset={fitLog.currentPreset}
-            onMoveDate={actions.moveDate}
-            onSelectDate={(date) => {
-              actions.selectDate(date);
-              actions.setCurrentWorkoutId(null);
-            }}
-            onSelectPreset={actions.selectPreset}
-            onStartPreset={actions.startPreset}
-            onOpenPresets={() => actions.setScreen('preset')}
-            onOpenSelect={() => actions.setScreen('select')}
-            onOpenDetail={actions.openWorkoutDetail}
-            onDeleteWorkout={actions.deleteWorkout}
-          />
-        )}
-
-        {fitLog.screen === 'select' && (
-          <SelectScreen
-            groupedExercises={fitLog.groupedExercises}
-            partRecentLabels={fitLog.partRecentLabels}
-            editMode={fitLog.editMode}
-            addFormOpen={fitLog.addFormOpen}
-            partInput={fitLog.partInput}
-            nameInput={fitLog.nameInput}
-            measurementTypeInput={fitLog.measurementTypeInput}
-            expandedParts={fitLog.expandedParts}
-            draggingExerciseId={fitLog.draggingExerciseId}
-            onBack={() => actions.setScreen('home')}
-            onToggleEditMode={() => {
-              actions.setEditMode(!fitLog.editMode);
-              if (!fitLog.editMode) actions.setAddFormOpen(false);
-            }}
-            onToggleAddForm={() => actions.setAddFormOpen(!fitLog.addFormOpen)}
-            onPartInput={actions.setPartInput}
-            onNameInput={actions.setNameInput}
-            onMeasurementTypeInput={actions.setMeasurementTypeInput}
-            onAddCustomExercise={actions.addCustomExercise}
-            onAddExercise={actions.addExerciseToToday}
-            onStartDrag={actions.startPointerExerciseDrag}
-            onCommitOrder={(rows) => {
-              actions.commitExerciseOrder(rows);
-              actions.setDraggingExerciseId(null);
-            }}
-            onDeleteExercise={actions.deleteExercise}
-            onUpdateExerciseMeasurementType={actions.updateExerciseMeasurementType}
-            onTogglePartExpanded={actions.togglePartExpanded}
-            onSetPartAndOpenForm={(part) => {
-              actions.setPartInput(part);
-              actions.setAddFormOpen(true);
-            }}
-          />
-        )}
-
-        {fitLog.screen === 'detail' && fitLog.currentWorkout && (
-          <DetailScreen
-            workout={fitLog.currentWorkout}
-            selectedDate={fitLog.selectedDate}
-            workouts={fitLog.state.workouts}
-            onBack={() => actions.setScreen('home')}
-            onOpenHistory={() => actions.setScreen('exerciseHistory')}
-            onUpdateSet={actions.updateSet}
-            onUpdateSetIntensity={actions.updateSetIntensity}
-            onDeleteSet={actions.deleteSet}
-            onAddSet={actions.addSet}
-          />
-        )}
-
-        {fitLog.screen === 'exerciseHistory' && fitLog.currentWorkout && (
-          <ExerciseHistoryScreen
-            workout={fitLog.currentWorkout}
-            workouts={fitLog.state.workouts}
-            onBack={() => actions.setScreen('detail')}
-          />
-        )}
-
-        {fitLog.screen === 'preset' && (
-          <PresetListScreen
-            presets={fitLog.state.presets}
-            exercises={fitLog.state.exercises}
-            onBack={() => actions.setScreen('home')}
-            onCreate={actions.createPreset}
-            onEdit={(presetId) => {
-              actions.setCurrentEditingPresetId(presetId);
-              actions.setScreen('presetEdit');
-            }}
-            onDelete={actions.deletePreset}
-          />
-        )}
-
-        {fitLog.screen === 'presetEdit' && (
-          <PresetEditScreen
-            preset={fitLog.editingPreset}
-            exercises={fitLog.state.exercises}
-            groupedExercises={fitLog.groupedExercises}
-            onBack={() => actions.setScreen('preset')}
-            onRename={actions.renamePreset}
-            onDelete={actions.deletePreset}
-            onAdd={actions.addExerciseToPreset}
-            onRemove={actions.removeExerciseFromPreset}
-            onMove={actions.movePresetExercise}
-          />
-        )}
-
-        {fitLog.screen === 'history' && (
-          <HistoryScreen
-            selectedDate={fitLog.selectedDate}
-            workouts={fitLog.state.workouts}
-            trainingDays={fitLog.state.trainingDays}
-            trainingPlans={fitLog.state.trainingPlans}
-            splitPartOptions={fitLog.splitPartOptions}
-            partFilter={fitLog.historyPartFilter}
-            onPartFilter={actions.setHistoryPartFilter}
-            onSelectDate={(date) => {
-              actions.selectDate(date);
-              actions.setCurrentWorkoutId(null);
-              actions.setScreen('home');
-            }}
-            onExport={actions.exportState}
-            onImport={actions.importState}
-            onMoveMonth={actions.moveMonth}
-            onAddTrainingPlan={actions.addTrainingPlan}
-            onDeleteTrainingPlan={actions.deleteTrainingPlan}
-          />
-        )}
+        {screen === 'home' && <HomeScreen />}
+        {screen === 'select' && <SelectScreen />}
+        {screen === 'detail' && currentWorkout && <DetailScreen />}
+        {screen === 'exerciseHistory' && currentWorkout && <ExerciseHistoryScreen />}
+        {screen === 'preset' && <PresetListScreen />}
+        {screen === 'presetEdit' && <PresetEditScreen />}
+        {screen === 'history' && <HistoryScreen />}
       </main>
 
       <nav className="bottom-nav">
         <button
-          className={`nav-item ${fitLog.screen === 'home' ? 'active' : ''}`}
+          className={`nav-item ${screen === 'home' ? 'active' : ''}`}
           type="button"
           onClick={() => actions.setScreen('home')}
         >
@@ -157,7 +45,7 @@ export function App() {
           <span>ホーム</span>
         </button>
         <button
-          className={`nav-item ${fitLog.screen === 'history' ? 'active' : ''}`}
+          className={`nav-item ${screen === 'history' ? 'active' : ''}`}
           type="button"
           onClick={() => actions.setScreen('history')}
         >
@@ -165,8 +53,8 @@ export function App() {
           <span>履歴/計画</span>
         </button>
       </nav>
-      <div className={`toast ${fitLog.toast ? 'show' : ''}`} role="status" aria-live="polite">
-        {fitLog.toast}
+      <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">
+        {toast}
       </div>
     </>
   );

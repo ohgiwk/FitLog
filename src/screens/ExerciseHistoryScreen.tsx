@@ -9,19 +9,27 @@ import {
   measurementUnit,
   number,
 } from '../utils';
+import { useFitLogContext } from '../hooks/FitLogContext';
+
+/**
+ * 種目別の履歴画面が必要とする state・操作を Context から組み立てる view-model フック
+ */
+function useExerciseHistoryScreenModel() {
+  const { currentWorkout, state, actions } = useFitLogContext();
+
+  return {
+    workout: currentWorkout,
+    workouts: state.workouts,
+    onBack: () => actions.setScreen('detail'),
+  };
+}
 
 /**
  * 種目別の履歴画面。ベスト記録と日別のセット履歴を一覧表示する
  */
-export function ExerciseHistoryScreen({
-  workout,
-  workouts,
-  onBack,
-}: {
-  workout: Workout;
-  workouts: Workout[];
-  onBack: () => void;
-}) {
+export function ExerciseHistoryScreen() {
+  const { workout, workouts, onBack } = useExerciseHistoryScreenModel();
+  if (!workout) return null;
   const histories = workouts
     .filter((item) => item.exerciseId === workout.exerciseId && item.sets.some(hasRecordedValue))
     .sort((a, b) => b.date.localeCompare(a.date));

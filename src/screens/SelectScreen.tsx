@@ -1,59 +1,99 @@
-import { FormEvent, PointerEvent } from 'react';
+import { MeasurementType } from '../types';
 import { ChevronLeft, DragHandle, TrashIcon } from '../icons';
-import { Exercise, MeasurementType } from '../types';
+import { useFitLogContext } from '../hooks/FitLogContext';
+
+/**
+ * 種目選択画面が必要とする state・派生値・操作を Context から組み立てる view-model フック
+ */
+function useSelectScreenModel() {
+  const {
+    groupedExercises,
+    partRecentLabels,
+    editMode,
+    addFormOpen,
+    partInput,
+    nameInput,
+    measurementTypeInput,
+    expandedParts,
+    draggingExerciseId,
+    actions,
+  } = useFitLogContext();
+
+  return {
+    groupedExercises,
+    partRecentLabels,
+    editMode,
+    addFormOpen,
+    partInput,
+    nameInput,
+    measurementTypeInput,
+    expandedParts,
+    draggingExerciseId,
+    onBack: () => actions.setScreen('home'),
+    /**
+     * 編集モードを切り替える。編集モードへ入るときは追加フォームを閉じる
+     */
+    onToggleEditMode: () => {
+      const next = !editMode;
+      actions.setEditMode(next);
+      if (next) actions.setAddFormOpen(false);
+    },
+    onToggleAddForm: () => actions.setAddFormOpen(!addFormOpen),
+    onPartInput: actions.setPartInput,
+    onNameInput: actions.setNameInput,
+    onMeasurementTypeInput: actions.setMeasurementTypeInput,
+    onAddCustomExercise: actions.addCustomExercise,
+    onAddExercise: actions.addExerciseToToday,
+    onStartDrag: actions.startPointerExerciseDrag,
+    /**
+     * 並び替え結果を確定し、ドラッグ中の状態を解除する
+     */
+    onCommitOrder: (rows: HTMLElement[]) => {
+      actions.commitExerciseOrder(rows);
+      actions.setDraggingExerciseId(null);
+    },
+    onDeleteExercise: actions.deleteExercise,
+    onUpdateExerciseMeasurementType: actions.updateExerciseMeasurementType,
+    onTogglePartExpanded: actions.togglePartExpanded,
+    /**
+     * 指定した部位を入力欄へ反映し、追加フォームを開く
+     */
+    onSetPartAndOpenForm: (part: string) => {
+      actions.setPartInput(part);
+      actions.setAddFormOpen(true);
+    },
+  };
+}
 
 /**
  * 種目選択画面。部位ごとの種目一覧表示・追加・編集(並び替え/削除)を行う
  */
-export function SelectScreen({
-  groupedExercises,
-  partRecentLabels,
-  editMode,
-  addFormOpen,
-  partInput,
-  nameInput,
-  measurementTypeInput,
-  expandedParts,
-  draggingExerciseId,
-  onBack,
-  onToggleEditMode,
-  onToggleAddForm,
-  onPartInput,
-  onNameInput,
-  onMeasurementTypeInput,
-  onAddCustomExercise,
-  onAddExercise,
-  onStartDrag,
-  onCommitOrder,
-  onDeleteExercise,
-  onUpdateExerciseMeasurementType,
-  onTogglePartExpanded,
-  onSetPartAndOpenForm,
-}: {
-  groupedExercises: Map<string, Exercise[]>;
-  partRecentLabels: Map<string, string>;
-  editMode: boolean;
-  addFormOpen: boolean;
-  partInput: string;
-  nameInput: string;
-  measurementTypeInput: MeasurementType;
-  expandedParts: Set<string>;
-  draggingExerciseId: string | null;
-  onBack: () => void;
-  onToggleEditMode: () => void;
-  onToggleAddForm: () => void;
-  onPartInput: (value: string) => void;
-  onNameInput: (value: string) => void;
-  onMeasurementTypeInput: (value: MeasurementType) => void;
-  onAddCustomExercise: (event: FormEvent) => void;
-  onAddExercise: (exerciseId: string) => void;
-  onStartDrag: (event: PointerEvent<HTMLDivElement>) => void;
-  onCommitOrder: (rows: HTMLElement[]) => void;
-  onDeleteExercise: (exerciseId: string) => void;
-  onUpdateExerciseMeasurementType: (exerciseId: string, measurementType: MeasurementType) => void;
-  onTogglePartExpanded: (part: string) => void;
-  onSetPartAndOpenForm: (part: string) => void;
-}) {
+export function SelectScreen() {
+  const {
+    groupedExercises,
+    partRecentLabels,
+    editMode,
+    addFormOpen,
+    partInput,
+    nameInput,
+    measurementTypeInput,
+    expandedParts,
+    draggingExerciseId,
+    onBack,
+    onToggleEditMode,
+    onToggleAddForm,
+    onPartInput,
+    onNameInput,
+    onMeasurementTypeInput,
+    onAddCustomExercise,
+    onAddExercise,
+    onStartDrag,
+    onCommitOrder,
+    onDeleteExercise,
+    onUpdateExerciseMeasurementType,
+    onTogglePartExpanded,
+    onSetPartAndOpenForm,
+  } = useSelectScreenModel();
   return (
     <section className="screen active">
       <header className="topbar">

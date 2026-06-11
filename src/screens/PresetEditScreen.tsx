@@ -1,31 +1,32 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronUp, TrashIcon } from '../icons';
-import { Exercise, Preset } from '../types';
+import { useFitLogContext } from '../hooks/FitLogContext';
+
+/**
+ * プリセット編集画面が必要とする state・操作を Context から組み立てる view-model フック
+ */
+function usePresetEditScreenModel() {
+  const { editingPreset, state, groupedExercises, actions } = useFitLogContext();
+
+  return {
+    preset: editingPreset,
+    exercises: state.exercises,
+    groupedExercises,
+    onBack: () => actions.setScreen('preset'),
+    onRename: actions.renamePreset,
+    onDelete: actions.deletePreset,
+    onAdd: actions.addExerciseToPreset,
+    onRemove: actions.removeExerciseFromPreset,
+    onMove: actions.movePresetExercise,
+  };
+}
 
 /**
  * プリセット編集画面。名称変更・種目の追加/削除/並び替えを行う
  */
-export function PresetEditScreen({
-  preset,
-  exercises,
-  groupedExercises,
-  onBack,
-  onRename,
-  onDelete,
-  onAdd,
-  onRemove,
-  onMove,
-}: {
-  preset: Preset | null;
-  exercises: Exercise[];
-  groupedExercises: Map<string, Exercise[]>;
-  onBack: () => void;
-  onRename: (presetId: string, name: string) => void;
-  onDelete: (presetId: string) => void;
-  onAdd: (presetId: string, exerciseId: string) => void;
-  onRemove: (presetId: string, exerciseId: string) => void;
-  onMove: (presetId: string, exerciseId: string, direction: number) => void;
-}) {
+export function PresetEditScreen() {
+  const { preset, exercises, groupedExercises, onBack, onRename, onDelete, onAdd, onRemove, onMove } =
+    usePresetEditScreenModel();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   /**

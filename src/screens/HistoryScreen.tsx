@@ -2,47 +2,65 @@ import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { TrainingDay, TrainingPlan, TrainingPlanMode, Workout } from '../types';
 import { calendarCells, localDate, nextMonthLabel, parseDate, prevMonthLabel } from '../utils';
 import { ExportIcon, ImportIcon, SettingsIcon } from '../icons';
+import { useFitLogContext } from '../hooks/FitLogContext';
 
 const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
 
 /**
+ * 履歴/計画画面が必要とする state・操作を Context から組み立てる view-model フック
+ */
+function useHistoryScreenModel() {
+  const {
+    selectedDate,
+    state,
+    splitPartOptions,
+    historyPartFilter,
+    actions,
+  } = useFitLogContext();
+
+  return {
+    selectedDate,
+    workouts: state.workouts,
+    trainingDays: state.trainingDays,
+    trainingPlans: state.trainingPlans,
+    splitPartOptions,
+    partFilter: historyPartFilter,
+    onPartFilter: actions.setHistoryPartFilter,
+    /**
+     * 日付を選択し、ワークアウト選択を解除してホーム画面へ戻る
+     */
+    onSelectDate: (date: string) => {
+      actions.selectDate(date);
+      actions.setCurrentWorkoutId(null);
+      actions.setScreen('home');
+    },
+    onExport: actions.exportState,
+    onImport: actions.importState,
+    onMoveMonth: actions.moveMonth,
+    onAddTrainingPlan: actions.addTrainingPlan,
+    onDeleteTrainingPlan: actions.deleteTrainingPlan,
+  };
+}
+
+/**
  * 履歴/計画画面。カレンダー・部位別履歴・分割計画の管理とデータ入出力を行う
  */
-export function HistoryScreen({
-  selectedDate,
-  workouts,
-  trainingDays,
-  trainingPlans,
-  splitPartOptions,
-  partFilter,
-  onPartFilter,
-  onSelectDate,
-  onExport,
-  onImport,
-  onMoveMonth,
-  onAddTrainingPlan,
-  onDeleteTrainingPlan,
-}: {
-  selectedDate: string;
-  workouts: Workout[];
-  trainingDays: TrainingDay[];
-  trainingPlans: TrainingPlan[];
-  splitPartOptions: string[];
-  partFilter: string;
-  onPartFilter: (part: string) => void;
-  onSelectDate: (date: string) => void;
-  onExport: () => void;
-  onImport: (file: File) => Promise<void>;
-  onMoveMonth: (delta: number) => void;
-  onAddTrainingPlan: (
-    part: string,
-    mode: TrainingPlanMode,
-    weekdays: number[],
-    intervalDays: number,
-    startDate: string,
-  ) => void;
-  onDeleteTrainingPlan: (planId: string) => void;
-}) {
+export function HistoryScreen() {
+  const {
+    selectedDate,
+    workouts,
+    trainingDays,
+    trainingPlans,
+    splitPartOptions,
+    partFilter,
+    onPartFilter,
+    onSelectDate,
+    onExport,
+    onImport,
+    onMoveMonth,
+    onAddTrainingPlan,
+    onDeleteTrainingPlan,
+  } = useHistoryScreenModel();
   const [activeView, setActiveView] = useState<'history' | 'plan'>('history');
   const [menuOpen, setMenuOpen] = useState(false);
   const [planPart, setPlanPart] = useState(splitPartOptions[0] || '');
