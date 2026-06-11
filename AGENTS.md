@@ -12,16 +12,56 @@
 
 ## 主要ファイル
 
-- `src/App.tsx`: 画面の接続とナビゲーションを担当します。
-- `src/hooks/useFitLog.ts`: アプリの状態管理とトレーニング操作を担当します。
-- `src/screens/`: 各画面のコンポーネントを置きます。
-- `src/components/`: 小さな再利用コンポーネントを置きます。
-- `src/data/starterExercises.ts`: 初期表示する種目マスタを定義します。
-- `src/storage.ts`: `localStorage` の読み込み、正規化、移行処理を担当します。
+- `src/main.tsx`: アプリのエントリーポイントです。`ErrorBoundary` で全体を包み、PWA を登録します。
+- `src/App.tsx`: 画面の接続とボトムナビ・トーストを担当します。
+- `src/hooks/useFitLog.ts`: 各ドメインフックを束ね、state・派生値・操作(actions)を統合します。
+- `src/hooks/`: 役割ごとに分割した状態管理・操作フックと、配布用の `FitLogContext.tsx` を置きます。
+- `src/selectors/fitLogSelectors.ts`: React 非依存の純粋な派生値計算(セレクタ)を置きます。
+- `src/screens/`: 各画面のコンポーネントを置きます。各画面は view-model フックで Context から値を取り出します。
+- `src/components/`: 小さな再利用コンポーネント(エラー境界・セット行・強度アイコンなど)を置きます。
+- `src/data/starterExercises.ts`: 初期表示する種目マスタと種目カタログのバージョンを定義します。
+- `src/storage.ts`: `localStorage` の読み込み、正規化、移行、壊れたデータの退避処理を担当します。
 - `src/types.ts`: 共通の TypeScript 型を定義します。
-- `src/styles.css`: CSS の入口です。
+- `src/utils.ts`: 日付処理、計算処理、汎用ヘルパーを置きます。
+- `src/icons.tsx`: 画面で使うアイコンをまとめます。
+- `src/styles.css`: CSS の入口で、`src/styles/` 配下を読み込みます。
 - `src/styles/`: 画面や役割ごとに分割した CSS を置きます。
+- `src/*.test.ts`: テスト対象コードの隣に置く Vitest のテストです(`storage.test.ts`、`utils.test.ts`)。
+- `vite.config.ts`: ビルド設定と PWA 設定、公開パス `/FitLog/` を定義します。
+- `vitest.config.ts`: テスト実行設定(jsdom 環境)を定義します。
 - `.github/workflows/deploy-pages.yml`: GitHub Pages のデプロイ workflow です。
+
+## ディレクトリ構造
+
+主要なファイルとフォルダの構成は次のとおりです。
+
+```text
+FitLog/
+├── index.html                # HTML エントリー
+├── package.json              # 依存とスクリプト
+├── vite.config.ts            # Vite + PWA 設定(base: /FitLog/)
+├── vitest.config.ts          # Vitest 設定(jsdom)
+├── tsconfig.json             # TypeScript 設定
+├── eslint.config.mjs         # ESLint 設定
+├── .github/
+│   └── workflows/
+│       └── deploy-pages.yml  # GitHub Pages デプロイ
+└── src/
+    ├── main.tsx              # エントリー(ErrorBoundary + PWA 登録)
+    ├── App.tsx               # 画面切り替え・ナビ・トースト
+    ├── types.ts              # 共通の型
+    ├── utils.ts              # 日付・計算・汎用ヘルパー
+    ├── storage.ts            # localStorage の読み込み・正規化・移行
+    ├── icons.tsx             # アイコン
+    ├── styles.css            # CSS の入口
+    ├── *.test.ts             # Vitest のテスト
+    ├── components/           # 再利用コンポーネント
+    ├── data/                 # 種目マスタなどの初期データ
+    ├── hooks/                # 状態管理・操作フックと Context
+    ├── screens/              # 各画面コンポーネント
+    ├── selectors/            # 純粋な派生値計算
+    └── styles/               # 役割ごとに分割した CSS
+```
 
 ## 開発コマンド
 
