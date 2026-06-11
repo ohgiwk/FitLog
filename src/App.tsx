@@ -4,6 +4,7 @@ import { DetailScreen } from './screens/DetailScreen';
 import { ExerciseHistoryScreen } from './screens/ExerciseHistoryScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
 import { HomeScreen } from './screens/HomeScreen';
+import { PartEditScreen } from './screens/PartEditScreen';
 import { PresetEditScreen } from './screens/PresetEditScreen';
 import { PresetListScreen } from './screens/PresetListScreen';
 import { SelectScreen } from './screens/SelectScreen';
@@ -33,6 +34,7 @@ function AppShell() {
         {screen === 'preset' && <PresetListScreen />}
         {screen === 'presetEdit' && <PresetEditScreen />}
         {screen === 'history' && <HistoryScreen />}
+        {screen === 'partEdit' && <PartEditScreen />}
       </main>
 
       <nav className="bottom-nav">

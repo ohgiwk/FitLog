@@ -1,6 +1,8 @@
 import { starterCatalogVersion, starterExercises } from './data/starterExercises';
+import { defaultPartColor, paletteColorAt } from './data/partColors';
 import {
   MeasurementType,
+  PartSetting,
   Preset,
   SetIntensity,
   State,
@@ -8,6 +10,11 @@ import {
   WorkoutSet,
 } from './types';
 import { uid } from './utils';
+
+/**
+ * 並び・色管理の対象外にする特別な部位
+ */
+const REST_PART = 'レスト';
 
 export const storeKey = 'fit-log-v2';
 
@@ -33,6 +40,22 @@ export type LoadResult = {
 };
 
 /**
+ * 部位名の配列から、表示順つきの部位設定(色つき)を作る。
+ * 色はパレットを順番に循環して割り当てる
+ */
+function buildPartsFromNames(names: string[]): PartSetting[] {
+  const parts: PartSetting[] = [];
+  const seen = new Set<string>();
+  names.forEach((value) => {
+    const name = value.trim();
+    if (!name || name === REST_PART || seen.has(name)) return;
+    seen.add(name);
+    parts.push({ name, color: paletteColorAt(parts.length) });
+  });
+  return parts;
+}
+
+/**
  * 何も保存されていないときに使う初期状態を作る
  */
 function createDefaultState(): State {
@@ -42,6 +65,7 @@ function createDefaultState(): State {
     presets: defaultPresets,
     trainingDays: [],
     trainingPlans: [],
+    parts: buildPartsFromNames(starterExercises.map((exercise) => exercise.part)),
     catalogVersion: starterCatalogVersion,
   };
 }
@@ -83,15 +107,64 @@ export function normalizeState(saved: Partial<State> | null | undefined): State 
   if (!saved?.exercises || !saved?.workouts) return null;
   const catalogVersion = typeof saved.catalogVersion === 'number' ? saved.catalogVersion : 1;
   const exercises = normalizeExercises(saved.exercises);
+  const mergedExercises =
+    catalogVersion < starterCatalogVersion ? mergeStarterExercises(exercises) : exercises;
+  const workouts = normalizeWorkouts(saved.workouts);
+  const trainingDays = normalizeTrainingDays(saved.trainingDays);
+  const trainingPlans = normalizeTrainingPlans(saved.trainingPlans);
   return {
-    exercises:
-      catalogVersion < starterCatalogVersion ? mergeStarterExercises(exercises) : exercises,
-    workouts: normalizeWorkouts(saved.workouts),
+    exercises: mergedExercises,
+    workouts,
     presets: normalizePresets(saved.presets),
-    trainingDays: normalizeTrainingDays(saved.trainingDays),
-    trainingPlans: normalizeTrainingPlans(saved.trainingPlans),
+    trainingDays,
+    trainingPlans,
+    parts: normalizePartSettings(saved.parts, mergedExercises, workouts, trainingDays, trainingPlans),
     catalogVersion: starterCatalogVersion,
   };
+}
+
+/**
+ * 保存済みの部位設定を正規化し、データ上だけに存在する部位を補う。
+ * - 保存済み設定(名前・色)を順序を保って取り込む
+ * - 種目などに現れる未登録の部位を後ろへ追加し、パレット色を割り当てる
+ * - 「レスト」は対象外にする
+ */
+function normalizePartSettings(
+  saved: unknown,
+  exercises: State['exercises'],
+  workouts: State['workouts'],
+  trainingDays: State['trainingDays'],
+  trainingPlans: State['trainingPlans'],
+): PartSetting[] {
+  const parts: PartSetting[] = [];
+  const seen = new Set<string>();
+  if (Array.isArray(saved)) {
+    saved.forEach((item) => {
+      if (!item || typeof item !== 'object') return;
+      const record = item as Record<string, unknown>;
+      const name = typeof record.name === 'string' ? record.name.trim() : '';
+      if (!name || name === REST_PART || seen.has(name)) return;
+      const color = typeof record.color === 'string' && record.color ? record.color : defaultPartColor;
+      seen.add(name);
+      parts.push({ name, color });
+    });
+  }
+
+  const derived: string[] = [];
+  const collect = (value: string) => {
+    const name = value.trim();
+    if (!name || name === REST_PART || seen.has(name) || derived.includes(name)) return;
+    derived.push(name);
+  };
+  exercises.forEach((exercise) => collect(exercise.part));
+  workouts.forEach((workout) => collect(workout.part));
+  trainingDays.forEach((day) => day.parts.forEach(collect));
+  trainingPlans.forEach((plan) => collect(plan.part));
+  derived.forEach((name) => {
+    seen.add(name);
+    parts.push({ name, color: paletteColorAt(parts.length) });
+  });
+  return parts;
 }
 
 export function parseImportedState(json: string): State | null {

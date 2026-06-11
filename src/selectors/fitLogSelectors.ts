@@ -1,5 +1,59 @@
-import { Exercise, Preset, State, Workout } from '../types';
+import { Exercise, PartSetting, Preset, State, Workout } from '../types';
+import { defaultPartColor } from '../data/partColors';
 import { isBlank, newSet, parseDate, uid } from '../utils';
+
+/**
+ * トレーニング日などで使う特別な部位。並びや色管理の対象外にする
+ */
+export const REST_PART = 'レスト';
+
+/**
+ * 明示的な部位設定(順序・色)に、データ上だけ存在する部位を補って
+ * 表示順つきの完全な部位一覧を作る。
+ * - 先頭は state.parts の順序をそのまま使う
+ * - その後ろに、種目などに現れるが未登録の部位を五十音順で既定色で追加する
+ * - 「レスト」は対象外にする
+ */
+export function buildOrderedParts(
+  parts: PartSetting[],
+  exercises: Exercise[],
+  workouts: Workout[],
+  trainingDays: State['trainingDays'],
+  trainingPlans: State['trainingPlans'],
+): PartSetting[] {
+  const result: PartSetting[] = [];
+  const seen = new Set<string>();
+  parts.forEach((part) => {
+    const name = part.name.trim();
+    if (!name || name === REST_PART || seen.has(name)) return;
+    seen.add(name);
+    result.push({ name, color: part.color || defaultPartColor });
+  });
+
+  const implicit: string[] = [];
+  const collect = (value: string) => {
+    const name = value.trim();
+    if (!name || name === REST_PART || seen.has(name) || implicit.includes(name)) return;
+    implicit.push(name);
+  };
+  exercises.forEach((exercise) => collect(exercise.part));
+  workouts.forEach((workout) => collect(workout.part));
+  trainingDays.forEach((day) => day.parts.forEach(collect));
+  trainingPlans.forEach((plan) => collect(plan.part));
+  implicit.sort((a, b) => a.localeCompare(b, 'ja'));
+  implicit.forEach((name) => {
+    seen.add(name);
+    result.push({ name, color: defaultPartColor });
+  });
+  return result;
+}
+
+/**
+ * 部位名から表示色を引けるマップを作る
+ */
+export function buildPartColorMap(orderedParts: PartSetting[]): Map<string, string> {
+  return new Map(orderedParts.map((part) => [part.name, part.color]));
+}
 
 export function findCurrentWorkout(
   workouts: Workout[],

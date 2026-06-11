@@ -1,5 +1,6 @@
 import {
   IconCalendarMonth,
+  IconCategory,
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
@@ -64,4 +65,8 @@ export function ExportIcon() {
 
 export function ImportIcon() {
   return <IconUpload />;
+}
+
+export function PartsIcon() {
+  return <IconCategory />;
 }

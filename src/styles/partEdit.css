@@ -1,0 +1,113 @@
+.part-add-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.part-add-form input {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-weight: 800;
+  text-align: left;
+}
+
+.part-edit-empty {
+  border: 1px solid var(--line);
+  padding: 16px;
+  background: var(--surface);
+  color: var(--text-empty);
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.part-edit-list {
+  display: grid;
+  gap: 8px;
+}
+
+.part-edit-row {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--red);
+  padding: 11px 10px;
+  background: var(--surface);
+}
+
+.part-edit-head {
+  display: grid;
+  grid-template-columns: 18px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.part-edit-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.part-edit-name {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.part-edit-order {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.part-edit-order button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text-secondary-strong);
+}
+
+.part-edit-order button:disabled {
+  color: var(--disabled-text);
+  opacity: 0.5;
+}
+
+.part-edit-delete {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: var(--text-secondary);
+}
+
+.part-edit-delete:active {
+  color: var(--red);
+}
+
+.part-color-picker {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+
+.part-color-swatch {
+  height: 32px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+}
+
+.part-color-swatch.active {
+  border-color: var(--white-border-strong);
+  box-shadow: 0 0 0 2px var(--shadow-strong);
+}

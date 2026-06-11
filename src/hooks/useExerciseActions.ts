@@ -2,6 +2,7 @@ import { FormEvent, PointerEvent } from 'react';
 import { Exercise, MeasurementType, Screen, State } from '../types';
 import { dragAfterElement, uid } from '../utils';
 import { createWorkout } from '../selectors/fitLogSelectors';
+import { paletteColorAt } from '../data/partColors';
 
 type ExerciseActionsDeps = {
   state: State;
@@ -48,11 +49,17 @@ export function useExerciseActions({
 
     const exercise: Exercise = { id: uid(), part, name, measurementType: measurementTypeInput };
     const workout = createWorkout(exercise, selectedDate);
-    saveState((prev) => ({
-      ...prev,
-      exercises: [exercise, ...prev.exercises],
-      workouts: [...prev.workouts, workout],
-    }));
+    saveState((prev) => {
+      const parts = prev.parts.some((item) => item.name === part)
+        ? prev.parts
+        : [...prev.parts, { name: part, color: paletteColorAt(prev.parts.length) }];
+      return {
+        ...prev,
+        parts,
+        exercises: [exercise, ...prev.exercises],
+        workouts: [...prev.workouts, workout],
+      };
+    });
     setCurrentWorkoutId(workout.id);
     setNameInput('');
     setMeasurementTypeInput('reps');

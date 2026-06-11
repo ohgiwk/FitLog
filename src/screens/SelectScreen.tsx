@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { MeasurementType } from '../types';
-import { ChevronLeft, DragHandle, TrashIcon } from '../icons';
+import { ChevronDown, ChevronLeft, ChevronUp, DragHandle, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/FitLogContext';
 
 /**
@@ -9,6 +10,8 @@ function useSelectScreenModel() {
   const {
     groupedExercises,
     partRecentLabels,
+    orderedParts,
+    partColors,
     editMode,
     addFormOpen,
     partInput,
@@ -22,6 +25,8 @@ function useSelectScreenModel() {
   return {
     groupedExercises,
     partRecentLabels,
+    orderedParts,
+    partColors,
     editMode,
     addFormOpen,
     partInput,
@@ -38,7 +43,14 @@ function useSelectScreenModel() {
       actions.setEditMode(next);
       if (next) actions.setAddFormOpen(false);
     },
-    onToggleAddForm: () => actions.setAddFormOpen(!addFormOpen),
+    /**
+     * 追加フォームを開閉する。開くときに部位が未選択なら先頭の部位を初期値にする
+     */
+    onToggleAddForm: () => {
+      const next = !addFormOpen;
+      if (next && !partInput) actions.setPartInput(orderedParts[0]?.name ?? '');
+      actions.setAddFormOpen(next);
+    },
     onPartInput: actions.setPartInput,
     onNameInput: actions.setNameInput,
     onMeasurementTypeInput: actions.setMeasurementTypeInput,
@@ -72,6 +84,8 @@ export function SelectScreen() {
   const {
     groupedExercises,
     partRecentLabels,
+    orderedParts,
+    partColors,
     editMode,
     addFormOpen,
     partInput,
@@ -94,6 +108,9 @@ export function SelectScreen() {
     onTogglePartExpanded,
     onSetPartAndOpenForm,
   } = useSelectScreenModel();
+  const partOptions = orderedParts.map((part) => part.name);
+  const selectableParts = partOptions.length ? partOptions : ['その他'];
+  const [detailOpen, setDetailOpen] = useState(false);
   return (
     <section className="screen active">
       <header className="topbar">
@@ -116,12 +133,17 @@ export function SelectScreen() {
         <form className="add-form" onSubmit={onAddCustomExercise}>
           <label>
             部位
-            <input
-              maxLength={12}
-              placeholder="胸"
-              value={partInput}
+            <select
+              className="add-form-select"
+              value={partInput || selectableParts[0]}
               onChange={(event) => onPartInput(event.target.value)}
-            />
+            >
+              {selectableParts.map((part) => (
+                <option key={part} value={part}>
+                  {part}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             種目名
@@ -131,10 +153,21 @@ export function SelectScreen() {
               onChange={(event) => onNameInput(event.target.value)}
             />
           </label>
-          <div className="form-field">
-            <div className="form-label">記録単位</div>
-            <MeasurementToggle value={measurementTypeInput} onChange={onMeasurementTypeInput} />
-          </div>
+          <button
+            className="add-form-detail-toggle"
+            type="button"
+            aria-expanded={detailOpen}
+            onClick={() => setDetailOpen((open) => !open)}
+          >
+            <span>詳細設定</span>
+            {detailOpen ? <ChevronUp /> : <ChevronDown />}
+          </button>
+          {detailOpen && (
+            <div className="form-field form-field-row">
+              <div className="form-label">記録単位</div>
+              <MeasurementToggle value={measurementTypeInput} onChange={onMeasurementTypeInput} />
+            </div>
+          )}
           <button className="primary" type="submit">
             追加して記録へ
           </button>
@@ -146,7 +179,10 @@ export function SelectScreen() {
           const visibleExercises = editMode || expanded ? exercises : exercises.slice(0, 4);
           return (
             <section className="part-card" key={part}>
-              <div className="part-title">
+              <div
+                className="part-title"
+                style={partColors.get(part) ? { borderLeftColor: partColors.get(part) } : undefined}
+              >
                 {part}
                 {editMode ? '' : ` - ${partRecentLabels.get(part) || '履歴なし'}`}
               </div>

@@ -4,6 +4,7 @@ import { useFitLogCore } from './useFitLogCore';
 import { useFitLogSelectors } from './useFitLogSelectors';
 import { useFitLogUi } from './useFitLogUi';
 import { useNavigation } from './useNavigation';
+import { usePartActions } from './usePartActions';
 import { usePresetActions } from './usePresetActions';
 import { useTrainingPlanActions } from './useTrainingPlanActions';
 import { useWorkoutActions } from './useWorkoutActions';
@@ -63,6 +64,12 @@ export function useFitLog() {
     selectedDate: nav.selectedDate,
   });
 
+  const part = usePartActions({
+    state: core.state,
+    saveState: core.saveState,
+    showToast: core.showToast,
+  });
+
   const backup = useBackup({
     state: core.state,
     setState: core.setState,
@@ -85,6 +92,8 @@ export function useFitLog() {
     groupedExercises: selectors.groupedExercises,
     historyPartFilter: ui.historyPartFilter,
     partRecentLabels: selectors.partRecentLabels,
+    orderedParts: selectors.orderedParts,
+    partColors: selectors.partColors,
     nameInput: ui.nameInput,
     measurementTypeInput: ui.measurementTypeInput,
     partInput: ui.partInput,
@@ -132,6 +141,10 @@ export function useFitLog() {
       startPreset: presets.startPreset,
       addTrainingPlan: trainingPlan.addTrainingPlan,
       upsertTrainingPlan: trainingPlan.upsertTrainingPlan,
+      addPart: part.addPart,
+      deletePart: part.deletePart,
+      movePart: part.movePart,
+      setPartColor: part.setPartColor,
       togglePartExpanded: ui.togglePartExpanded,
       updateExerciseMeasurementType: exercise.updateExerciseMeasurementType,
       updateSet: workout.updateSet,

@@ -5,7 +5,8 @@ export type Screen =
   | 'exerciseHistory'
   | 'preset'
   | 'presetEdit'
-  | 'history';
+  | 'history'
+  | 'partEdit';
 
 export type MeasurementType = 'reps' | 'seconds';
 
@@ -58,12 +59,21 @@ export type TrainingPlan = {
   startDate: string;
 };
 
+/**
+ * 部位ごとの表示設定。並び順は配列の順序で表し、color に表示色(HEX)を持つ
+ */
+export type PartSetting = {
+  name: string;
+  color: string;
+};
+
 export type State = {
   exercises: Exercise[];
   workouts: Workout[];
   presets: Preset[];
   trainingDays: TrainingDay[];
   trainingPlans: TrainingPlan[];
+  parts: PartSetting[];
   catalogVersion: number;
 };
 

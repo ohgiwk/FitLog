@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { State } from '../types';
 import { groupExercises } from '../utils';
 import {
+  buildOrderedParts,
+  buildPartColorMap,
   buildPartRecentLabels,
   buildSplitPartOptions,
   plannedPartsForDate,
@@ -12,9 +14,38 @@ import {
  */
 export function useFitLogSelectors(state: State, selectedDate: string) {
   /**
-   * 種目を部位ごとにまとめたマップ
+   * 表示順つきの部位一覧(明示設定＋データ由来)
    */
-  const groupedExercises = useMemo(() => groupExercises(state.exercises), [state.exercises]);
+  const orderedParts = useMemo(
+    () =>
+      buildOrderedParts(
+        state.parts,
+        state.exercises,
+        state.workouts,
+        state.trainingDays,
+        state.trainingPlans,
+      ),
+    [state.parts, state.exercises, state.workouts, state.trainingDays, state.trainingPlans],
+  );
+  /**
+   * 部位名から表示色を引けるマップ
+   */
+  const partColors = useMemo(() => buildPartColorMap(orderedParts), [orderedParts]);
+  /**
+   * 種目を部位ごとにまとめ、部位の表示順に並べ替えたマップ
+   */
+  const groupedExercises = useMemo(() => {
+    const grouped = groupExercises(state.exercises);
+    const ordered = new Map<string, typeof state.exercises>();
+    orderedParts.forEach((part) => {
+      const exercises = grouped.get(part.name);
+      if (exercises) ordered.set(part.name, exercises);
+    });
+    grouped.forEach((exercises, part) => {
+      if (!ordered.has(part)) ordered.set(part, exercises);
+    });
+    return ordered;
+  }, [state.exercises, orderedParts]);
   /**
    * 履歴や計画で使う部位の選択肢一覧
    */
@@ -43,5 +74,12 @@ export function useFitLogSelectors(state: State, selectedDate: string) {
     [groupedExercises, selectedDate, state.workouts],
   );
 
-  return { groupedExercises, splitPartOptions, selectedPlannedParts, partRecentLabels };
+  return {
+    groupedExercises,
+    splitPartOptions,
+    selectedPlannedParts,
+    partRecentLabels,
+    orderedParts,
+    partColors,
+  };
 }

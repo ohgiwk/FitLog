@@ -1,7 +1,7 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { TrainingDay, TrainingPlan, TrainingPlanMode, Workout } from '../types';
 import { calendarCells, localDate, nextMonthLabel, parseDate, prevMonthLabel } from '../utils';
-import { ExportIcon, ImportIcon, SettingsIcon } from '../icons';
+import { ExportIcon, ImportIcon, PartsIcon, SettingsIcon } from '../icons';
 import { useFitLogContext } from '../hooks/FitLogContext';
 
 const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
@@ -14,6 +14,8 @@ function useHistoryScreenModel() {
     selectedDate,
     state,
     splitPartOptions,
+    orderedParts,
+    partColors,
     historyPartFilter,
     actions,
   } = useFitLogContext();
@@ -24,8 +26,11 @@ function useHistoryScreenModel() {
     trainingDays: state.trainingDays,
     trainingPlans: state.trainingPlans,
     splitPartOptions,
+    orderedParts,
+    partColors,
     partFilter: historyPartFilter,
     onPartFilter: actions.setHistoryPartFilter,
+    onEditParts: () => actions.setScreen('partEdit'),
     /**
      * 日付を選択し、ワークアウト選択を解除してホーム画面へ戻る
      */
@@ -51,6 +56,8 @@ export function HistoryScreen() {
     trainingDays,
     trainingPlans,
     splitPartOptions,
+    orderedParts,
+    partColors,
     partFilter,
     onPartFilter,
     onSelectDate,
@@ -58,6 +65,7 @@ export function HistoryScreen() {
     onImport,
     onMoveMonth,
     onUpsertTrainingPlan,
+    onEditParts,
   } = useHistoryScreenModel();
   const [activeView, setActiveView] = useState<'history' | 'plan'>('history');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -65,7 +73,7 @@ export function HistoryScreen() {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
   const partTabs = ['ALL', ...splitPartOptions.filter((part) => part !== 'レスト')];
-  const planParts = [...new Set(splitPartOptions.filter((part) => part !== 'レスト'))];
+  const planParts = orderedParts.map((part) => part.name).filter((part) => part !== 'レスト');
   const trainingDayByDate = new Map(trainingDays.map((day) => [day.date, day.parts]));
   const visibleHistory = buildVisibleHistory(workouts, trainingDays, partFilter);
   const trainedDates = new Set(visibleHistory.map((day) => day.date));
@@ -125,6 +133,17 @@ export function HistoryScreen() {
                 <button type="button" role="menuitem" onClick={openImport}>
                   <ImportIcon />
                   <span>記録を読み込む</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onEditParts();
+                  }}
+                >
+                  <PartsIcon />
+                  <span>部位を編集</span>
                 </button>
               </div>
             )}
@@ -244,6 +263,7 @@ export function HistoryScreen() {
                   <PlanRow
                     key={part}
                     part={part}
+                    color={partColors.get(part)}
                     plan={trainingPlans.find((plan) => plan.part === part)}
                     fallbackStartDate={selectedDate}
                     onChange={onUpsertTrainingPlan}
@@ -275,6 +295,7 @@ export function HistoryScreen() {
 
 type PlanRowProps = {
   part: string;
+  color: string | undefined;
   plan: TrainingPlan | undefined;
   fallbackStartDate: string;
   onChange: (
@@ -290,7 +311,7 @@ type PlanRowProps = {
  * 部位ごとの分割計画をその場で編集する行。
  * モード切替・曜日トグル・間隔/開始日の変更があるたびに onChange で保存する
  */
-function PlanRow({ part, plan, fallbackStartDate, onChange }: PlanRowProps) {
+function PlanRow({ part, color, plan, fallbackStartDate, onChange }: PlanRowProps) {
   const mode: TrainingPlanMode = plan?.mode ?? 'weekly';
   const planWeekdays = plan?.weekdays ?? [];
   const intervalDays = plan?.intervalDays ?? 3;
@@ -323,7 +344,7 @@ function PlanRow({ part, plan, fallbackStartDate, onChange }: PlanRowProps) {
   }
 
   return (
-    <div className="plan-row">
+    <div className="plan-row" style={color ? { borderLeftColor: color } : undefined}>
       <div className="plan-row-head">
         <strong>{part}</strong>
         <div className="plan-mode-toggle" role="group" aria-label={`${part}の計画タイプ`}>

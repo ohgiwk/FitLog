@@ -89,6 +89,7 @@ npm run format       # prettier --write
 | `src/screens/` | 各画面コンポーネント（view-model フックで Context から取得） |
 | `src/components/` | 小さな再利用コンポーネント（エラー境界・セット行・強度アイコンなど） |
 | `src/data/starterExercises.ts` | 初期種目マスタとカタログ版 |
+| `src/data/partColors.ts` | 部位の表示色パレット（8 色）と既定色 |
 | `src/styles/` | 役割ごとに分割した CSS |
 | `src/*.test.ts` | テスト対象の隣に置く Vitest のテスト |
 
@@ -163,6 +164,7 @@ useFitLogCore (state + 永続化 + トースト)
 | `useWorkoutActions` | `hooks/useWorkoutActions.ts` | ワークアウト/セットの追加・更新・削除・並び替え・詳細を開く |
 | `useExerciseActions` | `hooks/useExerciseActions.ts` | 種目マスタの追加・計測方法変更・削除・ドラッグ並び替え |
 | `useTrainingPlanActions` | `hooks/useTrainingPlanActions.ts` | 分割計画の追加（上書き）・インライン更新・削除 |
+| `usePartActions` | `hooks/usePartActions.ts` | 部位の追加・削除・並び替え・表示色変更 |
 | `useBackup` | `hooks/useBackup.ts` | JSON エクスポート / インポート |
 | `useFitLog` | `hooks/useFitLog.ts` | 上記を束ね、画面へ渡す値と `actions` をまとめる統合フック |
 
@@ -188,6 +190,7 @@ useFitLogCore (state + 永続化 + トースト)
 | `presets` | `Preset[]` | よく使う種目のまとまり |
 | `trainingDays` | `TrainingDay[]` | 日付ごとの実施部位（履歴の補助情報） |
 | `trainingPlans` | `TrainingPlan[]` | 部位ごとの分割計画 |
+| `parts` | `PartSetting[]` | 部位の表示設定（表示順は配列順、`color` に表示色 HEX）。「レスト」は対象外 |
 | `catalogVersion` | `number` | 種目マスタのカタログ版（追補判定に使用） |
 
 ### 4.2 各型
@@ -242,7 +245,14 @@ type TrainingPlan = {
   intervalDays: number;  // 何日ごと（interval のとき有効、>=1）
   startDate: string;     // 'YYYY-MM-DD'（interval の起点）
 };
+
+type PartSetting = {
+  name: string;          // 部位名
+  color: string;         // 表示色（HEX）。8 色パレットから選択
+};
 ```
+
+部位の表示色パレットは `src/data/partColors.ts`（`partColorPalette` の 8 色、既定色 `defaultPartColor`）。
 
 ### 4.3 種目マスタと記録の責務分離
 
@@ -301,6 +311,8 @@ type TrainingPlan = {
   - `WorkoutSet`: `id` が文字列でなければ除外。`weight` / `recordValue` は文字列・数値以外を `''` に。`recordValue` は旧フィールド `reps` からも引き継ぐ。`intensity` は 1〜5 のみ採用、それ以外は `undefined`。`note` は文字列以外を `''`。
   - `TrainingDay`: 同一日付をマージし、`parts` を trim + 重複排除。旧フィールド `part`（単数）からも取り込む。
   - `TrainingPlan`: `part` 必須。`mode` は `'interval'` 以外を `'weekly'`。`weekdays` は 0〜6 の整数のみ・重複排除・ソート。`intervalDays` は正の整数（既定 1）。
+  - `parts`（`normalizePartSettings`）: 保存済み設定（`name` + `color`、空名・重複・「レスト」は除外、色が無ければ既定色）を順序を保って取り込み、その後、種目・記録・実施日・計画に現れる未登録の部位を末尾へ追加してパレット色を割り当てる。旧データに `parts` が無くても、ここで既存部位から自動生成される。
+- **初期状態の `parts`**: スターター種目の部位（胸 / 背中 / 脚 / 肩 / 腕）をその順序で生成し、パレット色を循環で割り当てる。
 
 ### 5.6 エクスポート / インポート（`useBackup`）
 
@@ -314,7 +326,7 @@ type TrainingPlan = {
 
 ## 6. 画面仕様
 
-`Screen` 型: `'home' | 'select' | 'detail' | 'exerciseHistory' | 'preset' | 'presetEdit' | 'history'`。
+`Screen` 型: `'home' | 'select' | 'detail' | 'exerciseHistory' | 'preset' | 'presetEdit' | 'history' | 'partEdit'`。
 
 ### 6.1 アプリ外枠とナビゲーション（`App.tsx`）
 
@@ -346,13 +358,14 @@ type TrainingPlan = {
 
 ### 6.3 種目選択（`SelectScreen`）
 
-- 部位ごとにグループ化（`groupedExercises`）して表示。
+- 部位ごとにグループ化（`groupedExercises`）して表示。並び順は部位の表示順（`orderedParts`）に従う。
+- 部位タイトルの左色は部位の表示色（`partColors`）を反映する。
 - **通常モード**:
   - 各種目はボタンで、タップすると選択日にその種目を追加して詳細画面へ（`addExerciseToToday`）。
   - 部位タイトルに最終実施ラベル（`partRecentLabels`: `履歴なし` / `今日` / `N日前`）を表示。
   - 種目が 5 件以上ある部位は先頭 4 件のみ表示し、「すべて表示 / 閉じる」で展開（`expandedParts`）。
   - 各部位フッタに「種目を追加」（その部位を入力欄へ入れて追加フォームを開く）。
-- **追加フォーム**（`addFormOpen`）: 部位（最大 12 文字、空なら「その他」）/ 種目名（最大 30 文字、必須）/ 記録単位トグル。送信で新種目を作成し、その記録の詳細へ。
+- **追加フォーム**（`addFormOpen`）: 部位（`orderedParts` から選ぶセレクトボックス。部位が無ければ「その他」）/ 種目名（最大 30 文字、必須）/ 記録単位トグル。送信で新種目を作成し、その記録の詳細へ。新規部位は作成されないが、フォームを開いたとき部位未選択なら先頭の部位を初期値にする。
 - **編集モード**（「編集」ボタン）:
   - 種目行をドラッグで並び替え（部位をまたいだ移動も可、ドロップ先の部位へ所属変更）。
   - 行内で計測方法トグル、削除ボタン。
@@ -386,18 +399,28 @@ type TrainingPlan = {
 
 ### 6.7 履歴/計画（`HistoryScreen`）
 
-- トップバー右に設定メニュー（記録の書き出し / 読み込み）。
+- トップバー右に設定メニュー（記録の書き出し / 読み込み / 部位を編集）。「部位を編集」で部位の編集画面（`partEdit`）へ遷移。
 - 「履歴」「計画」をタブ切り替え。
 - **履歴タブ**:
   - 部位フィルタタブ（`ALL` + 部位、ただし「レスト」は除外）。
   - 月カレンダー（前月 / 次月、記録のある日は `trained`、本日は `today`、計画日はツールチップで部位表示）。日付タップでその日のホームへ。
   - 「<部位>の履歴」リスト: 日付・部位・種目名（`buildVisibleHistory` で `workouts` と `trainingDays` を日付ごとに統合し、部位フィルタを適用、新しい順）。
 - **計画タブ**:
-  - 部位ごとに 1 行（`PlanRow`、`splitPartOptions` から「レスト」を除外）を表示し、その場で編集する（フォームや追加・削除ボタンは持たない）。
+  - 部位ごとに 1 行（`PlanRow`、`orderedParts` から「レスト」を除外）を表示し、その場で編集する（フォームや追加・削除ボタンは持たない）。並び順と行の左色は部位の表示設定（`orderedParts` / `partColors`）を反映する。
   - 各行: 部位名と「曜日 / 何日ごと」のモードトグル、`weekly` のとき曜日ピッカー、`interval` のとき間隔＋開始日。操作のたびに `upsertTrainingPlan` で即保存。
   - `weekly` で曜日を 1 つも選ばない状態にすると、その部位の計画は持たない（保存されない）。
   - 部位が 1 つも無ければ「部位がありません」。
-  - 「今後7日」プレビュー: 選択日から 7 日間の予定部位。
+  - 「今後7日の予定」プレビュー: 選択日から 7 日間の予定部位（日付に曜日付き、日付と部位で改行）。
+
+### 6.8 部位の編集（`PartEditScreen`）
+
+- 履歴/計画画面の設定メニューから遷移。トップバーの戻るで履歴/計画へ戻る。
+- 追加フォーム: 部位名（最大 12 文字）を入力して「追加」。空・重複（`orderedParts` と一致）は不可。
+- 部位一覧（`orderedParts`）を 1 行ずつ表示。各行:
+  - 表示色のスウォッチ＋部位名、上 / 下ボタンで表示順を変更（端ではボタンを無効化）、削除ボタン。
+  - 8 色パレット（`partColorPalette`）のボタンで表示色を選択。選択中の色は強調表示。
+- 削除は「その部位の種目が残っていない」場合のみ可能。削除時はその部位の分割計画（`trainingPlans`）も合わせて取り除く。種目がある部位は削除不可（トースト通知）。
+- 選んだ表示色・並び順は、種目選択画面と計画タブの各部位ヘッダ左色・並び順に反映される。
 
 ---
 
@@ -507,6 +530,15 @@ weight === 0 または reps === 0 → '0.0'
   - `weekly` かつ曜日が空のときは、その部位の計画を削除する（行から計画を持たない状態にする）。
 - `deleteTrainingPlan`: 指定計画を削除。
 
+### 8.4.1 部位の編集（`usePartActions`）
+
+- いずれの操作も、`buildOrderedParts` で作る表示順つきの完全な部位一覧を `state.parts` へ書き戻す（明示設定＋データ由来を統合し、以降は明示管理になる）。
+- `addPart(name)`: 末尾に追加。空・重複はトースト。色はパレットを順番に割り当てる。
+- `deletePart(name)`: その部位の種目が残っていれば不可（トースト）。可能なら `parts` から除外し、その部位の `trainingPlans` も削除。
+- `movePart(name, direction)`: 表示順を 1 つ前後に移動。
+- `setPartColor(name, color)`: 表示色を変更。
+- 関連セレクタ（`fitLogSelectors`）: `buildOrderedParts`（明示設定＋データ由来の部位を統合し表示順で返す。「レスト」は除外）、`buildPartColorMap`（部位名→色）。`addCustomExercise` で新規部位を作る場合も `state.parts` に追記される。
+
 ### 8.5 レストタイマー（`RestTimer`）
 
 - 既定 60 秒、入力は数字のみ・最大 3 桁、1〜999 にクランプ。
@@ -531,7 +563,7 @@ weight === 0 または reps === 0 → '0.0'
 
 - モバイル優先レイアウトを維持。狭い画面でも文字がはみ出さないようにする。
 - ボタン・入力欄はタッチしやすいサイズにする。
-- CSS は `src/styles.css` を入口に、`src/styles/` 配下で役割ごとに分割（`base` / `layout` / `home` / `detail` / `history` / `presets` / `select` / `controls` / `responsive`）。
+- CSS は `src/styles.css` を入口に、`src/styles/` 配下で役割ごとに分割（`base` / `layout` / `home` / `detail` / `history` / `partEdit` / `presets` / `select` / `controls` / `responsive`）。
 - トーストは画面下部に短時間表示（1800ms）。ダイアログはバックドロップ + `role="dialog"` `aria-modal="true"`。
 
 ---
