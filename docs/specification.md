@@ -162,7 +162,7 @@ useFitLogCore (state + 永続化 + トースト)
 | `usePresetActions` | `hooks/usePresetActions.ts` | プリセットの選択・作成・改名・削除・種目増減・並び替え・一括投入 |
 | `useWorkoutActions` | `hooks/useWorkoutActions.ts` | ワークアウト/セットの追加・更新・削除・並び替え・詳細を開く |
 | `useExerciseActions` | `hooks/useExerciseActions.ts` | 種目マスタの追加・計測方法変更・削除・ドラッグ並び替え |
-| `useTrainingPlanActions` | `hooks/useTrainingPlanActions.ts` | 分割計画の追加（上書き）・削除 |
+| `useTrainingPlanActions` | `hooks/useTrainingPlanActions.ts` | 分割計画の追加（上書き）・インライン更新・削除 |
 | `useBackup` | `hooks/useBackup.ts` | JSON エクスポート / インポート |
 | `useFitLog` | `hooks/useFitLog.ts` | 上記を束ね、画面へ渡す値と `actions` をまとめる統合フック |
 
@@ -393,8 +393,10 @@ type TrainingPlan = {
   - 月カレンダー（前月 / 次月、記録のある日は `trained`、本日は `today`、計画日はツールチップで部位表示）。日付タップでその日のホームへ。
   - 「<部位>の履歴」リスト: 日付・部位・種目名（`buildVisibleHistory` で `workouts` と `trainingDays` を日付ごとに統合し、部位フィルタを適用、新しい順）。
 - **計画タブ**:
-  - 計画フォーム: 部位選択 / タイプ（曜日 or 何日ごと）/ 曜日ピッカー or （間隔＋開始日）/ 追加・更新。
-  - 計画一覧: 部位と整形済み内容（`◯・◯曜日` または `YYYY/MM/DD から N日ごと`）、削除ボタン、行タップでフォームへ読み込み。
+  - 部位ごとに 1 行（`PlanRow`、`splitPartOptions` から「レスト」を除外）を表示し、その場で編集する（フォームや追加・削除ボタンは持たない）。
+  - 各行: 部位名と「曜日 / 何日ごと」のモードトグル、`weekly` のとき曜日ピッカー、`interval` のとき間隔＋開始日。操作のたびに `upsertTrainingPlan` で即保存。
+  - `weekly` で曜日を 1 つも選ばない状態にすると、その部位の計画は持たない（保存されない）。
+  - 部位が 1 つも無ければ「部位がありません」。
   - 「今後7日」プレビュー: 選択日から 7 日間の予定部位。
 
 ---
@@ -499,6 +501,10 @@ weight === 0 または reps === 0 → '0.0'
   - 部位必須。`weekly` は曜日 1 つ以上、`interval` は `intervalDays >= 1` が必須（不足時はトースト）。
   - 同じ部位の既存計画があれば **上書き**（ID を引き継ぐ）、無ければ先頭へ追加。
   - `startDate` 未指定なら選択日を使用。保存後「計画を保存しました」。
+- `upsertTrainingPlan(part, mode, weekdays, intervalDays, startDate)`:
+  - `HistoryScreen` の部位行インライン編集から呼ばれる。トーストは出さない。
+  - 同じ部位の既存計画があれば **上書き**（ID を引き継ぐ）、無ければ先頭へ追加。`weekdays` は重複排除・ソート、`intervalDays` は `>=1` に丸め、`startDate` 未指定なら選択日を使用。
+  - `weekly` かつ曜日が空のときは、その部位の計画を削除する（行から計画を持たない状態にする）。
 - `deleteTrainingPlan`: 指定計画を削除。
 
 ### 8.5 レストタイマー（`RestTimer`）

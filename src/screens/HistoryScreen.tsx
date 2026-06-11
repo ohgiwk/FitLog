@@ -37,8 +37,7 @@ function useHistoryScreenModel() {
     onExport: actions.exportState,
     onImport: actions.importState,
     onMoveMonth: actions.moveMonth,
-    onAddTrainingPlan: actions.addTrainingPlan,
-    onDeleteTrainingPlan: actions.deleteTrainingPlan,
+    onUpsertTrainingPlan: actions.upsertTrainingPlan,
   };
 }
 
@@ -58,16 +57,10 @@ export function HistoryScreen() {
     onExport,
     onImport,
     onMoveMonth,
-    onAddTrainingPlan,
-    onDeleteTrainingPlan,
+    onUpsertTrainingPlan,
   } = useHistoryScreenModel();
   const [activeView, setActiveView] = useState<'history' | 'plan'>('history');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [planPart, setPlanPart] = useState(splitPartOptions[0] || '');
-  const [planMode, setPlanMode] = useState<TrainingPlanMode>('weekly');
-  const [planWeekdays, setPlanWeekdays] = useState<number[]>([]);
-  const [planIntervalDays, setPlanIntervalDays] = useState('3');
-  const [planStartDate, setPlanStartDate] = useState(selectedDate);
   const monthDate = parseDate(selectedDate);
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
@@ -78,39 +71,8 @@ export function HistoryScreen() {
   const trainedDates = new Set(visibleHistory.map((day) => day.date));
   const cells = calendarCells(year, month);
   const currentPartLabel = partFilter === 'ALL' ? 'すべて' : partFilter;
-  const selectedPlan = trainingPlans.find((plan) => plan.part === planPart);
   const today = localDate(new Date());
   const importInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    applyPlanToForm(planPart);
-  }, [planPart, selectedDate, trainingPlans]);
-
-  /**
-   * 部位を選択し、その計画内容をフォームへ読み込む
-   */
-  function loadPlan(part: string) {
-    setPlanPart(part);
-    applyPlanToForm(part);
-  }
-
-  /**
-   * 指定部位の既存計画をフォームへ反映する。なければ既定値に戻す
-   */
-  function applyPlanToForm(part: string) {
-    const plan = trainingPlans.find((item) => item.part === part);
-    if (!plan) {
-      setPlanMode('weekly');
-      setPlanWeekdays([]);
-      setPlanIntervalDays('3');
-      setPlanStartDate(selectedDate);
-      return;
-    }
-    setPlanMode(plan.mode);
-    setPlanWeekdays(plan.weekdays);
-    setPlanIntervalDays(String(plan.intervalDays));
-    setPlanStartDate(plan.startDate || selectedDate);
-  }
 
   /**
    * 隠しファイル入力をクリックしてインポート用のファイル選択を開く
@@ -271,120 +233,154 @@ export function HistoryScreen() {
         ) : (
           <section className="schedule-panel">
             <h2>分割計画</h2>
-            <form
-              className="schedule-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                onAddTrainingPlan(
-                  planPart,
-                  planMode,
-                  planWeekdays,
-                  Number(planIntervalDays),
-                  planStartDate,
-                );
-              }}
-            >
-              <select
-                aria-label="計画する部位"
-                value={planPart}
-                onChange={(event) => loadPlan(event.target.value)}
-              >
-                <option value="">未選択</option>
-                {planParts.map((part) => (
-                  <option key={part} value={part}>
-                    {part}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="計画タイプ"
-                value={planMode}
-                onChange={(event) => setPlanMode(event.target.value as TrainingPlanMode)}
-              >
-                <option value="weekly">曜日</option>
-                <option value="interval">何日ごと</option>
-              </select>
-              {planMode === 'weekly' ? (
-                <div className="weekday-picker" aria-label="曜日を選択">
-                  {weekdays.map((day, index) => (
-                    <button
-                      className={planWeekdays.includes(index) ? 'active' : ''}
-                      key={day}
-                      type="button"
-                      onClick={() =>
-                        setPlanWeekdays((prev) =>
-                          prev.includes(index)
-                            ? prev.filter((value) => value !== index)
-                            : [...prev, index].sort(),
-                        )
-                      }
-                    >
-                      {day}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="interval-fields">
-                  <label>
-                    <span>間隔</span>
-                    <input
-                      inputMode="numeric"
-                      min="1"
-                      type="number"
-                      value={planIntervalDays}
-                      onChange={(event) => setPlanIntervalDays(event.target.value)}
-                    />
-                  </label>
-                  <label>
-                    <span>開始日</span>
-                    <input
-                      type="date"
-                      value={planStartDate}
-                      onChange={(event) => setPlanStartDate(event.target.value)}
-                    />
-                  </label>
-                </div>
-              )}
-              <button className="small-primary" type="submit">
-                {selectedPlan ? '更新' : '追加'}
-              </button>
-            </form>
-            {!trainingPlans.length ? (
-              <div className="schedule-empty">計画はありません</div>
+            <p className="schedule-desc">
+              部位ごとにトレーニングする曜日や間隔を決めると、予定としてカレンダーやホームに表示されます。
+            </p>
+            {!planParts.length ? (
+              <div className="schedule-empty">部位がありません</div>
             ) : (
               <div className="schedule-list">
-                {trainingPlans.map((plan) => (
-                  <div className="schedule-row" key={plan.id}>
-                    <div>
-                      <button
-                        className="schedule-row-main"
-                        type="button"
-                        onClick={() => loadPlan(plan.part)}
-                      >
-                        <strong>{plan.part}</strong>
-                        <span>{formatPlan(plan)}</span>
-                      </button>
-                    </div>
-                    <button type="button" onClick={() => onDeleteTrainingPlan(plan.id)}>
-                      削除
-                    </button>
-                  </div>
+                {planParts.map((part) => (
+                  <PlanRow
+                    key={part}
+                    part={part}
+                    plan={trainingPlans.find((plan) => plan.part === part)}
+                    fallbackStartDate={selectedDate}
+                    onChange={onUpsertTrainingPlan}
+                  />
                 ))}
               </div>
             )}
             <div className="schedule-preview">
-              <strong>今後7日</strong>
-              {buildUpcomingPlans(selectedDate, trainingPlans).map((item) => (
-                <span key={item.date}>
-                  {item.date.slice(5).replace('-', '/')}{' '}
-                  {item.parts.length ? item.parts.join(' / ') : '-'}
-                </span>
-              ))}
+              <strong className="schedule-preview-title">今後7日の予定</strong>
+              <div className="schedule-preview-list">
+                {buildUpcomingPlans(selectedDate, trainingPlans).map((item) => (
+                  <span className="schedule-preview-item" key={item.date}>
+                    <span className="schedule-preview-date">
+                      {item.date.slice(5).replace('-', '/')}（{weekdays[parseDate(item.date).getDay()]}）
+                    </span>
+                    <span className="schedule-preview-parts">
+                      {item.parts.length ? item.parts.join(' / ') : '-'}
+                    </span>
+                  </span>
+                ))}
+              </div>
             </div>
           </section>
         )}
       </div>
     </section>
+  );
+}
+
+type PlanRowProps = {
+  part: string;
+  plan: TrainingPlan | undefined;
+  fallbackStartDate: string;
+  onChange: (
+    part: string,
+    mode: TrainingPlanMode,
+    weekdays: number[],
+    intervalDays: number,
+    startDate: string,
+  ) => void;
+};
+
+/**
+ * 部位ごとの分割計画をその場で編集する行。
+ * モード切替・曜日トグル・間隔/開始日の変更があるたびに onChange で保存する
+ */
+function PlanRow({ part, plan, fallbackStartDate, onChange }: PlanRowProps) {
+  const mode: TrainingPlanMode = plan?.mode ?? 'weekly';
+  const planWeekdays = plan?.weekdays ?? [];
+  const intervalDays = plan?.intervalDays ?? 3;
+  const startDate = plan?.startDate || fallbackStartDate;
+  const [intervalText, setIntervalText] = useState(String(intervalDays));
+
+  useEffect(() => {
+    setIntervalText(String(intervalDays));
+  }, [intervalDays]);
+
+  /**
+   * 曜日ボタンの選択状態をトグルして保存する
+   */
+  function toggleWeekday(index: number) {
+    const next = planWeekdays.includes(index)
+      ? planWeekdays.filter((value) => value !== index)
+      : [...planWeekdays, index].sort((a, b) => a - b);
+    onChange(part, 'weekly', next, intervalDays, startDate);
+  }
+
+  /**
+   * 間隔の入力を反映する。数値として有効なときだけ保存する
+   */
+  function commitInterval(text: string) {
+    setIntervalText(text);
+    const value = Number(text);
+    if (Number.isFinite(value) && value >= 1) {
+      onChange(part, 'interval', planWeekdays, Math.round(value), startDate);
+    }
+  }
+
+  return (
+    <div className="plan-row">
+      <div className="plan-row-head">
+        <strong>{part}</strong>
+        <div className="plan-mode-toggle" role="group" aria-label={`${part}の計画タイプ`}>
+          <button
+            className={mode === 'weekly' ? 'active' : ''}
+            type="button"
+            onClick={() => onChange(part, 'weekly', planWeekdays, intervalDays, startDate)}
+          >
+            曜日
+          </button>
+          <button
+            className={mode === 'interval' ? 'active' : ''}
+            type="button"
+            onClick={() => onChange(part, 'interval', planWeekdays, intervalDays, startDate)}
+          >
+            何日ごと
+          </button>
+        </div>
+      </div>
+      {mode === 'weekly' ? (
+        <div className="weekday-picker" aria-label={`${part}の曜日`}>
+          {weekdays.map((day, index) => (
+            <button
+              className={planWeekdays.includes(index) ? 'active' : ''}
+              key={day}
+              type="button"
+              onClick={() => toggleWeekday(index)}
+            >
+              {day}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="interval-fields">
+          <label>
+            <span>間隔</span>
+            <input
+              inputMode="numeric"
+              min="1"
+              type="number"
+              value={intervalText}
+              onChange={(event) => commitInterval(event.target.value)}
+            />
+          </label>
+          <label>
+            <span>開始日</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(event) =>
+                onChange(part, 'interval', planWeekdays, intervalDays, event.target.value)
+              }
+            />
+          </label>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -410,14 +406,6 @@ function buildVisibleHistory(workouts: Workout[], trainingDays: TrainingDay[], p
     .filter((day) => partFilter === 'ALL' || day.parts.has(partFilter))
     .sort((a, b) => b.date.localeCompare(a.date))
     .map((day) => ({ ...day, parts: [...day.parts] }));
-}
-
-/**
- * 計画の内容を表示用の文字列(曜日や間隔)に整形する
- */
-function formatPlan(plan: TrainingPlan) {
-  if (plan.mode === 'weekly') return `${plan.weekdays.map((day) => weekdays[day]).join('・')}曜日`;
-  return `${plan.startDate.replaceAll('-', '/')}から${plan.intervalDays}日ごと`;
 }
 
 /**

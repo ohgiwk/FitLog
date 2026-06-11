@@ -131,6 +131,7 @@ export function useFitLog() {
       startPointerExerciseDrag: exercise.startPointerExerciseDrag,
       startPreset: presets.startPreset,
       addTrainingPlan: trainingPlan.addTrainingPlan,
+      upsertTrainingPlan: trainingPlan.upsertTrainingPlan,
       togglePartExpanded: ui.togglePartExpanded,
       updateExerciseMeasurementType: exercise.updateExerciseMeasurementType,
       updateSet: workout.updateSet,

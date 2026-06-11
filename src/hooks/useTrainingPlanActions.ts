@@ -1,4 +1,4 @@
-import { State, TrainingPlanMode } from '../types';
+import { State, TrainingPlan, TrainingPlanMode } from '../types';
 import { uid } from '../utils';
 
 type TrainingPlanActionsDeps = {
@@ -60,5 +60,43 @@ export function useTrainingPlanActions({
     }));
   }
 
-  return { addTrainingPlan, deleteTrainingPlan };
+  /**
+   * 部位行のインライン編集から計画をそのまま反映する。
+   * 既存計画があれば上書き、なければ作成する。トーストは出さない。
+   * 曜日モードで曜日が未選択のときは、その部位の計画を持たない状態にする
+   */
+  function upsertTrainingPlan(
+    part: string,
+    mode: TrainingPlanMode,
+    weekdays: number[],
+    intervalDays: number,
+    startDate: string,
+  ) {
+    const normalizedPart = part.trim();
+    if (!normalizedPart) return;
+    const normalizedWeekdays = [...new Set(weekdays)].sort((a, b) => a - b);
+    saveState((prev) => {
+      if (mode === 'weekly' && !normalizedWeekdays.length) {
+        return {
+          ...prev,
+          trainingPlans: prev.trainingPlans.filter((item) => item.part !== normalizedPart),
+        };
+      }
+      const existing = prev.trainingPlans.find((item) => item.part === normalizedPart);
+      const plan: TrainingPlan = {
+        id: existing?.id ?? uid(),
+        part: normalizedPart,
+        mode,
+        weekdays: mode === 'weekly' ? normalizedWeekdays : [],
+        intervalDays: mode === 'interval' ? Math.max(1, Math.round(intervalDays || 1)) : 1,
+        startDate: startDate || selectedDate,
+      };
+      const trainingPlans = existing
+        ? prev.trainingPlans.map((item) => (item.id === existing.id ? plan : item))
+        : [plan, ...prev.trainingPlans];
+      return { ...prev, trainingPlans };
+    });
+  }
+
+  return { addTrainingPlan, deleteTrainingPlan, upsertTrainingPlan };
 }
