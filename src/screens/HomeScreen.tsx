@@ -6,6 +6,9 @@ import { HomeSetRow } from "../components/HomeSetRow";
 
 const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
 
+/**
+ * ホーム画面。選択日のトレーニング一覧・集計・プリセット開始・カレンダーを表示する
+ */
 export function HomeScreen({ selectedDate, workouts, selectedWorkouts, selectedPlannedParts, presets, currentPreset, onMoveDate, onSelectDate, onSelectPreset, onStartPreset, onOpenPresets, onOpenSelect, onOpenDetail, onDeleteWorkout }: {
   selectedDate: string;
   workouts: Workout[];
@@ -39,12 +42,18 @@ export function HomeScreen({ selectedDate, workouts, selectedWorkouts, selectedP
   const totalVolume = selectedWorkouts.reduce((sum, workout) =>
     sum + (isRepsMeasurement(workout.measurementType) ? workout.sets.reduce((setSum, set) => setSum + number(set.weight) * number(set.recordValue), 0) : 0), 0);
 
+  /**
+   * キーボード操作(Enter/Space)で種目の詳細画面を開く
+   */
   function openDetailFromKey(event: KeyboardEvent<HTMLElement>, workoutId: string) {
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
     onOpenDetail(workoutId);
   }
 
+  /**
+   * 削除を要求する。未記録の種目は確認なしで削除する
+   */
   function requestDelete(event: MouseEvent<HTMLButtonElement>, workout: Workout) {
     event.stopPropagation();
     if (isUnstartedWorkout(workout)) {
@@ -54,32 +63,50 @@ export function HomeScreen({ selectedDate, workouts, selectedWorkouts, selectedP
     setDeleteTarget(workout);
   }
 
+  /**
+   * 確認ダイアログで選んだ種目を削除する
+   */
   function confirmDelete() {
     if (!deleteTarget) return;
     onDeleteWorkout(deleteTarget.id);
     setDeleteTarget(null);
   }
 
+  /**
+   * カレンダーダイアログを選択日の月で開く
+   */
   function openCalendarDialog() {
     setCalendarMonthDate(parseDate(selectedDate));
     setCalendarOpen(true);
   }
 
+  /**
+   * カレンダーダイアログを閉じる
+   */
   function closeCalendarDialog() {
     setCalendarOpen(false);
   }
 
+  /**
+   * カレンダーで日付を選択し、ダイアログを閉じる
+   */
   function selectCalendarDate(nextDate: string) {
     onSelectDate(nextDate);
     setCalendarOpen(false);
   }
 
+  /**
+   * カレンダーの表示月を前後に動かす
+   */
   function moveCalendarMonth(delta: number) {
     const next = new Date(calendarMonthDate);
     next.setMonth(next.getMonth() + delta, 1);
     setCalendarMonthDate(next);
   }
 
+  /**
+   * 本日へジャンプして選択し、カレンダーを閉じる
+   */
   function jumpToToday() {
     const today = localDate(new Date());
     onSelectDate(today);

@@ -2,6 +2,9 @@ import { FormEvent, PointerEvent } from "react";
 import { ChevronLeft, DragHandle, TrashIcon } from "../icons";
 import { Exercise, MeasurementType } from "../types";
 
+/**
+ * 種目選択画面。部位ごとの種目一覧表示・追加・編集(並び替え/削除)を行う
+ */
 export function SelectScreen({ groupedExercises, partRecentLabels, editMode, addFormOpen, partInput, nameInput, measurementTypeInput, expandedParts, draggingExerciseId, onBack, onToggleEditMode, onToggleAddForm, onPartInput, onNameInput, onMeasurementTypeInput, onAddCustomExercise, onAddExercise, onStartDrag, onCommitOrder, onDeleteExercise, onUpdateExerciseMeasurementType, onTogglePartExpanded, onSetPartAndOpenForm }: {
   groupedExercises: Map<string, Exercise[]>;
   partRecentLabels: Map<string, string>;
@@ -101,6 +104,9 @@ export function SelectScreen({ groupedExercises, partRecentLabels, editMode, add
   );
 }
 
+/**
+ * 記録単位(回数/秒数)を切り替えるトグルボタン
+ */
 function MeasurementToggle({ value, compact = false, onChange }: { value: MeasurementType; compact?: boolean; onChange: (value: MeasurementType) => void }) {
   return (
     <div className={`measurement-toggle ${compact ? "compact" : ""}`} data-row-action>

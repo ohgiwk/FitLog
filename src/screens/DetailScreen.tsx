@@ -5,6 +5,9 @@ import { LastRecord } from "../components/LastRecord";
 import { IntensityIcon } from "../components/IntensityIcon";
 import { RestTimer } from "../components/RestTimer";
 
+/**
+ * 種目詳細画面。各セットの重量・記録・強度の入力やレストタイマーを表示する
+ */
 export function DetailScreen({ workout, selectedDate, workouts, onBack, onOpenHistory, onUpdateSet, onUpdateSetIntensity, onDeleteSet, onAddSet }: {
   workout: Workout;
   selectedDate: string;

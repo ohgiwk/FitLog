@@ -3,6 +3,9 @@ import { IntensityIcon } from "../components/IntensityIcon";
 import { ChevronLeft } from "../icons";
 import { calcRm, isBlank, isRepsMeasurement, measurementLabel, measurementUnit, number } from "../utils";
 
+/**
+ * 種目別の履歴画面。ベスト記録と日別のセット履歴を一覧表示する
+ */
 export function ExerciseHistoryScreen({ workout, workouts, onBack }: { workout: Workout; workouts: Workout[]; onBack: () => void }) {
   const histories = workouts
     .filter((item) => item.exerciseId === workout.exerciseId && item.sets.some(hasRecordedValue))
@@ -39,6 +42,9 @@ export function ExerciseHistoryScreen({ workout, workouts, onBack }: { workout: 
   );
 }
 
+/**
+ * 重量または記録値が実際に入力されているセットかどうかを判定する
+ */
 function hasRecordedValue(set: WorkoutSet) {
   return !isBlank(set.weight) || !isBlank(set.recordValue) ? number(set.weight) > 0 || number(set.recordValue) > 0 : false;
 }
@@ -50,6 +56,9 @@ type BestRecord = {
   subRecords: { label: string; value: string }[];
 };
 
+/**
+ * ベスト記録(主要記録と関連記録)をまとめて表示するコンポーネント
+ */
 function BestRecordSummary({ bestRecord }: { bestRecord: BestRecord }) {
   return (
     <section className="best-record" aria-label="ベスト記録">
@@ -71,6 +80,9 @@ function BestRecordSummary({ bestRecord }: { bestRecord: BestRecord }) {
   );
 }
 
+/**
+ * 履歴から計測方法に応じたベスト記録(最大1RMや最長記録など)を算出する
+ */
 function buildBestRecord(histories: Workout[], measurementType: Workout["measurementType"]): BestRecord | null {
   const sets = histories.flatMap((item) => item.sets.filter(hasRecordedValue).map((set) => ({ date: item.date, set })));
   if (!sets.length) return null;
@@ -118,6 +130,9 @@ function buildBestRecord(histories: Workout[], measurementType: Workout["measure
   };
 }
 
+/**
+ * 履歴テーブルの1セット分の行を表示するコンポーネント
+ */
 function ExerciseHistorySetRow({ set, index, measurementType }: { set: WorkoutSet; index: number; measurementType: Workout["measurementType"] }) {
   const weight = number(set.weight);
   const recordValue = number(set.recordValue);

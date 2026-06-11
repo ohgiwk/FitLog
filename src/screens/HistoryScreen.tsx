@@ -5,6 +5,9 @@ import { ExportIcon, ImportIcon, SettingsIcon } from "../icons";
 
 const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
 
+/**
+ * 履歴/計画画面。カレンダー・部位別履歴・分割計画の管理とデータ入出力を行う
+ */
 export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPlans, splitPartOptions, partFilter, onPartFilter, onSelectDate, onExport, onImport, onMoveMonth, onAddTrainingPlan, onDeleteTrainingPlan }: {
   selectedDate: string;
   workouts: Workout[];
@@ -45,11 +48,17 @@ export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPl
     applyPlanToForm(planPart);
   }, [planPart, selectedDate, trainingPlans]);
 
+  /**
+   * 部位を選択し、その計画内容をフォームへ読み込む
+   */
   function loadPlan(part: string) {
     setPlanPart(part);
     applyPlanToForm(part);
   }
 
+  /**
+   * 指定部位の既存計画をフォームへ反映する。なければ既定値に戻す
+   */
   function applyPlanToForm(part: string) {
     const plan = trainingPlans.find((item) => item.part === part);
     if (!plan) {
@@ -65,11 +74,17 @@ export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPl
     setPlanStartDate(plan.startDate || selectedDate);
   }
 
+  /**
+   * 隠しファイル入力をクリックしてインポート用のファイル選択を開く
+   */
   function openImport() {
     setMenuOpen(false);
     importInputRef.current?.click();
   }
 
+  /**
+   * 選択されたファイルを読み込み、インポート処理へ渡す
+   */
   async function handleImport(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -202,6 +217,9 @@ export function HistoryScreen({ selectedDate, workouts, trainingDays, trainingPl
   );
 }
 
+/**
+ * ワークアウトとトレーニング日を日付ごとにまとめ、部位フィルターを適用した履歴を作る
+ */
 function buildVisibleHistory(workouts: Workout[], trainingDays: TrainingDay[], partFilter: string) {
   const byDate = new Map<string, { date: string; parts: Set<string>; workoutNames: string[] }>();
   trainingDays.forEach((day) => {
@@ -219,11 +237,17 @@ function buildVisibleHistory(workouts: Workout[], trainingDays: TrainingDay[], p
     .map((day) => ({ ...day, parts: [...day.parts] }));
 }
 
+/**
+ * 計画の内容を表示用の文字列(曜日や間隔)に整形する
+ */
 function formatPlan(plan: TrainingPlan) {
   if (plan.mode === "weekly") return `${plan.weekdays.map((day) => weekdays[day]).join("・")}曜日`;
   return `${plan.startDate.replaceAll("-", "/")}から${plan.intervalDays}日ごと`;
 }
 
+/**
+ * 選択日から7日分の予定部位を組み立てる
+ */
 function buildUpcomingPlans(selectedDate: string, trainingPlans: TrainingPlan[]) {
   const start = parseDate(selectedDate);
   return Array.from({ length: 7 }, (_, index) => {
@@ -234,6 +258,9 @@ function buildUpcomingPlans(selectedDate: string, trainingPlans: TrainingPlan[])
   });
 }
 
+/**
+ * 指定日に計画で予定されている部位を求める(曜日指定・間隔指定の両方に対応)
+ */
 function plannedPartsForDate(date: string, trainingPlans: TrainingPlan[]) {
   const target = parseDate(date);
   const weekday = target.getDay();

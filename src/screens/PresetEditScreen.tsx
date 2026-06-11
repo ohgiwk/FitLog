@@ -2,6 +2,9 @@ import { useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronUp, TrashIcon } from "../icons";
 import { Exercise, Preset } from "../types";
 
+/**
+ * プリセット編集画面。名称変更・種目の追加/削除/並び替えを行う
+ */
 export function PresetEditScreen({ preset, exercises, groupedExercises, onBack, onRename, onDelete, onAdd, onRemove, onMove }: {
   preset: Preset | null;
   exercises: Exercise[];
@@ -15,6 +18,9 @@ export function PresetEditScreen({ preset, exercises, groupedExercises, onBack, 
 }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
+  /**
+   * 確認ダイアログで編集中のプリセットを削除する
+   */
   function confirmDelete() {
     if (!preset) return;
     onDelete(preset.id);

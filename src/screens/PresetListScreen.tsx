@@ -2,6 +2,9 @@ import { useState } from "react";
 import { ChevronLeft, TrashIcon } from "../icons";
 import { Exercise, Preset } from "../types";
 
+/**
+ * プリセット管理画面。プリセットの一覧表示・作成・編集・削除を行う
+ */
 export function PresetListScreen({ presets, exercises, onBack, onCreate, onEdit, onDelete }: {
   presets: Preset[];
   exercises: Exercise[];
@@ -12,6 +15,9 @@ export function PresetListScreen({ presets, exercises, onBack, onCreate, onEdit,
 }) {
   const [deleteTarget, setDeleteTarget] = useState<Preset | null>(null);
 
+  /**
+   * 確認ダイアログで選んだプリセットを削除する
+   */
   function confirmDelete() {
     if (!deleteTarget) return;
     onDelete(deleteTarget.id);
