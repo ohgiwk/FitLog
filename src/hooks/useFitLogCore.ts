@@ -24,7 +24,11 @@ function persistState(state: State, onError: () => void) {
  * アプリの保存対象データ(state)とトースト表示を一元管理する土台フック
  */
 export function useFitLogCore() {
-  const [state, setState] = useState<State>(() => loadState());
+  /**
+   * 起動時に1度だけ localStorage から読み込み、復旧フラグも保持する
+   */
+  const [loadResult] = useState(loadState);
+  const [state, setState] = useState<State>(loadResult.state);
   const [toast, setToast] = useState('');
   /**
    * 即時保存(flush)で常に最新の state を参照するための保持用 ref
@@ -42,6 +46,16 @@ export function useFitLogCore() {
   function notifySaveError() {
     setToast('保存に失敗しました。空き容量を確認してください');
   }
+
+  /**
+   * 壊れた保存データから初期化へ復帰した場合に、その旨をトーストで知らせる。
+   * 旧データは退避済みなので消えていないことを伝える
+   */
+  useEffect(() => {
+    if (loadResult.recoveredFromCorruption) {
+      setToast('保存データを読み込めませんでした。旧データは退避済みです');
+    }
+  }, [loadResult.recoveredFromCorruption]);
 
   /**
    * state が変わるたびに、一定時間後へまとめて localStorage に保存する

@@ -11,6 +11,12 @@ import { uid } from './utils';
 
 export const storeKey = 'fit-log-v2';
 
+/**
+ * 読み込みに失敗した壊れた保存データの退避先キー。
+ * 元データを削除する代わりにここへ退避し、後から復旧できるようにする
+ */
+export const corruptStoreKey = 'fit-log-v2-corrupt';
+
 const defaultPresets: Preset[] = [
   { id: 'preset-chest-day', name: '胸の日', exerciseIds: [] },
   { id: 'preset-back-day', name: '背中の日', exerciseIds: [] },
@@ -18,14 +24,18 @@ const defaultPresets: Preset[] = [
   { id: 'preset-shoulder-day', name: '肩の日', exerciseIds: [] },
 ];
 
-export function loadState(): State {
-  try {
-    const saved = JSON.parse(localStorage.getItem(storeKey) || 'null') as Partial<State> | null;
-    const normalized = normalizeState(saved);
-    if (normalized) return normalized;
-  } catch {
-    localStorage.removeItem(storeKey);
-  }
+/**
+ * loadState の結果。state に加え、壊れたデータから初期化へ復帰したかを返す
+ */
+export type LoadResult = {
+  state: State;
+  recoveredFromCorruption: boolean;
+};
+
+/**
+ * 何も保存されていないときに使う初期状態を作る
+ */
+function createDefaultState(): State {
   return {
     exercises: starterExercises,
     workouts: [],
@@ -34,6 +44,39 @@ export function loadState(): State {
     trainingPlans: [],
     catalogVersion: starterCatalogVersion,
   };
+}
+
+/**
+ * 壊れた保存データを退避先キーへコピーする。元データは削除しない。
+ * 退避自体に失敗しても元データは storeKey 側に残るため、ここでは何もしない
+ */
+function preserveCorruptState(raw: string) {
+  try {
+    localStorage.setItem(corruptStoreKey, raw);
+  } catch {
+    // 退避できなくても元データは保持されるため、ここでは握りつぶす
+  }
+}
+
+export function loadState(): LoadResult {
+  let raw: string | null = null;
+  try {
+    raw = localStorage.getItem(storeKey);
+  } catch {
+    return { state: createDefaultState(), recoveredFromCorruption: false };
+  }
+  if (!raw || raw === 'null') {
+    return { state: createDefaultState(), recoveredFromCorruption: false };
+  }
+  try {
+    const saved = JSON.parse(raw) as Partial<State> | null;
+    const normalized = normalizeState(saved);
+    if (normalized) return { state: normalized, recoveredFromCorruption: false };
+  } catch {
+    // 解析に失敗。データは消さず下で退避する
+  }
+  preserveCorruptState(raw);
+  return { state: createDefaultState(), recoveredFromCorruption: true };
 }
 
 export function normalizeState(saved: Partial<State> | null | undefined): State | null {
