@@ -10,22 +10,14 @@ const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
  * 履歴/計画画面が必要とする state・操作を Context から組み立てる view-model フック
  */
 function useHistoryScreenModel() {
-  const {
-    selectedDate,
-    state,
-    splitPartOptions,
-    orderedParts,
-    partColors,
-    historyPartFilter,
-    actions,
-  } = useFitLogContext();
+  const { selectedDate, state, orderedParts, partColors, historyPartFilter, actions } =
+    useFitLogContext();
 
   return {
     selectedDate,
     workouts: state.workouts,
     trainingDays: state.trainingDays,
     trainingPlans: state.trainingPlans,
-    splitPartOptions,
     orderedParts,
     partColors,
     partFilter: historyPartFilter,
@@ -55,7 +47,6 @@ export function HistoryScreen() {
     workouts,
     trainingDays,
     trainingPlans,
-    splitPartOptions,
     orderedParts,
     partColors,
     partFilter,
@@ -72,7 +63,7 @@ export function HistoryScreen() {
   const monthDate = parseDate(selectedDate);
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
-  const partTabs = ['ALL', ...splitPartOptions.filter((part) => part !== 'レスト')];
+  const partTabs = ['ALL', ...orderedParts.map((part) => part.name)];
   const planParts = orderedParts.map((part) => part.name).filter((part) => part !== 'レスト');
   const trainingDayByDate = new Map(trainingDays.map((day) => [day.date, day.parts]));
   const visibleHistory = buildVisibleHistory(workouts, trainingDays, partFilter);
@@ -177,16 +168,25 @@ export function HistoryScreen() {
         {activeView === 'history' ? (
           <>
             <div className="muscle-tabs" aria-label="部位フィルター">
-              {partTabs.map((part) => (
-                <button
-                  className={`muscle-tab ${partFilter === part ? 'active' : ''}`}
-                  key={part}
-                  type="button"
-                  onClick={() => onPartFilter(part)}
-                >
-                  {part}
-                </button>
-              ))}
+              {partTabs.map((part) => {
+                const color = partColors.get(part);
+                const isActive = partFilter === part;
+                /**
+                 * 文字色は常に白。選択中はその部位の色を背景にする
+                 */
+                const style = isActive && color ? { background: color } : undefined;
+                return (
+                  <button
+                    className={`muscle-tab ${isActive ? 'active' : ''}`}
+                    key={part}
+                    type="button"
+                    style={style}
+                    onClick={() => onPartFilter(part)}
+                  >
+                    {part}
+                  </button>
+                );
+              })}
             </div>
             <div className="calendar-head">
               <button className="month-btn" type="button" onClick={() => onMoveMonth(-1)}>

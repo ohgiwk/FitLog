@@ -232,15 +232,16 @@
 .muscle-tab {
   min-height: 42px;
   border-right: 1px solid var(--border-strong);
-  color: var(--red);
+  color: var(--text-on-primary);
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 400;
   white-space: nowrap;
 }
 
 .muscle-tab.active {
   background: var(--red);
   color: var(--text-on-primary);
+  font-weight: 800;
 }
 
 .history-mode {
