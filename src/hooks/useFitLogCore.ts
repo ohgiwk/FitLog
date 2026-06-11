@@ -1,6 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { loadState, storeKey } from '../storage';
 import { State } from '../types';
+
+/**
+ * state を localStorage へ保存するまでの待ち時間(ミリ秒)。
+ * 連続入力のたびに書き込むのを避け、最後の入力からこの時間後にまとめて保存する
+ */
+const SAVE_DEBOUNCE_MS = 400;
+
+/**
+ * state を localStorage へ保存する。
+ * 容量超過やプライベートモードなどで失敗した場合は onError を呼ぶ
+ */
+function persistState(state: State, onError: () => void) {
+  try {
+    localStorage.setItem(storeKey, JSON.stringify(state));
+  } catch {
+    onError();
+  }
+}
 
 /**
  * アプリの保存対象データ(state)とトースト表示を一元管理する土台フック
@@ -8,13 +26,54 @@ import { State } from '../types';
 export function useFitLogCore() {
   const [state, setState] = useState<State>(() => loadState());
   const [toast, setToast] = useState('');
+  /**
+   * 即時保存(flush)で常に最新の state を参照するための保持用 ref
+   */
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  /**
+   * 初回マウント時は読み込んだ内容をそのまま書き戻すだけなので保存をスキップする
+   */
+  const isFirstSaveRef = useRef(true);
 
   /**
-   * state が変わるたびに localStorage へ保存する
+   * 保存に失敗したことをトーストで知らせる
+   */
+  function notifySaveError() {
+    setToast('保存に失敗しました。空き容量を確認してください');
+  }
+
+  /**
+   * state が変わるたびに、一定時間後へまとめて localStorage に保存する
    */
   useEffect(() => {
-    localStorage.setItem(storeKey, JSON.stringify(state));
+    if (isFirstSaveRef.current) {
+      isFirstSaveRef.current = false;
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      persistState(state, notifySaveError);
+    }, SAVE_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
   }, [state]);
+
+  /**
+   * アプリが非表示・終了に向かう瞬間に、デバウンス待ちの内容を取りこぼさず保存する
+   */
+  useEffect(() => {
+    const flush = () => {
+      if (document.visibilityState === 'hidden') {
+        persistState(stateRef.current, notifySaveError);
+      }
+    };
+    const flushNow = () => persistState(stateRef.current, notifySaveError);
+    document.addEventListener('visibilitychange', flush);
+    window.addEventListener('pagehide', flushNow);
+    return () => {
+      document.removeEventListener('visibilitychange', flush);
+      window.removeEventListener('pagehide', flushNow);
+    };
+  }, []);
 
   /**
    * トースト表示後、一定時間で自動的に消す
