@@ -65,9 +65,22 @@
   display: none !important;
 }
 
+html,
 body {
+  height: 100%;
+}
+
+body {
+  /**
+   * 文書全体のスクロール（オーバースクロールのバウンス）を止める。
+   * body 自体はスクロールさせず、内側の `.app` をスクロール領域にすることで、
+   * 限界以上にスクロールしても sticky なヘッダが一切追従しないようにする
+   */
+  position: fixed;
+  inset: 0;
   margin: 0;
-  min-height: 100vh;
+  overflow: hidden;
+  overscroll-behavior: none;
   background: var(--bg);
   color: var(--ink);
 }
@@ -97,9 +110,17 @@ input {
 }
 
 .app {
+  /**
+   * 実際のスクロールはこのコンテナが担当する。
+   * overscroll-behavior でバウンスとスクロール連鎖を抑え、
+   * 内側に置いた sticky ヘッダがスクロールに追従しないようにする
+   */
   width: min(100%, 480px);
-  min-height: calc(100vh - (76px + env(safe-area-inset-bottom)));
+  height: 100dvh;
   margin: 0 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
   background: var(--bg);
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
