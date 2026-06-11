@@ -1,0 +1,22 @@
+---
+description: ビルド確認コマンドの実行方法（サンドボックス外で実行する）
+alwaysApply: true
+---
+
+# ビルド確認は required_permissions: ["all"] で実行する
+
+`npm run build`（= `tsc && vite build`）でビルド確認を行うときは、Shell ツールで
+`required_permissions: ["all"]`（サンドボックス外）を指定して実行すること。
+
+## 理由
+
+`vite-plugin-pwa` の workbox 生成処理が、サンドボックス内ではハングして完了しない。
+サンドボックス外であれば PWA 生成まで含めて正常に完了する（数秒で終了する）。
+
+- サンドボックス内: `vite build` 本体は通るが、PWA 生成で止まる
+- サンドボックス外（`all`）: `✓ built in ...` の後に `PWA v1.3.0 ... files generated` まで完了
+
+## 対象
+
+- `npm run build`
+- `tsc` や `vite build` を直接呼ぶ場合も同様
