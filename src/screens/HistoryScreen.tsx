@@ -209,12 +209,26 @@ export function HistoryScreen() {
                 const trained = trainedDates.has(cell.date);
                 const isToday = cell.date === today;
                 const trainingParts = trainingDayByDate.get(cell.date);
+                const plannedParts = plannedPartsForDate(cell.date, trainingPlans);
+                const plannedColor = plannedParts
+                  .map((part) => partColors.get(part))
+                  .find((color): color is string => Boolean(color));
+                /**
+                 * 計画で予定された日は、未実施・本日でなければ部位色の薄い円で示す
+                 */
+                const plannedStyle =
+                  !trained && !isToday && plannedColor
+                    ? { background: hexToRgba(plannedColor, 0.2) }
+                    : undefined;
                 return (
                   <div className={`day-cell ${cell.inMonth ? '' : 'other'}`} key={cell.date}>
                     <button
-                      className={`day-btn ${trained ? 'trained' : ''} ${isToday ? 'today' : ''}`}
+                      className={`day-btn ${trained ? 'trained' : ''} ${isToday ? 'today' : ''} ${
+                        plannedStyle ? 'planned' : ''
+                      }`}
                       type="button"
-                      title={trainingParts?.join(' / ') || undefined}
+                      style={plannedStyle}
+                      title={trainingParts?.join(' / ') || plannedParts.join(' / ') || undefined}
                       onClick={() => onSelectDate(cell.date)}
                     >
                       {cell.day}
@@ -440,6 +454,20 @@ function buildUpcomingPlans(selectedDate: string, trainingPlans: TrainingPlan[])
     const value = localDate(date);
     return { date: value, parts: plannedPartsForDate(value, trainingPlans) };
   });
+}
+
+/**
+ * 部位色の HEX(#rrggbb) を指定した不透明度の rgba 文字列へ変換する。
+ * 解釈できない値はそのまま返す
+ */
+function hexToRgba(hex: string, alpha: number) {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!match) return hex;
+  const value = parseInt(match[1], 16);
+  const r = (value >> 16) & 255;
+  const g = (value >> 8) & 255;
+  const b = value & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 /**
