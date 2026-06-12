@@ -1,62 +1,161 @@
-import { Exercise } from '../types';
+import { Exercise, ExerciseCategory } from '../types';
 import { uid } from '../utils';
 
-export const starterCatalogVersion = 2;
+export const starterCatalogVersion = 3;
 
-export const starterExercises: Exercise[] = [
-  { id: uid(), part: '胸', name: 'ベンチプレス', measurementType: 'reps' },
+/**
+ * 部位ごと・カテゴリごとの種目名定義。
+ * ここから starterExercises を生成する（重複定義を避けて見通しよく管理するため）
+ */
+const starterCatalog: {
+  part: string;
+  categories: { category: ExerciseCategory; names: string[] }[];
+}[] = [
   {
-    id: uid(),
     part: '胸',
-    name: 'スミスマシン・インクラインベンチプレス',
-    measurementType: 'reps',
+    categories: [
+      {
+        category: 'free',
+        names: ['ベンチプレス', 'インクラインベンチプレス', 'デクラインベンチプレス', 'ナローベンチプレス'],
+      },
+      {
+        category: 'machine',
+        names: [
+          'チェストプレス',
+          'スミスマシン・インクラインベンチプレス',
+          'ペックフライ',
+          'インクラインチェストプレス',
+        ],
+      },
+      {
+        category: 'dumbbell',
+        names: ['ダンベルベンチプレス', 'インクラインダンベルプレス', 'デクラインダンベルプレス', 'ダンベルフライ'],
+      },
+      {
+        category: 'cable',
+        names: ['ケーブルクロスオーバー', 'ローケーブルフライ', 'ハイケーブルフライ', 'ケーブルチェストプレス'],
+      },
+      {
+        category: 'bodyweight',
+        names: ['プッシュアップ', 'ワイドプッシュアップ', 'デクラインプッシュアップ', 'インクラインプッシュアップ'],
+      },
+    ],
   },
-  { id: uid(), part: '胸', name: 'デクラインダンベルプレス', measurementType: 'reps' },
-  { id: uid(), part: '胸', name: 'インクラインダンベルプレス', measurementType: 'reps' },
-  { id: uid(), part: '胸', name: 'ダンベルフライ', measurementType: 'reps' },
-  { id: uid(), part: '胸', name: 'ケーブルクロスオーバー', measurementType: 'reps' },
-  { id: uid(), part: '胸', name: 'チェストプレス', measurementType: 'reps' },
-  { id: uid(), part: '胸', name: 'プッシュアップ', measurementType: 'reps' },
-  { id: uid(), part: '背中', name: 'インバーテッドロー', measurementType: 'reps' },
-  { id: uid(), part: '背中', name: 'ハーフデッドリフト', measurementType: 'reps' },
-  { id: uid(), part: '背中', name: 'Tバーロウ', measurementType: 'reps' },
-  { id: uid(), part: '背中', name: 'ラットプルダウン', measurementType: 'reps' },
-  { id: uid(), part: '背中', name: 'シーテッドロー', measurementType: 'reps' },
-  { id: uid(), part: '背中', name: 'ワンハンドダンベルロー', measurementType: 'reps' },
-  { id: uid(), part: '背中', name: 'チンニング', measurementType: 'reps' },
-  { id: uid(), part: '背中', name: 'バックエクステンション', measurementType: 'reps' },
-  { id: uid(), part: '脚', name: 'シーテッドレッグカール', measurementType: 'reps' },
-  { id: uid(), part: '脚', name: 'ゴブレットスクワット', measurementType: 'reps' },
-  { id: uid(), part: '脚', name: 'スクワット', measurementType: 'reps' },
-  { id: uid(), part: '脚', name: 'レッグプレス', measurementType: 'reps' },
-  { id: uid(), part: '脚', name: 'レッグエクステンション', measurementType: 'reps' },
-  { id: uid(), part: '脚', name: 'ルーマニアンデッドリフト', measurementType: 'reps' },
-  { id: uid(), part: '脚', name: 'ブルガリアンスクワット', measurementType: 'reps' },
-  { id: uid(), part: '脚', name: 'カーフレイズ', measurementType: 'reps' },
-  { id: uid(), part: '肩', name: 'ショルダープレス', measurementType: 'reps' },
-  { id: uid(), part: '肩', name: 'サイドレイズ', measurementType: 'reps' },
-  { id: uid(), part: '肩', name: 'フロントレイズ', measurementType: 'reps' },
-  { id: uid(), part: '肩', name: 'リアレイズ', measurementType: 'reps' },
-  { id: uid(), part: '肩', name: 'アップライトロー', measurementType: 'reps' },
-  { id: uid(), part: '肩', name: 'アーノルドプレス', measurementType: 'reps' },
-  { id: uid(), part: '肩', name: 'フェイスプル', measurementType: 'reps' },
-  { id: uid(), part: '肩', name: 'シュラッグ', measurementType: 'reps' },
-  { id: uid(), part: '腕', name: 'ダンベルカール', measurementType: 'reps' },
-  { id: uid(), part: '腕', name: 'バーベルカール', measurementType: 'reps' },
-  { id: uid(), part: '腕', name: 'ハンマーカール', measurementType: 'reps' },
-  { id: uid(), part: '腕', name: 'プリーチャーカール', measurementType: 'reps' },
-  { id: uid(), part: '腕', name: 'トライセプスプレスダウン', measurementType: 'reps' },
   {
-    id: uid(),
-    part: '腕',
-    name: 'ライイングトライセプスエクステンション',
-    measurementType: 'reps',
+    part: '背中',
+    categories: [
+      {
+        category: 'free',
+        names: ['デッドリフト', 'ハーフデッドリフト', 'ベントオーバーロー', 'Tバーロウ'],
+      },
+      {
+        category: 'machine',
+        names: ['ラットプルダウン', 'シーテッドロー', 'アシステッドチンニング', 'マシンローイング'],
+      },
+      {
+        category: 'dumbbell',
+        names: ['ワンハンドダンベルロー', 'ダンベルデッドリフト', 'ダンベルプルオーバー', 'ダンベルベントオーバーロー'],
+      },
+      {
+        category: 'cable',
+        names: ['ケーブルローイング', 'ストレートアームプルダウン', 'ワンハンドケーブルロー', 'ケーブルプルオーバー'],
+      },
+      {
+        category: 'bodyweight',
+        names: ['チンニング', 'プルアップ', 'インバーテッドロー', 'バックエクステンション'],
+      },
+    ],
   },
-  { id: uid(), part: '腕', name: 'ディップス', measurementType: 'reps' },
   {
-    id: uid(),
+    part: '脚',
+    categories: [
+      {
+        category: 'free',
+        names: ['スクワット', 'フロントスクワット', 'ルーマニアンデッドリフト', 'バーベルランジ'],
+      },
+      {
+        category: 'machine',
+        names: ['レッグプレス', 'レッグエクステンション', 'シーテッドレッグカール', 'カーフレイズ'],
+      },
+      {
+        category: 'dumbbell',
+        names: ['ゴブレットスクワット', 'ブルガリアンスクワット', 'ダンベルランジ', 'ダンベルルーマニアンデッドリフト'],
+      },
+      {
+        category: 'cable',
+        names: ['ケーブルプルスルー', 'ケーブルキックバック', 'ケーブルアダクション', 'ケーブルアブダクション'],
+      },
+      {
+        category: 'bodyweight',
+        names: ['自重スクワット', 'ジャンプスクワット', 'ウォーキングランジ', 'シシースクワット'],
+      },
+    ],
+  },
+  {
+    part: '肩',
+    categories: [
+      {
+        category: 'free',
+        names: ['バーベルショルダープレス', 'ミリタリープレス', 'アップライトロー', 'バーベルフロントレイズ'],
+      },
+      {
+        category: 'machine',
+        names: ['マシンショルダープレス', 'マシンサイドレイズ', 'リバースペックフライ', 'スミスマシン・ショルダープレス'],
+      },
+      {
+        category: 'dumbbell',
+        names: ['ショルダープレス', 'サイドレイズ', 'フロントレイズ', 'リアレイズ', 'アーノルドプレス', 'シュラッグ'],
+      },
+      {
+        category: 'cable',
+        names: ['フェイスプル', 'ケーブルサイドレイズ', 'ケーブルフロントレイズ', 'ケーブルリアレイズ'],
+      },
+      {
+        category: 'bodyweight',
+        names: ['パイクプッシュアップ', 'ハンドスタンドプッシュアップ', 'ウォールハンドスタンド'],
+      },
+    ],
+  },
+  {
     part: '腕',
-    name: 'オーバーヘッドトライセプスエクステンション',
-    measurementType: 'reps',
+    categories: [
+      {
+        category: 'free',
+        names: ['バーベルカール', 'EZバーカール', 'ライイングトライセプスエクステンション', 'クローズグリップベンチプレス'],
+      },
+      {
+        category: 'machine',
+        names: ['プリーチャーカール', 'マシンアームカール', 'マシントライセプスエクステンション', 'マシンディップス'],
+      },
+      {
+        category: 'dumbbell',
+        names: ['ダンベルカール', 'ハンマーカール', 'コンセントレーションカール', 'ダンベルキックバック'],
+      },
+      {
+        category: 'cable',
+        names: [
+          'トライセプスプレスダウン',
+          'オーバーヘッドトライセプスエクステンション',
+          'ケーブルカール',
+          'ケーブルハンマーカール',
+        ],
+      },
+      {
+        category: 'bodyweight',
+        names: ['ディップス', 'ダイヤモンドプッシュアップ', 'ベンチディップス'],
+      },
+    ],
   },
 ];
+
+export const starterExercises: Exercise[] = starterCatalog.flatMap(({ part, categories }) =>
+  categories.flatMap(({ category, names }) =>
+    names.map((name) => ({
+      id: uid(),
+      part,
+      name,
+      measurementType: 'reps' as const,
+      category,
+    })),
+  ),
+);

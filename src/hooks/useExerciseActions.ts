@@ -1,22 +1,12 @@
-import { FormEvent, PointerEvent } from 'react';
-import { Exercise, MeasurementType, Screen, State } from '../types';
+import { PointerEvent } from 'react';
+import { Exercise, ExerciseCategory, MeasurementType, State } from '../types';
 import { dragAfterElement, uid } from '../utils';
-import { createWorkout } from '../selectors/fitLogSelectors';
 import { paletteColorAt } from '../data/partColors';
 
 type ExerciseActionsDeps = {
   state: State;
   saveState: (updater: (draft: State) => State) => void;
   showToast: (message: string) => void;
-  showScreen: (next: Screen) => void;
-  selectedDate: string;
-  setCurrentWorkoutId: (workoutId: string | null) => void;
-  partInput: string;
-  nameInput: string;
-  measurementTypeInput: MeasurementType;
-  setNameInput: (value: string) => void;
-  setMeasurementTypeInput: (value: MeasurementType) => void;
-  setAddFormOpen: (value: boolean) => void;
   setDraggingExerciseId: (exerciseId: string | null) => void;
 };
 
@@ -27,56 +17,72 @@ export function useExerciseActions({
   state,
   saveState,
   showToast,
-  showScreen,
-  selectedDate,
-  setCurrentWorkoutId,
-  partInput,
-  nameInput,
-  measurementTypeInput,
-  setNameInput,
-  setMeasurementTypeInput,
-  setAddFormOpen,
   setDraggingExerciseId,
 }: ExerciseActionsDeps) {
   /**
-   * フォーム入力から新しい種目を作成し、その記録の詳細画面へ進む
+   * 指定した部位に新しい種目を追加する(マスタにのみ追加し、画面遷移はしない)。
+   * 追加できたら true を返す。部位が未登録ならパレット色つきで登録する
    */
-  function addCustomExercise(event: FormEvent) {
-    event.preventDefault();
-    const part = partInput.trim() || 'その他';
-    const name = nameInput.trim();
-    if (!name) return showToast('種目名を入力してください');
-
-    const exercise: Exercise = { id: uid(), part, name, measurementType: measurementTypeInput };
-    const workout = createWorkout(exercise, selectedDate);
+  function addExerciseToPart(
+    part: string,
+    name: string,
+    measurementType: MeasurementType,
+    category: ExerciseCategory,
+  ) {
+    const trimmedPart = part.trim() || 'その他';
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      showToast('種目名を入力してください');
+      return false;
+    }
+    const exercise: Exercise = {
+      id: uid(),
+      part: trimmedPart,
+      name: trimmedName,
+      measurementType,
+      category,
+    };
     saveState((prev) => {
-      const parts = prev.parts.some((item) => item.name === part)
+      const parts = prev.parts.some((item) => item.name === trimmedPart)
         ? prev.parts
-        : [...prev.parts, { name: part, color: paletteColorAt(prev.parts.length) }];
-      return {
-        ...prev,
-        parts,
-        exercises: [exercise, ...prev.exercises],
-        workouts: [...prev.workouts, workout],
-      };
+        : [...prev.parts, { name: trimmedPart, color: paletteColorAt(prev.parts.length) }];
+      return { ...prev, parts, exercises: [exercise, ...prev.exercises] };
     });
-    setCurrentWorkoutId(workout.id);
-    setNameInput('');
-    setMeasurementTypeInput('reps');
-    setAddFormOpen(false);
-    showScreen('detail');
+    showToast(`${trimmedName}を追加しました`);
+    return true;
   }
 
   /**
-   * 種目の計測方法(回数/秒数)を切り替える
+   * 種目の名前・記録単位・器具カテゴリをまとめて更新する。
+   * 種目名は trim して空なら更新せず false を返す。
+   * 改名時は既存ワークアウトの名前スナップショットも追従させる
    */
-  function updateExerciseMeasurementType(exerciseId: string, measurementType: MeasurementType) {
+  function updateExercise(
+    exerciseId: string,
+    fields: { name: string; measurementType: MeasurementType; category: ExerciseCategory },
+  ) {
+    const trimmedName = fields.name.trim();
+    if (!trimmedName) {
+      showToast('種目名を入力してください');
+      return false;
+    }
     saveState((prev) => ({
       ...prev,
       exercises: prev.exercises.map((exercise) =>
-        exercise.id === exerciseId ? { ...exercise, measurementType } : exercise,
+        exercise.id === exerciseId
+          ? {
+              ...exercise,
+              name: trimmedName,
+              measurementType: fields.measurementType,
+              category: fields.category,
+            }
+          : exercise,
+      ),
+      workouts: prev.workouts.map((workout) =>
+        workout.exerciseId === exerciseId ? { ...workout, name: trimmedName } : workout,
       ),
     }));
+    return true;
   }
 
   /**
@@ -173,8 +179,8 @@ export function useExerciseActions({
   }
 
   return {
-    addCustomExercise,
-    updateExerciseMeasurementType,
+    addExerciseToPart,
+    updateExercise,
     deleteExercise,
     commitExerciseOrder,
     startPointerExerciseDrag,

@@ -171,9 +171,9 @@ describe('month labels', () => {
 describe('groupExercises', () => {
   it('部位ごとにまとめる', () => {
     const exercises: Exercise[] = [
-      { id: '1', part: '胸', name: 'ベンチプレス', measurementType: 'reps' },
-      { id: '2', part: '背中', name: 'ラットプルダウン', measurementType: 'reps' },
-      { id: '3', part: '胸', name: 'ダンベルフライ', measurementType: 'reps' },
+      { id: '1', part: '胸', name: 'ベンチプレス', measurementType: 'reps', category: 'free' },
+      { id: '2', part: '背中', name: 'ラットプルダウン', measurementType: 'reps', category: 'machine' },
+      { id: '3', part: '胸', name: 'ダンベルフライ', measurementType: 'reps', category: 'dumbbell' },
     ];
     const grouped = groupExercises(exercises);
     expect([...grouped.keys()]).toEqual(['胸', '背中']);

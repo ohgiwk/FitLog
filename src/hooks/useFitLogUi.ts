@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { MeasurementType } from '../types';
 
 /**
  * 保存対象ではない、画面操作のための一時的な UI 状態をまとめるフック
@@ -7,23 +6,14 @@ import { MeasurementType } from '../types';
 export function useFitLogUi() {
   const [historyPartFilter, setHistoryPartFilter] = useState('ALL');
   const [editMode, setEditMode] = useState(false);
-  const [expandedParts, setExpandedParts] = useState<Set<string>>(() => new Set());
-  const [addFormOpen, setAddFormOpen] = useState(false);
-  const [partInput, setPartInput] = useState('');
-  const [nameInput, setNameInput] = useState('');
-  const [measurementTypeInput, setMeasurementTypeInput] = useState<MeasurementType>('reps');
+  const [activePart, setActivePart] = useState<string | null>(null);
   const [draggingExerciseId, setDraggingExerciseId] = useState<string | null>(null);
 
   /**
-   * 部位ごとの展開・折りたたみを切り替える
+   * 種目選択画面で表示する部位タブを切り替える
    */
-  function togglePartExpanded(part: string) {
-    setExpandedParts((prev) => {
-      const next = new Set(prev);
-      if (next.has(part)) next.delete(part);
-      else next.add(part);
-      return next;
-    });
+  function selectPart(part: string) {
+    setActivePart(part);
   }
 
   return {
@@ -31,19 +21,11 @@ export function useFitLogUi() {
     setHistoryPartFilter,
     editMode,
     setEditMode,
-    expandedParts,
-    setExpandedParts,
-    addFormOpen,
-    setAddFormOpen,
-    partInput,
-    setPartInput,
-    nameInput,
-    setNameInput,
-    measurementTypeInput,
-    setMeasurementTypeInput,
+    activePart,
+    setActivePart,
     draggingExerciseId,
     setDraggingExerciseId,
-    togglePartExpanded,
+    selectPart,
   };
 }
 

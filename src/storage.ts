@@ -1,6 +1,7 @@
 import { starterCatalogVersion, starterExercises } from './data/starterExercises';
 import { defaultPartColor, paletteColorAt } from './data/partColors';
 import {
+  ExerciseCategory,
   MeasurementType,
   PartSetting,
   Preset,
@@ -9,7 +10,15 @@ import {
   TrainingPlanMode,
   WorkoutSet,
 } from './types';
-import { uid } from './utils';
+import { defaultExerciseCategory, uid } from './utils';
+
+/**
+ * 初期種目のカテゴリを「部位::種目名」から引くためのマップ。
+ * 旧データ(カテゴリ未設定)を読み込むときのフォールバックに使う
+ */
+const starterCategoryByKey = new Map(
+  starterExercises.map((exercise) => [exerciseKey(exercise.part, exercise.name), exercise.category]),
+);
 
 /**
  * 並び・色管理の対象外にする特別な部位
@@ -275,9 +284,27 @@ function normalizeExercises(exercises: unknown): State['exercises'] {
         part: item.part,
         name: item.name,
         measurementType: normalizeMeasurementType(item.measurementType),
+        category: normalizeExerciseCategory(item.category, item.part, item.name),
       },
     ];
   });
+}
+
+/**
+ * 種目の器具カテゴリを正規化する。
+ * 未設定や不正な値のときは、初期種目に同名があればそのカテゴリを、なければ既定値を使う
+ */
+function normalizeExerciseCategory(value: unknown, part: string, name: string): ExerciseCategory {
+  if (
+    value === 'free' ||
+    value === 'machine' ||
+    value === 'dumbbell' ||
+    value === 'cable' ||
+    value === 'bodyweight'
+  ) {
+    return value;
+  }
+  return starterCategoryByKey.get(exerciseKey(part, name)) ?? defaultExerciseCategory;
 }
 
 function normalizeWorkouts(workouts: unknown): State['workouts'] {

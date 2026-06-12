@@ -158,7 +158,7 @@ useFitLogCore (state + 永続化 + トースト)
 | --- | --- | --- |
 | `useFitLogCore` | `hooks/useFitLogCore.ts` | `State` の保持、`localStorage` 保存（デバウンス・flush・失敗通知）、トースト管理、`saveState` / `setState` 提供 |
 | `useNavigation` | `hooks/useNavigation.ts` | `screen` / `selectedDate` / `currentWorkoutId` の管理、画面遷移、日付・月移動、離脱時の空セット掃除 |
-| `useFitLogUi` | `hooks/useFitLogUi.ts` | 保存しない一時 UI 状態（編集モード、追加フォーム、入力欄、展開状態、ドラッグ対象、履歴フィルタ） |
+| `useFitLogUi` | `hooks/useFitLogUi.ts` | 保存しない一時 UI 状態（編集モード、種目選択画面で表示中の部位タブ `activePart`、ドラッグ対象、履歴フィルタ） |
 | `useFitLogSelectors` | `hooks/useFitLogSelectors.ts` | `state` と `selectedDate` から派生値を `useMemo` で計算 |
 | `usePresetActions` | `hooks/usePresetActions.ts` | プリセットの選択・作成・改名・削除・種目増減・並び替え・一括投入 |
 | `useWorkoutActions` | `hooks/useWorkoutActions.ts` | ワークアウト/セットの追加・更新・削除・並び替え・詳細を開く |
@@ -185,7 +185,7 @@ useFitLogCore (state + 永続化 + トースト)
 
 | フィールド | 型 | 内容 |
 | --- | --- | --- |
-| `exercises` | `Exercise[]` | 種目マスタ（部位・名前・計測方法） |
+| `exercises` | `Exercise[]` | 種目マスタ（部位・名前・計測方法・器具カテゴリ） |
 | `workouts` | `Workout[]` | 日付ごとの記録（セットを含む） |
 | `presets` | `Preset[]` | よく使う種目のまとまり |
 | `trainingDays` | `TrainingDay[]` | 日付ごとの実施部位（履歴の補助情報） |
@@ -198,12 +198,14 @@ useFitLogCore (state + 永続化 + トースト)
 ```ts
 type MeasurementType = 'reps' | 'seconds';
 type SetIntensity = 1 | 2 | 3 | 4 | 5;
+type ExerciseCategory = 'free' | 'machine' | 'dumbbell' | 'cable' | 'bodyweight';
 
 type Exercise = {
   id: string;
   part: string;          // 部位（例: 胸 / 背中 / 脚 / 肩 / 腕 / その他）
   name: string;          // 種目名
   measurementType: MeasurementType; // 記録単位（回数 / 秒数）
+  category: ExerciseCategory; // 器具カテゴリ（種目リスト内の小見出し分類）
 };
 
 type WorkoutSet = {
@@ -256,7 +258,7 @@ type PartSetting = {
 
 ### 4.3 種目マスタと記録の責務分離
 
-- `Exercise` は「何を行うか」の軽量マスタ（`id` / `part` / `name` / `measurementType`）。
+- `Exercise` は「何を行うか」の軽量マスタ（`id` / `part` / `name` / `measurementType` / `category`）。
 - 実際の重量・回数（秒数）・強度・メモは `WorkoutSet` に保存する。
 - `Workout` は `name` / `part` / `measurementType` を記録時点のスナップショットとして保持するため、後でマスタを編集しても過去の記録表示は変わらない（種目の並び替え時のみ後述の同期がある）。
 
@@ -297,7 +299,7 @@ type PartSetting = {
 - `exercises`: スターター種目（`data/starterExercises.ts`）。
 - `presets`: 既定プリセット 4 件（`胸の日` / `背中の日` / `脚の日` / `肩の日`、いずれも種目空）。
 - `workouts` / `trainingDays` / `trainingPlans`: 空配列。
-- `catalogVersion`: `starterCatalogVersion`（現在 `2`）。
+- `catalogVersion`: `starterCatalogVersion`（現在 `3`）。
 
 ### 5.5 正規化・移行（`normalizeState`）
 
@@ -306,7 +308,7 @@ type PartSetting = {
 - **種目マスタ追補**: 保存データの `catalogVersion` が `starterCatalogVersion` 未満なら、`part::name` をキーに未収録のスターター種目だけを末尾へ追加（`mergeStarterExercises`）。正規化後は `catalogVersion` を最新へ更新。
 - **既定プリセット補完**: 名前が一致しない既定プリセットを末尾に追加（`mergeDefaultPresets`）。
 - 各フィールドの正規化方針:
-  - `Exercise`: `id` / `part` / `name` がすべて文字列でなければ除外。`measurementType` は `'seconds'` 以外を `'reps'` に丸める。
+  - `Exercise`: `id` / `part` / `name` がすべて文字列でなければ除外。`measurementType` は `'seconds'` 以外を `'reps'` に丸める。`category` は 5 種のいずれかに丸め、未設定・不正値のときは初期種目マスタに同名があればそのカテゴリを、なければ `'free'` を使う。
   - `Workout`: `id` / `exerciseId` / `date` / `name` / `part` が文字列でなければ除外。
   - `WorkoutSet`: `id` が文字列でなければ除外。`weight` / `recordValue` は文字列・数値以外を `''` に。`recordValue` は旧フィールド `reps` からも引き継ぐ。`intensity` は 1〜5 のみ採用、それ以外は `undefined`。`note` は文字列以外を `''`。
   - `TrainingDay`: 同一日付をマージし、`parts` を trim + 重複排除。旧フィールド `part`（単数）からも取り込む。
@@ -359,17 +361,17 @@ type PartSetting = {
 ### 6.3 種目選択（`SelectScreen`）
 
 - 部位ごとにグループ化（`groupedExercises`）して表示。並び順は部位の表示順（`orderedParts`）に従う。
-- 部位タイトルの左色は部位の表示色（`partColors`）を反映する。
+- **部位タブ**: ヘッダ下に部位タブを横並び（`orderedParts` の順）で表示し、タップで表示する部位を切り替える（`activePart` に選択中の部位を保持。未選択・種目が無くなった部位を指す場合は先頭タブを使う）。タブ文字色は常に白で、選択中はその部位の表示色（`partColors`）を背景にする。タブはヘッダに固定され、リストをスクロールしても残る。
+- **器具カテゴリ**: 選択中の部位の種目リスト内を、フリーウエイト種目 / マシン種目 / ダンベル種目 / ケーブル種目 / 自重種目の 5 区分で小見出し付き表示する（`utils.exerciseCategories` の順序）。種目が 0 件の区分は表示しない。
 - **通常モード**:
   - 各種目はボタンで、タップすると選択日にその種目を追加して詳細画面へ（`addExerciseToToday`）。
-  - 部位タイトルに最終実施ラベル（`partRecentLabels`: `履歴なし` / `今日` / `N日前`）を表示。
-  - 種目が 5 件以上ある部位は先頭 4 件のみ表示し、「すべて表示 / 閉じる」で展開（`expandedParts`）。
-  - 各部位フッタに「種目を追加」（その部位を入力欄へ入れて追加フォームを開く）。
-- **追加フォーム**（`addFormOpen`）: 部位（`orderedParts` から選ぶセレクトボックス。部位が無ければ「その他」）/ 種目名（最大 30 文字、必須）/ 記録単位トグル。送信で新種目を作成し、その記録の詳細へ。新規部位は作成されないが、フォームを開いたとき部位未選択なら先頭の部位を初期値にする。
+  - リスト見出しに選択中部位の最終実施ラベル（`partRecentLabels`: `履歴なし` / `今日` / `N日前`）を表示。
 - **編集モード**（「編集」ボタン）:
-  - 種目行をドラッグで並び替え（部位をまたいだ移動も可、ドロップ先の部位へ所属変更）。
-  - 行内で計測方法トグル、削除ボタン。
-  - 削除時はプリセットからも該当 ID を除去。
+  - 選択中の部位の種目行をドラッグで並び替え（表示中は 1 部位のみのため同一部位内での並び替え）。表示していない部位の種目は DOM に無いが、並び替え確定時（`commitExerciseOrder`）に保持される。
+  - 行内に編集アイコン・削除ボタンを表示。削除時はプリセットからも該当 ID を除去。種目名・カテゴリ・記録単位の編集は編集ダイアログで行う。
+  - リスト見出し右に「＋」ボタンを表示。押すと種目追加ダイアログを開く。
+- **種目追加ダイアログ**（編集モードの「＋」から）: 部位（`orderedParts` から選ぶセレクト。初期値は「＋」を押した部位）/ 種目名（最大 30 文字、必須）/ 器具カテゴリ（セレクト、既定はフリーウエイト）/ 「詳細設定」を開くと記録単位トグル。追加すると `addExerciseToPart` でマスタにのみ種目を追加し、**画面遷移せず編集モードに留まる**（記録は作らない）。
+- **種目編集ダイアログ**（編集モードの編集アイコンから）: 種目名（最大 30 文字、必須）/ 器具カテゴリ（セレクト）/ 「詳細設定」を開くと記録単位トグル。保存すると `updateExercise` でマスタを更新し、編集モードに留まる。改名時は既存ワークアウトの名前スナップショットも追従する。
 
 ### 6.4 種目詳細（`DetailScreen`）
 
@@ -449,6 +451,7 @@ weight === 0 または reps === 0 → '0.0'
 - `isBlank(value)`: trim して空文字なら true。
 - `formatWeight(value)`: 数値化して小数 1 桁。
 - `measurementUnit` / `measurementLabel`: `'seconds'` → `秒`/`秒数`、`'reps'` → `回`/`回数`。
+- `exerciseCategories` / `defaultExerciseCategory`: 器具カテゴリの表示順・ラベル（フリーウエイト種目 / マシン種目 / ダンベル種目 / ケーブル種目 / 自重種目）と、未設定時の既定値（`'free'`）。
 
 ### 7.4 予定部位（`plannedPartsForDate`）
 
@@ -502,8 +505,8 @@ weight === 0 または reps === 0 → '0.0'
 
 ### 8.2 種目マスタ操作（`useExerciseActions`）
 
-- `addCustomExercise`: フォーム入力から新種目を作成（部位は空なら「その他」、種目名は必須）。先頭に追加し、その記録の詳細へ。
-- `updateExerciseMeasurementType`: 計測方法（回数/秒数）を変更。
+- `addExerciseToPart(part, name, measurementType, category)`: 指定部位に新種目をマスタへ追加（部位は空なら「その他」、種目名は必須）。先頭に追加し、部位が未登録ならパレット色つきで `state.parts` に登録。画面遷移・記録作成はしない。追加できたら `true` を返す。
+- `updateExercise(exerciseId, { name, measurementType, category })`: 種目の名前・記録単位・カテゴリをまとめて更新（種目名は必須）。改名時は既存ワークアウトの `name` スナップショットも同期。更新できたら `true` を返す。
 - `deleteExercise`: 種目を削除し、全プリセットから該当 ID を除去。
 - `commitExerciseOrder`: ドラッグ後の DOM 並び順を読み取り、種目の順序と所属部位を `state` に反映。並び順変更に合わせて既存ワークアウトの `name` / `part` を最新の種目に同期。
 - `startPointerExerciseDrag`: Pointer イベントで行ドラッグを開始（DOM を直接操作し、終了時に `commitExerciseOrder`）。`[data-row-action]` 上での開始は無視。
@@ -537,7 +540,7 @@ weight === 0 または reps === 0 → '0.0'
 - `deletePart(name)`: その部位の種目が残っていれば不可（トースト）。可能なら `parts` から除外し、その部位の `trainingPlans` も削除。
 - `movePart(name, direction)`: 表示順を 1 つ前後に移動。
 - `setPartColor(name, color)`: 表示色を変更。
-- 関連セレクタ（`fitLogSelectors`）: `buildOrderedParts`（明示設定＋データ由来の部位を統合し表示順で返す。「レスト」は除外）、`buildPartColorMap`（部位名→色）。`addCustomExercise` で新規部位を作る場合も `state.parts` に追記される。
+- 関連セレクタ（`fitLogSelectors`）: `buildOrderedParts`（明示設定＋データ由来の部位を統合し表示順で返す。「レスト」は除外）、`buildPartColorMap`（部位名→色）。`addExerciseToPart` で新規部位を作る場合も `state.parts` に追記される。
 
 ### 8.5 レストタイマー（`RestTimer`）
 
@@ -580,8 +583,8 @@ weight === 0 または reps === 0 → '0.0'
 
 ## 11. 初期データ（スターター種目）
 
-`src/data/starterExercises.ts`。`starterCatalogVersion = 2`。
+`src/data/starterExercises.ts`。`starterCatalogVersion = 3`。
 
 - 部位: 胸 / 背中 / 脚 / 肩 / 腕。すべて `measurementType: 'reps'`。
-- 例: 胸（ベンチプレス、インクラインダンベルプレス、ダンベルフライ ほか）、背中（ラットプルダウン、シーテッドロー、チンニング ほか）、脚（スクワット、レッグプレス、ルーマニアンデッドリフト ほか）、肩（ショルダープレス、サイドレイズ ほか）、腕（ダンベルカール、トライセプスプレスダウン ほか）。
+- 「部位 → 器具カテゴリ → 種目名」の定義（`starterCatalog`）から `starterExercises` を生成する。各部位・各カテゴリ（フリーウエイト / マシン / ダンベル / ケーブル / 自重）に概ね 4 種目ずつ用意する（自重の肩・腕など一部は 3 種目）。
 - カタログ版を上げると、既存ユーザーには未収録の種目だけが追補される（5.5 参照）。

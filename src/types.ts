@@ -12,11 +12,17 @@ export type MeasurementType = 'reps' | 'seconds';
 
 export type SetIntensity = 1 | 2 | 3 | 4 | 5;
 
+/**
+ * 種目の器具カテゴリ。種目リスト内をさらに分類して表示・設定するために使う
+ */
+export type ExerciseCategory = 'free' | 'machine' | 'dumbbell' | 'cable' | 'bodyweight';
+
 export type Exercise = {
   id: string;
   part: string;
   name: string;
   measurementType: MeasurementType;
+  category: ExerciseCategory;
 };
 
 export type WorkoutSet = {

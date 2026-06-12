@@ -9,6 +9,7 @@ import {
   IconGripVertical,
   IconHistory,
   IconHome,
+  IconPencil,
   IconPlus,
   IconSettings,
   IconTrash,
@@ -37,6 +38,10 @@ export function PlusIcon() {
 
 export function TrashIcon() {
   return <IconTrash />;
+}
+
+export function EditIcon() {
+  return <IconPencil />;
 }
 
 export function DragHandle() {

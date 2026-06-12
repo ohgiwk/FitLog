@@ -1,11 +1,29 @@
 import {
   CalendarCell,
   Exercise,
+  ExerciseCategory,
   MeasurementType,
   SetIntensity,
   Workout,
   WorkoutSet,
 } from './types';
+
+/**
+ * 種目の器具カテゴリの表示順とラベル。
+ * 種目選択画面の小見出しやカテゴリ選択でこの順序を使う
+ */
+export const exerciseCategories: { value: ExerciseCategory; label: string }[] = [
+  { value: 'free', label: 'フリーウエイト種目' },
+  { value: 'machine', label: 'マシン種目' },
+  { value: 'dumbbell', label: 'ダンベル種目' },
+  { value: 'cable', label: 'ケーブル種目' },
+  { value: 'bodyweight', label: '自重種目' },
+];
+
+/**
+ * 種目のカテゴリ未設定時に使う既定カテゴリ
+ */
+export const defaultExerciseCategory: ExerciseCategory = 'free';
 
 export function groupExercises(exercises: Exercise[]) {
   return exercises.reduce((groups, exercise) => {

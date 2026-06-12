@@ -1,7 +1,16 @@
-import { useState } from 'react';
-import { MeasurementType } from '../types';
-import { ChevronDown, ChevronLeft, ChevronUp, DragHandle, TrashIcon } from '../icons';
+import { FormEvent, useState } from 'react';
+import { Exercise, ExerciseCategory, MeasurementType } from '../types';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronUp,
+  DragHandle,
+  EditIcon,
+  PlusIcon,
+  TrashIcon,
+} from '../icons';
 import { useFitLogContext } from '../hooks/FitLogContext';
+import { exerciseCategories } from '../utils';
 
 /**
  * 種目選択画面が必要とする state・派生値・操作を Context から組み立てる view-model フック
@@ -13,11 +22,7 @@ function useSelectScreenModel() {
     orderedParts,
     partColors,
     editMode,
-    addFormOpen,
-    partInput,
-    nameInput,
-    measurementTypeInput,
-    expandedParts,
+    activePart,
     draggingExerciseId,
     actions,
   } = useFitLogContext();
@@ -28,34 +33,15 @@ function useSelectScreenModel() {
     orderedParts,
     partColors,
     editMode,
-    addFormOpen,
-    partInput,
-    nameInput,
-    measurementTypeInput,
-    expandedParts,
+    activePart,
     draggingExerciseId,
     onBack: () => actions.setScreen('home'),
     /**
-     * 編集モードを切り替える。編集モードへ入るときは追加フォームを閉じる
+     * 編集モードを切り替える
      */
-    onToggleEditMode: () => {
-      const next = !editMode;
-      actions.setEditMode(next);
-      if (next) actions.setAddFormOpen(false);
-    },
-    /**
-     * 追加フォームを開閉する。開くときに部位が未選択なら先頭の部位を初期値にする
-     */
-    onToggleAddForm: () => {
-      const next = !addFormOpen;
-      if (next && !partInput) actions.setPartInput(orderedParts[0]?.name ?? '');
-      actions.setAddFormOpen(next);
-    },
-    onPartInput: actions.setPartInput,
-    onNameInput: actions.setNameInput,
-    onMeasurementTypeInput: actions.setMeasurementTypeInput,
-    onAddCustomExercise: actions.addCustomExercise,
+    onToggleEditMode: () => actions.setEditMode(!editMode),
     onAddExercise: actions.addExerciseToToday,
+    onAddExerciseToPart: actions.addExerciseToPart,
     onStartDrag: actions.startPointerExerciseDrag,
     /**
      * 並び替え結果を確定し、ドラッグ中の状態を解除する
@@ -65,20 +51,14 @@ function useSelectScreenModel() {
       actions.setDraggingExerciseId(null);
     },
     onDeleteExercise: actions.deleteExercise,
-    onUpdateExerciseMeasurementType: actions.updateExerciseMeasurementType,
-    onTogglePartExpanded: actions.togglePartExpanded,
-    /**
-     * 指定した部位を入力欄へ反映し、追加フォームを開く
-     */
-    onSetPartAndOpenForm: (part: string) => {
-      actions.setPartInput(part);
-      actions.setAddFormOpen(true);
-    },
+    onUpdateExercise: actions.updateExercise,
+    onSelectPart: actions.selectPart,
   };
 }
 
 /**
- * 種目選択画面。部位ごとの種目一覧表示・追加・編集(並び替え/削除)を行う
+ * 種目選択画面。部位タブで切り替えつつ、選択中の部位の種目一覧(カテゴリ別)を
+ * 表示・追加・編集(並び替え/削除)する
  */
 export function SelectScreen() {
   const {
@@ -87,30 +67,30 @@ export function SelectScreen() {
     orderedParts,
     partColors,
     editMode,
-    addFormOpen,
-    partInput,
-    nameInput,
-    measurementTypeInput,
-    expandedParts,
+    activePart,
     draggingExerciseId,
     onBack,
     onToggleEditMode,
-    onToggleAddForm,
-    onPartInput,
-    onNameInput,
-    onMeasurementTypeInput,
-    onAddCustomExercise,
     onAddExercise,
+    onAddExerciseToPart,
     onStartDrag,
     onCommitOrder,
     onDeleteExercise,
-    onUpdateExerciseMeasurementType,
-    onTogglePartExpanded,
-    onSetPartAndOpenForm,
+    onUpdateExercise,
+    onSelectPart,
   } = useSelectScreenModel();
   const partOptions = orderedParts.map((part) => part.name);
   const selectableParts = partOptions.length ? partOptions : ['その他'];
-  const [detailOpen, setDetailOpen] = useState(false);
+  const [dialogPart, setDialogPart] = useState<string | null>(null);
+  const [editExercise, setEditExercise] = useState<Exercise | null>(null);
+  const tabs = Array.from(groupedExercises.keys());
+  const firstPart = tabs[0];
+  /**
+   * 選択中タブが未設定、または種目が無くなった部位を指しているときは先頭タブを使う
+   */
+  const currentPart = activePart && groupedExercises.has(activePart) ? activePart : firstPart;
+  const currentExercises = currentPart ? groupedExercises.get(currentPart) || [] : [];
+
   return (
     <section className="screen active">
       <header className="topbar">
@@ -123,24 +103,193 @@ export function SelectScreen() {
             {editMode ? '完了' : '編集'}
           </button>
         </div>
+        <div className="part-tabs" role="tablist" aria-label="部位">
+          {tabs.map((part) => {
+            const isActive = part === currentPart;
+            const color = partColors.get(part);
+            /**
+             * 文字色は常に白。選択中はその部位の色を背景にする
+             */
+            const style = isActive && color ? { background: color } : undefined;
+            return (
+              <button
+                className={`part-tab ${isActive ? 'active' : ''}`}
+                key={part}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                style={style}
+                onClick={() => onSelectPart(part)}
+              >
+                {part}
+              </button>
+            );
+          })}
+        </div>
       </header>
-      <div className="select-actions">
-        <button className="outline-pill" type="button" onClick={onToggleAddForm}>
-          部位・種目を追加
-        </button>
+      <div className="content">
+        {currentPart && (
+          <section className="part-card">
+            <div className="part-list-head">
+              <span className="part-list-label">
+                {editMode ? `${currentPart}の種目` : partRecentLabels.get(currentPart) || '履歴なし'}
+              </span>
+              {editMode && (
+                <button
+                  className="part-add"
+                  type="button"
+                  aria-label={`${currentPart}に種目を追加`}
+                  onClick={() => setDialogPart(currentPart)}
+                >
+                  <PlusIcon />
+                </button>
+              )}
+            </div>
+            <div className="exercise-list" data-part-list={currentPart}>
+              {exerciseCategories.flatMap(({ value, label }) => {
+                const items = currentExercises.filter((exercise) => exercise.category === value);
+                if (!items.length) return [];
+                return [
+                  <div className="category-subhead" key={`head-${value}`}>
+                    {label}
+                  </div>,
+                  ...items.map((exercise) =>
+                    editMode ? (
+                      <div
+                        className={`exercise-option edit-row ${draggingExerciseId === exercise.id ? 'dragging' : ''}`}
+                        data-exercise-row={exercise.id}
+                        draggable
+                        key={exercise.id}
+                        onPointerDown={onStartDrag}
+                        onDragStart={(event) => {
+                          event.dataTransfer.effectAllowed = 'move';
+                          event.dataTransfer.setData('text/plain', exercise.id);
+                        }}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDragEnd={() =>
+                          onCommitOrder(
+                            Array.from(
+                              document.querySelectorAll<HTMLElement>('[data-exercise-row]'),
+                            ),
+                          )
+                        }
+                      >
+                        <span className="drag-handle" aria-hidden="true">
+                          <DragHandle />
+                        </span>
+                        <span className="exercise-name">{exercise.name}</span>
+                        <button
+                          className="edit-exercise"
+                          data-row-action
+                          type="button"
+                          aria-label="種目を編集"
+                          onClick={() => setEditExercise(exercise)}
+                        >
+                          <EditIcon />
+                        </button>
+                        <button
+                          className="delete-exercise"
+                          data-row-action
+                          type="button"
+                          aria-label="種目を削除"
+                          onClick={() => onDeleteExercise(exercise.id)}
+                        >
+                          <TrashIcon />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className="exercise-option"
+                        key={exercise.id}
+                        type="button"
+                        onClick={() => onAddExercise(exercise.id)}
+                      >
+                        {exercise.name}
+                      </button>
+                    ),
+                  ),
+                ];
+              })}
+            </div>
+          </section>
+        )}
       </div>
-      {addFormOpen && (
-        <form className="add-form" onSubmit={onAddCustomExercise}>
+      {dialogPart !== null && (
+        <AddExerciseDialog
+          initialPart={dialogPart}
+          parts={selectableParts}
+          onClose={() => setDialogPart(null)}
+          onSubmit={onAddExerciseToPart}
+        />
+      )}
+      {editExercise !== null && (
+        <EditExerciseDialog
+          exercise={editExercise}
+          onClose={() => setEditExercise(null)}
+          onSubmit={onUpdateExercise}
+        />
+      )}
+    </section>
+  );
+}
+
+/**
+ * 編集モードで部位ヘッダの「＋」から開く、種目追加ダイアログ。
+ * 部位・種目名・(詳細設定の)記録単位を入力し、追加後はこの画面の編集モードに留まる
+ */
+function AddExerciseDialog({
+  initialPart,
+  parts,
+  onClose,
+  onSubmit,
+}: {
+  initialPart: string;
+  parts: string[];
+  onClose: () => void;
+  onSubmit: (
+    part: string,
+    name: string,
+    measurementType: MeasurementType,
+    category: ExerciseCategory,
+  ) => boolean;
+}) {
+  const [part, setPart] = useState(initialPart);
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState<ExerciseCategory>('free');
+  const [measurementType, setMeasurementType] = useState<MeasurementType>('reps');
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  /**
+   * 入力内容で種目を追加し、成功したらダイアログを閉じる
+   */
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (onSubmit(part, name, measurementType, category)) onClose();
+  }
+
+  return (
+    <div className="dialog-backdrop" role="presentation" onClick={onClose}>
+      <div
+        className="confirm-dialog add-exercise-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-exercise-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="confirm-title" id="add-exercise-title">
+          種目を追加
+        </div>
+        <form className="add-form" onSubmit={handleSubmit}>
           <label>
             部位
             <select
               className="add-form-select"
-              value={partInput || selectableParts[0]}
-              onChange={(event) => onPartInput(event.target.value)}
+              value={part}
+              onChange={(event) => setPart(event.target.value)}
             >
-              {selectableParts.map((part) => (
-                <option key={part} value={part}>
-                  {part}
+              {parts.map((item) => (
+                <option key={item} value={item}>
+                  {item}
                 </option>
               ))}
             </select>
@@ -148,10 +297,25 @@ export function SelectScreen() {
           <label>
             種目名
             <input
+              autoFocus
               maxLength={30}
-              value={nameInput}
-              onChange={(event) => onNameInput(event.target.value)}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
             />
+          </label>
+          <label>
+            カテゴリ
+            <select
+              className="add-form-select"
+              value={category}
+              onChange={(event) => setCategory(event.target.value as ExerciseCategory)}
+            >
+              {exerciseCategories.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
           </label>
           <button
             className="add-form-detail-toggle"
@@ -165,99 +329,114 @@ export function SelectScreen() {
           {detailOpen && (
             <div className="form-field form-field-row">
               <div className="form-label">記録単位</div>
-              <MeasurementToggle value={measurementTypeInput} onChange={onMeasurementTypeInput} />
+              <MeasurementToggle value={measurementType} onChange={setMeasurementType} />
             </div>
           )}
-          <button className="primary" type="submit">
-            追加して記録へ
-          </button>
+          <div className="confirm-actions">
+            <button className="small-outline" type="button" onClick={onClose}>
+              キャンセル
+            </button>
+            <button className="small-primary" type="submit" disabled={!name.trim()}>
+              追加
+            </button>
+          </div>
         </form>
-      )}
-      <div className="content">
-        {Array.from(groupedExercises.entries()).map(([part, exercises]) => {
-          const expanded = expandedParts.has(part);
-          const visibleExercises = editMode || expanded ? exercises : exercises.slice(0, 4);
-          return (
-            <section className="part-card" key={part}>
-              <div
-                className="part-title"
-                style={partColors.get(part) ? { borderLeftColor: partColors.get(part) } : undefined}
-              >
-                {part}
-                {editMode ? '' : ` - ${partRecentLabels.get(part) || '履歴なし'}`}
-              </div>
-              <div className="exercise-list" data-part-list={part}>
-                {visibleExercises.map((exercise) =>
-                  editMode ? (
-                    <div
-                      className={`exercise-option edit-row ${draggingExerciseId === exercise.id ? 'dragging' : ''}`}
-                      data-exercise-row={exercise.id}
-                      draggable
-                      key={exercise.id}
-                      onPointerDown={onStartDrag}
-                      onDragStart={(event) => {
-                        event.dataTransfer.effectAllowed = 'move';
-                        event.dataTransfer.setData('text/plain', exercise.id);
-                      }}
-                      onDragOver={(event) => event.preventDefault()}
-                      onDragEnd={() =>
-                        onCommitOrder(
-                          Array.from(document.querySelectorAll<HTMLElement>('[data-exercise-row]')),
-                        )
-                      }
-                    >
-                      <span className="drag-handle" aria-hidden="true">
-                        <DragHandle />
-                      </span>
-                      <span className="exercise-name">{exercise.name}</span>
-                      <MeasurementToggle
-                        value={exercise.measurementType}
-                        compact
-                        onChange={(measurementType) =>
-                          onUpdateExerciseMeasurementType(exercise.id, measurementType)
-                        }
-                      />
-                      <button
-                        className="delete-exercise"
-                        data-row-action
-                        type="button"
-                        aria-label="種目を削除"
-                        onClick={() => onDeleteExercise(exercise.id)}
-                      >
-                        <TrashIcon />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      className="exercise-option"
-                      key={exercise.id}
-                      type="button"
-                      onClick={() => onAddExercise(exercise.id)}
-                    >
-                      {exercise.name}
-                    </button>
-                  ),
-                )}
-              </div>
-              {!editMode && (
-                <div className="part-foot">
-                  <button type="button" onClick={() => onSetPartAndOpenForm(part)}>
-                    種目を追加
-                  </button>
-                  {exercises.length > 4 ? (
-                    <button type="button" onClick={() => onTogglePartExpanded(part)}>
-                      {expanded ? '閉じる' : 'すべて表示'}
-                    </button>
-                  ) : (
-                    <span />
-                  )}
-                </div>
-              )}
-            </section>
-          );
-        })}
       </div>
-    </section>
+    </div>
+  );
+}
+
+/**
+ * 編集モードで種目行の編集アイコンから開く、種目編集ダイアログ。
+ * 種目名・カテゴリ・(詳細設定の)記録単位を編集し、保存すると編集モードに留まる
+ */
+function EditExerciseDialog({
+  exercise,
+  onClose,
+  onSubmit,
+}: {
+  exercise: Exercise;
+  onClose: () => void;
+  onSubmit: (
+    exerciseId: string,
+    fields: { name: string; measurementType: MeasurementType; category: ExerciseCategory },
+  ) => boolean;
+}) {
+  const [name, setName] = useState(exercise.name);
+  const [category, setCategory] = useState<ExerciseCategory>(exercise.category);
+  const [measurementType, setMeasurementType] = useState<MeasurementType>(exercise.measurementType);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  /**
+   * 入力内容で種目を更新し、成功したらダイアログを閉じる
+   */
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (onSubmit(exercise.id, { name, measurementType, category })) onClose();
+  }
+
+  return (
+    <div className="dialog-backdrop" role="presentation" onClick={onClose}>
+      <div
+        className="confirm-dialog add-exercise-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-exercise-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="confirm-title" id="edit-exercise-title">
+          種目を編集
+        </div>
+        <form className="add-form" onSubmit={handleSubmit}>
+          <label>
+            種目名
+            <input
+              autoFocus
+              maxLength={30}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+          </label>
+          <label>
+            カテゴリ
+            <select
+              className="add-form-select"
+              value={category}
+              onChange={(event) => setCategory(event.target.value as ExerciseCategory)}
+            >
+              {exerciseCategories.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            className="add-form-detail-toggle"
+            type="button"
+            aria-expanded={detailOpen}
+            onClick={() => setDetailOpen((open) => !open)}
+          >
+            <span>詳細設定</span>
+            {detailOpen ? <ChevronUp /> : <ChevronDown />}
+          </button>
+          {detailOpen && (
+            <div className="form-field form-field-row">
+              <div className="form-label">記録単位</div>
+              <MeasurementToggle value={measurementType} onChange={setMeasurementType} />
+            </div>
+          )}
+          <div className="confirm-actions">
+            <button className="small-outline" type="button" onClick={onClose}>
+              キャンセル
+            </button>
+            <button className="small-primary" type="submit" disabled={!name.trim()}>
+              保存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 
