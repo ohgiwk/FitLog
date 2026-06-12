@@ -33,20 +33,6 @@ export function groupExercises(exercises: Exercise[]) {
   }, new Map<string, Exercise[]>());
 }
 
-export function dragAfterElement(list: HTMLElement, y: number) {
-  return Array.from(
-    list.querySelectorAll<HTMLElement>('[data-exercise-row]:not(.dragging)'),
-  ).reduce(
-    (closest, child) => {
-      const box = child.getBoundingClientRect();
-      const offset = y - box.top - box.height / 2;
-      if (offset < 0 && offset > closest.offset) return { offset, element: child };
-      return closest;
-    },
-    { offset: Number.NEGATIVE_INFINITY, element: null as HTMLElement | null },
-  ).element;
-}
-
 export function calendarCells(year: number, month: number): CalendarCell[] {
   const first = new Date(year, month, 1);
   const start = new Date(year, month, 1 - first.getDay());

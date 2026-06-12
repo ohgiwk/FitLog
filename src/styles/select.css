@@ -89,9 +89,16 @@
   grid-template-columns: 40px 1fr 42px 42px;
   align-items: center;
   gap: 8px;
+  user-select: none;
+}
+
+.exercise-option.edit-row .drag-handle {
   cursor: grab;
   touch-action: none;
-  user-select: none;
+}
+
+.exercise-option.edit-row .drag-handle:active {
+  cursor: grabbing;
 }
 
 .category-subhead {
@@ -104,17 +111,13 @@
   letter-spacing: 0.04em;
 }
 
-.exercise-option.edit-row:active {
-  cursor: grabbing;
+.category-rows {
+  min-height: 18px;
 }
 
 .exercise-option.dragging {
-  opacity: 0.45;
-}
-
-.exercise-list.drop-target {
-  outline: 2px solid var(--red-soft);
-  outline-offset: -2px;
+  opacity: 0.5;
+  background: var(--surface-muted);
 }
 
 .drag-handle {

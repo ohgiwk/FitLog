@@ -7,7 +7,6 @@ export function useFitLogUi() {
   const [historyPartFilter, setHistoryPartFilter] = useState('ALL');
   const [editMode, setEditMode] = useState(false);
   const [activePart, setActivePart] = useState<string | null>(null);
-  const [draggingExerciseId, setDraggingExerciseId] = useState<string | null>(null);
 
   /**
    * 種目選択画面で表示する部位タブを切り替える
@@ -23,8 +22,6 @@ export function useFitLogUi() {
     setEditMode,
     activePart,
     setActivePart,
-    draggingExerciseId,
-    setDraggingExerciseId,
     selectPart,
   };
 }

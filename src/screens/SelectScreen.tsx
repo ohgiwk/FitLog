@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, PointerEvent, useRef, useState } from 'react';
 import { Exercise, ExerciseCategory, MeasurementType } from '../types';
 import {
   ChevronDown,
@@ -13,19 +13,16 @@ import { useFitLogContext } from '../hooks/FitLogContext';
 import { exerciseCategories } from '../utils';
 
 /**
+ * 器具カテゴリの表示順での並び(value のみ)
+ */
+const categoryOrder = exerciseCategories.map((item) => item.value);
+
+/**
  * 種目選択画面が必要とする state・派生値・操作を Context から組み立てる view-model フック
  */
 function useSelectScreenModel() {
-  const {
-    groupedExercises,
-    partRecentLabels,
-    orderedParts,
-    partColors,
-    editMode,
-    activePart,
-    draggingExerciseId,
-    actions,
-  } = useFitLogContext();
+  const { groupedExercises, partRecentLabels, orderedParts, partColors, editMode, activePart, actions } =
+    useFitLogContext();
 
   return {
     groupedExercises,
@@ -34,7 +31,6 @@ function useSelectScreenModel() {
     partColors,
     editMode,
     activePart,
-    draggingExerciseId,
     onBack: () => actions.setScreen('home'),
     /**
      * 編集モードを切り替える
@@ -42,14 +38,7 @@ function useSelectScreenModel() {
     onToggleEditMode: () => actions.setEditMode(!editMode),
     onAddExercise: actions.addExerciseToToday,
     onAddExerciseToPart: actions.addExerciseToPart,
-    onStartDrag: actions.startPointerExerciseDrag,
-    /**
-     * 並び替え結果を確定し、ドラッグ中の状態を解除する
-     */
-    onCommitOrder: (rows: HTMLElement[]) => {
-      actions.commitExerciseOrder(rows);
-      actions.setDraggingExerciseId(null);
-    },
+    onReorder: actions.reorderPartExercises,
     onDeleteExercise: actions.deleteExercise,
     onUpdateExercise: actions.updateExercise,
     onSelectPart: actions.selectPart,
@@ -68,13 +57,11 @@ export function SelectScreen() {
     partColors,
     editMode,
     activePart,
-    draggingExerciseId,
     onBack,
     onToggleEditMode,
     onAddExercise,
     onAddExerciseToPart,
-    onStartDrag,
-    onCommitOrder,
+    onReorder,
     onDeleteExercise,
     onUpdateExercise,
     onSelectPart,
@@ -90,6 +77,13 @@ export function SelectScreen() {
    */
   const currentPart = activePart && groupedExercises.has(activePart) ? activePart : firstPart;
   const currentExercises = currentPart ? groupedExercises.get(currentPart) || [] : [];
+
+  const reorder = useExerciseReorder({
+    exercises: currentExercises,
+    onCommit: (layout) => {
+      if (currentPart) onReorder(currentPart, layout);
+    },
+  });
 
   return (
     <section className="screen active">
@@ -145,59 +139,63 @@ export function SelectScreen() {
                 </button>
               )}
             </div>
-            <div className="exercise-list" data-part-list={currentPart}>
-              {exerciseCategories.flatMap(({ value, label }) => {
-                const items = currentExercises.filter((exercise) => exercise.category === value);
-                if (!items.length) return [];
-                return [
-                  <div className="category-subhead" key={`head-${value}`}>
-                    {label}
-                  </div>,
-                  ...items.map((exercise) =>
-                    editMode ? (
-                      <div
-                        className={`exercise-option edit-row ${draggingExerciseId === exercise.id ? 'dragging' : ''}`}
-                        data-exercise-row={exercise.id}
-                        draggable
-                        key={exercise.id}
-                        onPointerDown={onStartDrag}
-                        onDragStart={(event) => {
-                          event.dataTransfer.effectAllowed = 'move';
-                          event.dataTransfer.setData('text/plain', exercise.id);
-                        }}
-                        onDragOver={(event) => event.preventDefault()}
-                        onDragEnd={() =>
-                          onCommitOrder(
-                            Array.from(
-                              document.querySelectorAll<HTMLElement>('[data-exercise-row]'),
-                            ),
-                          )
-                        }
-                      >
-                        <span className="drag-handle" aria-hidden="true">
-                          <DragHandle />
-                        </span>
-                        <span className="exercise-name">{exercise.name}</span>
-                        <button
-                          className="edit-exercise"
-                          data-row-action
-                          type="button"
-                          aria-label="種目を編集"
-                          onClick={() => setEditExercise(exercise)}
-                        >
-                          <EditIcon />
-                        </button>
-                        <button
-                          className="delete-exercise"
-                          data-row-action
-                          type="button"
-                          aria-label="種目を削除"
-                          onClick={() => onDeleteExercise(exercise.id)}
-                        >
-                          <TrashIcon />
-                        </button>
+            {editMode ? (
+              <div className="exercise-list" ref={reorder.listRef}>
+                {exerciseCategories.map(({ value, label }) => {
+                  const items = reorder.itemsFor(value);
+                  return (
+                    <div className="category-section" data-category-section={value} key={value}>
+                      <div className="category-subhead">{label}</div>
+                      <div className="category-rows">
+                        {items.map((exercise) => (
+                          <div
+                            className={`exercise-option edit-row ${reorder.draggingId === exercise.id ? 'dragging' : ''}`}
+                            data-exercise-row={exercise.id}
+                            key={exercise.id}
+                            onPointerDown={(event) => reorder.onPointerDown(event, exercise.id)}
+                            onPointerMove={reorder.onPointerMove}
+                            onPointerUp={reorder.onPointerUp}
+                            onPointerCancel={reorder.onPointerUp}
+                          >
+                            <span className="drag-handle" data-drag-handle aria-hidden="true">
+                              <DragHandle />
+                            </span>
+                            <span className="exercise-name">{exercise.name}</span>
+                            <button
+                              className="edit-exercise"
+                              data-row-action
+                              type="button"
+                              aria-label="種目を編集"
+                              onClick={() => setEditExercise(exercise)}
+                            >
+                              <EditIcon />
+                            </button>
+                            <button
+                              className="delete-exercise"
+                              data-row-action
+                              type="button"
+                              aria-label="種目を削除"
+                              onClick={() => onDeleteExercise(exercise.id)}
+                            >
+                              <TrashIcon />
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                    ) : (
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="exercise-list">
+                {exerciseCategories.flatMap(({ value, label }) => {
+                  const items = currentExercises.filter((exercise) => exercise.category === value);
+                  if (!items.length) return [];
+                  return [
+                    <div className="category-subhead" key={`head-${value}`}>
+                      {label}
+                    </div>,
+                    ...items.map((exercise) => (
                       <button
                         className="exercise-option"
                         key={exercise.id}
@@ -206,11 +204,11 @@ export function SelectScreen() {
                       >
                         {exercise.name}
                       </button>
-                    ),
-                  ),
-                ];
-              })}
-            </div>
+                    )),
+                  ];
+                })}
+              </div>
+            )}
           </section>
         )}
       </div>
@@ -225,12 +223,154 @@ export function SelectScreen() {
       {editExercise !== null && (
         <EditExerciseDialog
           exercise={editExercise}
+          parts={selectableParts}
           onClose={() => setEditExercise(null)}
           onSubmit={onUpdateExercise}
         />
       )}
     </section>
   );
+}
+
+/**
+ * 種目のレイアウト(表示順とカテゴリ)を表す 1 要素
+ */
+type ReorderItem = { id: string; category: ExerciseCategory };
+
+/**
+ * 2 つのレイアウトが同一(順序・カテゴリとも)か判定する
+ */
+function sameLayout(a: ReorderItem[], b: ReorderItem[]) {
+  return (
+    a.length === b.length &&
+    a.every((item, index) => item.id === b[index].id && item.category === b[index].category)
+  );
+}
+
+/**
+ * 種目行のドラッグ並び替えを、DOM を直接書き換えずに React の state で管理するフック。
+ * ポインタ位置から「挿入先カテゴリ」と「挿入位置」を計算し、作業中のレイアウトを返す。
+ * カテゴリをまたいでドロップした種目は移動先カテゴリへ変わり、終了時に確定する
+ */
+function useExerciseReorder({
+  exercises,
+  onCommit,
+}: {
+  exercises: Exercise[];
+  onCommit: (layout: ReorderItem[]) => void;
+}) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [layout, setLayout] = useState<ReorderItem[] | null>(null);
+
+  const byId = new Map(exercises.map((exercise) => [exercise.id, exercise]));
+  /**
+   * 既定レイアウトは、カテゴリ表示順 → 各カテゴリ内は種目配列順で並べたもの
+   */
+  const baseLayout: ReorderItem[] = categoryOrder.flatMap((category) =>
+    exercises
+      .filter((exercise) => exercise.category === category)
+      .map((exercise) => ({ id: exercise.id, category })),
+  );
+  const activeLayout = layout ?? baseLayout;
+
+  /**
+   * 指定カテゴリに属する種目を、現在の作業レイアウト順で返す
+   */
+  function itemsFor(category: ExerciseCategory): Exercise[] {
+    return activeLayout
+      .filter((item) => item.category === category)
+      .map((item) => byId.get(item.id))
+      .filter((exercise): exercise is Exercise => Boolean(exercise));
+  }
+
+  /**
+   * フラットなレイアウト配列内で、対象カテゴリ・挿入先 ID から挿入位置を求める。
+   * 挿入先 ID が無い(カテゴリ末尾/空カテゴリ)場合もグループ順を保つ位置を返す
+   */
+  function insertionIndex(list: ReorderItem[], category: ExerciseCategory, beforeId: string | null) {
+    if (beforeId) {
+      const index = list.findIndex((item) => item.id === beforeId);
+      if (index !== -1) return index;
+    }
+    const targetRank = categoryOrder.indexOf(category);
+    let index = 0;
+    list.forEach((item, i) => {
+      if (categoryOrder.indexOf(item.category) <= targetRank) index = i + 1;
+    });
+    return index;
+  }
+
+  /**
+   * ドラッグハンドル上での押下だけドラッグを開始する
+   */
+  function onPointerDown(event: PointerEvent<HTMLDivElement>, id: string) {
+    if (!(event.target as HTMLElement).closest('[data-drag-handle]')) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDraggingId(id);
+    setLayout(baseLayout);
+  }
+
+  /**
+   * ポインタ位置から挿入先カテゴリと位置を割り出し、ドラッグ中の種目を移動する
+   */
+  function onPointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (draggingId === null || !listRef.current) return;
+    const y = event.clientY;
+    const sections = Array.from(
+      listRef.current.querySelectorAll<HTMLElement>('[data-category-section]'),
+    );
+    if (!sections.length) return;
+
+    /**
+     * ポインタが含まれるカテゴリ区画を探す。無ければ先頭より上は先頭、以降は最後の区画
+     */
+    let targetCategory = sections[sections.length - 1].dataset.categorySection as ExerciseCategory;
+    for (const section of sections) {
+      const box = section.getBoundingClientRect();
+      if (y < box.bottom) {
+        targetCategory = section.dataset.categorySection as ExerciseCategory;
+        break;
+      }
+    }
+
+    const section = sections.find((item) => item.dataset.categorySection === targetCategory);
+    let insertBeforeId: string | null = null;
+    if (section) {
+      const rows = Array.from(section.querySelectorAll<HTMLElement>('[data-exercise-row]'));
+      for (const row of rows) {
+        const id = row.dataset.exerciseRow;
+        if (!id || id === draggingId) continue;
+        const box = row.getBoundingClientRect();
+        if (y < box.top + box.height / 2) {
+          insertBeforeId = id;
+          break;
+        }
+      }
+    }
+
+    setLayout((prev) => {
+      const current = prev ?? baseLayout;
+      const filtered = current.filter((item) => item.id !== draggingId);
+      const index = insertionIndex(filtered, targetCategory, insertBeforeId);
+      const next = [...filtered];
+      next.splice(index, 0, { id: draggingId, category: targetCategory });
+      return sameLayout(next, current) ? current : next;
+    });
+  }
+
+  /**
+   * ドラッグを終了し、レイアウト(順序・カテゴリ)が変わっていれば確定する
+   */
+  function onPointerUp() {
+    if (draggingId !== null && layout && !sameLayout(layout, baseLayout)) {
+      onCommit(layout);
+    }
+    setDraggingId(null);
+    setLayout(null);
+  }
+
+  return { listRef, draggingId, itemsFor, onPointerDown, onPointerMove, onPointerUp };
 }
 
 /**
@@ -352,27 +492,39 @@ function AddExerciseDialog({
  */
 function EditExerciseDialog({
   exercise,
+  parts,
   onClose,
   onSubmit,
 }: {
   exercise: Exercise;
+  parts: string[];
   onClose: () => void;
   onSubmit: (
     exerciseId: string,
-    fields: { name: string; measurementType: MeasurementType; category: ExerciseCategory },
+    fields: {
+      part: string;
+      name: string;
+      measurementType: MeasurementType;
+      category: ExerciseCategory;
+    },
   ) => boolean;
 }) {
+  const [part, setPart] = useState(exercise.part);
   const [name, setName] = useState(exercise.name);
   const [category, setCategory] = useState<ExerciseCategory>(exercise.category);
   const [measurementType, setMeasurementType] = useState<MeasurementType>(exercise.measurementType);
   const [detailOpen, setDetailOpen] = useState(false);
+  /**
+   * 変更前の部位が選択肢に無い場合に備え、先頭へ補っておく
+   */
+  const partChoices = parts.includes(part) ? parts : [part, ...parts];
 
   /**
    * 入力内容で種目を更新し、成功したらダイアログを閉じる
    */
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (onSubmit(exercise.id, { name, measurementType, category })) onClose();
+    if (onSubmit(exercise.id, { part, name, measurementType, category })) onClose();
   }
 
   return (
@@ -388,6 +540,20 @@ function EditExerciseDialog({
           種目を編集
         </div>
         <form className="add-form" onSubmit={handleSubmit}>
+          <label>
+            部位
+            <select
+              className="add-form-select"
+              value={part}
+              onChange={(event) => setPart(event.target.value)}
+            >
+              {partChoices.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </label>
           <label>
             種目名
             <input

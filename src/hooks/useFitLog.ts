@@ -46,7 +46,6 @@ export function useFitLog() {
     state: core.state,
     saveState: core.saveState,
     showToast: core.showToast,
-    setDraggingExerciseId: ui.setDraggingExerciseId,
   });
 
   const trainingPlan = useTrainingPlanActions({
@@ -75,7 +74,6 @@ export function useFitLog() {
   return {
     currentPreset: presets.currentPreset,
     currentWorkout: nav.currentWorkout,
-    draggingExerciseId: ui.draggingExerciseId,
     editMode: ui.editMode,
     editingPreset: presets.editingPreset,
     activePart: ui.activePart,
@@ -96,7 +94,7 @@ export function useFitLog() {
       addExerciseToPreset: presets.addExerciseToPreset,
       addExerciseToToday: workout.addExerciseToToday,
       addSet: workout.addSet,
-      commitExerciseOrder: exercise.commitExerciseOrder,
+      reorderPartExercises: exercise.reorderPartExercises,
       createPreset: presets.createPreset,
       deleteExercise: exercise.deleteExercise,
       deletePreset: presets.deletePreset,
@@ -116,11 +114,9 @@ export function useFitLog() {
       selectPreset: presets.setCurrentPresetId,
       setCurrentEditingPresetId: presets.setCurrentEditingPresetId,
       setCurrentWorkoutId: nav.setCurrentWorkoutId,
-      setDraggingExerciseId: ui.setDraggingExerciseId,
       setHistoryPartFilter: ui.setHistoryPartFilter,
       setScreen: nav.showScreen,
       setEditMode: ui.setEditMode,
-      startPointerExerciseDrag: exercise.startPointerExerciseDrag,
       startPreset: presets.startPreset,
       addTrainingPlan: trainingPlan.addTrainingPlan,
       upsertTrainingPlan: trainingPlan.upsertTrainingPlan,
