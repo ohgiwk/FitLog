@@ -148,6 +148,7 @@
 
 .rest-timer {
   position: fixed;
+  bottom: calc(86px + constant(safe-area-inset-bottom));
   bottom: calc(86px + env(safe-area-inset-bottom));
   left: calc(12px + max(0px, (100vw - 480px) / 2));
   z-index: 20;
