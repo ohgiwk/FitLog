@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { CalendarIcon, HomeIcon } from './icons';
 import { FitLogProvider, useFitLogContext } from './hooks/FitLogContext';
 import { DetailScreen } from './screens/DetailScreen';
@@ -8,6 +9,8 @@ import { PartEditScreen } from './screens/PartEditScreen';
 import { PresetEditScreen } from './screens/PresetEditScreen';
 import { PresetListScreen } from './screens/PresetListScreen';
 import { SelectScreen } from './screens/SelectScreen';
+
+type UpdateServiceWorker = (reloadPage?: boolean) => Promise<void>;
 
 export function App() {
   return (
@@ -23,6 +26,24 @@ export function App() {
  */
 function AppShell() {
   const { screen, currentWorkout, toast, actions } = useFitLogContext();
+  const [updateServiceWorker, setUpdateServiceWorker] = useState<UpdateServiceWorker | null>(null);
+  const [updating, setUpdating] = useState(false);
+
+  useEffect(() => {
+    const onPwaUpdate = (event: Event) => {
+      const { detail } = event as CustomEvent<{ updateSW: UpdateServiceWorker }>;
+      setUpdateServiceWorker(() => detail.updateSW);
+    };
+
+    window.addEventListener('fitlog:pwa-update', onPwaUpdate);
+    return () => window.removeEventListener('fitlog:pwa-update', onPwaUpdate);
+  }, []);
+
+  async function applyUpdate() {
+    if (!updateServiceWorker) return;
+    setUpdating(true);
+    await updateServiceWorker(true);
+  }
 
   return (
     <>
@@ -58,6 +79,14 @@ function AppShell() {
       <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">
         {toast}
       </div>
+      {updateServiceWorker && (
+        <div className="update-banner" role="status" aria-live="polite">
+          <span>新しいバージョンがあります</span>
+          <button className="update-button" type="button" disabled={updating} onClick={applyUpdate}>
+            {updating ? '更新中' : '更新'}
+          </button>
+        </div>
+      )}
     </>
   );
 }

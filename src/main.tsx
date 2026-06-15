@@ -5,7 +5,12 @@ import { App } from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { registerSW } from 'virtual:pwa-register';
 
-registerSW({ immediate: true });
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    window.dispatchEvent(new CustomEvent('fitlog:pwa-update', { detail: { updateSW } }));
+  },
+});
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

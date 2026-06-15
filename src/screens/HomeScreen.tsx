@@ -11,6 +11,7 @@ import {
 } from '../utils';
 import { HomeSetRow } from '../components/HomeSetRow';
 import { useFitLogContext } from '../hooks/FitLogContext';
+import { appVersion } from '../version';
 
 const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
 
@@ -327,6 +328,9 @@ export function HomeScreen() {
       <button className="fab" type="button" aria-label="種目を追加" onClick={onOpenSelect}>
         <PlusIcon />
       </button>
+      <div className="app-version" aria-label={`アプリバージョン ${appVersion}`}>
+        {appVersion}
+      </div>
       {deleteTarget && (
         <div className="dialog-backdrop" role="presentation">
           <div

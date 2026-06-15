@@ -223,3 +223,11 @@
   height: 36px;
   font-size: 16px;
 }
+
+.app-version {
+  margin: 6px auto 12px;
+  color: var(--text-muted-light);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}

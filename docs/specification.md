@@ -56,13 +56,13 @@ npm run format       # prettier --write
   - `display: 'standalone'`、`orientation: 'portrait'`
   - `theme_color: '#ef2331'`、`background_color: '#0f1115'`、`lang: 'ja'`
   - アイコン: `pwa-192x192.png`（any）、`pwa-512x512.png`（any maskable）
-- `registerType: 'autoUpdate'`（新しい Service Worker を自動で取り込む）。
+- `registerType: 'prompt'`（新しい Service Worker を検出したらアプリ側で更新通知を表示し、更新ボタンで取り込む）。
 - workbox: `navigateFallback: '/FitLog/index.html'`、`globPatterns` に `js,css,html,svg,png,ico` をプリキャッシュ。
 
 ### 2.3 エントリポイント（`src/main.tsx`）
 
 - `React.StrictMode` → `ErrorBoundary` → `App` の順に包む。
-- `registerSW({ immediate: true })` で Service Worker を即時登録する。
+- `registerSW({ immediate: true, onNeedRefresh })` で Service Worker を即時登録し、新しい Service Worker を検出したらアプリへ更新イベントを通知する。
 
 ### 2.4 プロジェクト構成 / 主要ファイル
 
@@ -335,6 +335,7 @@ type PartSetting = {
 - `<main class="app">` 内に現在の画面を 1 つだけ描画。
 - ボトムナビは 2 タブ:「ホーム」（`home`）/「履歴/計画」（`history`）。
 - トースト領域は `role="status"` `aria-live="polite"`。
+- 新しい Service Worker を検出したときは、画面下部に更新通知を表示する。「更新」ボタンを押すと新しい Service Worker を有効化し、ページを再読み込みする。
 - `detail` / `exerciseHistory` は `currentWorkout` がある場合のみ描画。
 
 #### 画面遷移の共通処理（`showScreen`）
@@ -357,6 +358,7 @@ type PartSetting = {
 - **FAB（＋）**: 種目選択画面へ。
 - **削除確認ダイアログ**: 記録ありの種目を削除しようとすると確認ダイアログを表示。未開始ワークアウトは確認なしで即削除。
 - **カレンダーダイアログ**: 月移動・日付選択・「本日」ジャンプ。記録のある日は `trained`、選択日は `selected` を付与。
+- **バージョン表示**: ホーム画面の下部中央にアプリバージョン（現在 `v0.0.1`）を小さなグレー文字で表示。
 
 ### 6.3 種目選択（`SelectScreen`）
 
