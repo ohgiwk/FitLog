@@ -1,19 +1,43 @@
-import { KeyboardEvent, MouseEvent, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, PlusIcon, TrashIcon } from '../icons';
+import { KeyboardEvent, MouseEvent, PointerEvent, useMemo, useRef, useState } from 'react';
+import { ChevronDown, ChevronUp, PlusIcon, TrashIcon } from '../icons';
 import { Workout } from '../types';
-import {
-  calendarCells,
-  isRepsMeasurement,
-  isUnstartedWorkout,
-  localDate,
-  number,
-  parseDate,
-} from '../utils';
+import { calendarCells, isUnstartedWorkout, localDate, parseDate } from '../utils';
 import { HomeSetRow } from '../components/HomeSetRow';
 import { useFitLogContext } from '../hooks/FitLogContext';
 import { appVersion } from '../version';
 
 const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
+type HomeCalendarMode = 'week' | 'month';
+
+/**
+ * 指定日を含む日曜始まりの1週間を作る
+ */
+function weekCells(anchorDate: Date) {
+  const start = new Date(anchorDate);
+  start.setDate(anchorDate.getDate() - anchorDate.getDay());
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    return { date: localDate(date), day: date.getDate(), inMonth: true };
+  });
+}
+
+/**
+ * 表示中の日付を週または月単位で移動する
+ */
+function moveCalendarAnchor(anchorDate: Date, mode: HomeCalendarMode, delta: number) {
+  const next = new Date(anchorDate);
+  if (mode === 'week') {
+    next.setDate(next.getDate() + delta * 7);
+    return next;
+  }
+
+  const day = next.getDate();
+  next.setDate(1);
+  next.setMonth(next.getMonth() + delta);
+  next.setDate(Math.min(day, new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate()));
+  return next;
+}
 
 /**
  * ホーム画面が必要とする state・派生値・操作を Context から組み立てる view-model フック
@@ -30,13 +54,13 @@ function useHomeScreenModel() {
     selectedPlannedParts,
     presets: state.presets,
     currentPreset,
-    onMoveDate: actions.moveDate,
     /**
-     * 日付を選択し、開いていた種目詳細の選択を解除する
+     * 日付を選択し、対象日のホーム内容へ移動する
      */
     onSelectDate: (date: string) => {
       actions.selectDate(date);
       actions.setCurrentWorkoutId(null);
+      actions.setScreen('home');
     },
     onSelectPreset: actions.selectPreset,
     onStartWorkoutDay: actions.startWorkoutDay,
@@ -60,7 +84,6 @@ export function HomeScreen() {
     selectedPlannedParts,
     presets,
     currentPreset,
-    onMoveDate,
     onSelectDate,
     onSelectPreset,
     onStartWorkoutDay,
@@ -71,44 +94,22 @@ export function HomeScreen() {
     onDeleteWorkout,
   } = useHomeScreenModel();
   const [deleteTarget, setDeleteTarget] = useState<Workout | null>(null);
-  const [calendarOpen, setCalendarOpen] = useState(false);
-  const [calendarMonthDate, setCalendarMonthDate] = useState(() => parseDate(selectedDate));
-  const date = new Date(`${selectedDate}T00:00:00`);
-  const dateLabel = `${selectedDate.replaceAll('-', '/')} (${weekdayLabels[date.getDay()]})`;
-  const sets = selectedWorkouts.flatMap((workout) => workout.sets);
-  const calendarYear = calendarMonthDate.getFullYear();
-  const calendarMonth = calendarMonthDate.getMonth();
+  const [calendarMode, setCalendarMode] = useState<HomeCalendarMode>('week');
+  const [calendarAnchorDate, setCalendarAnchorDate] = useState(() => parseDate(selectedDate));
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const suppressClick = useRef(false);
+  const calendarYear = calendarAnchorDate.getFullYear();
+  const calendarMonth = calendarAnchorDate.getMonth();
+  const today = localDate(new Date());
+  const selectedDateObject = parseDate(selectedDate);
+  const selectedDateLabel = `${selectedDate.replaceAll('-', '/')}(${weekdayLabels[selectedDateObject.getDay()]})`;
   const trainedDates = useMemo(() => new Set(workouts.map((workout) => workout.date)), [workouts]);
   const calendarDays = useMemo(
-    () => calendarCells(calendarYear, calendarMonth),
-    [calendarMonth, calendarYear],
-  );
-  const totalReps = selectedWorkouts.reduce(
-    (sum, workout) =>
-      sum +
-      (isRepsMeasurement(workout.measurementType)
-        ? workout.sets.reduce((setSum, set) => setSum + number(set.recordValue), 0)
-        : 0),
-    0,
-  );
-  const totalSeconds = selectedWorkouts.reduce(
-    (sum, workout) =>
-      sum +
-      (workout.measurementType === 'seconds'
-        ? workout.sets.reduce((setSum, set) => setSum + number(set.recordValue), 0)
-        : 0),
-    0,
-  );
-  const totalVolume = selectedWorkouts.reduce(
-    (sum, workout) =>
-      sum +
-      (isRepsMeasurement(workout.measurementType)
-        ? workout.sets.reduce(
-            (setSum, set) => setSum + number(set.weight) * number(set.recordValue),
-            0,
-          )
-        : 0),
-    0,
+    () =>
+      calendarMode === 'week'
+        ? weekCells(calendarAnchorDate)
+        : calendarCells(calendarYear, calendarMonth),
+    [calendarAnchorDate, calendarMode, calendarMonth, calendarYear],
   );
 
   /**
@@ -142,93 +143,181 @@ export function HomeScreen() {
   }
 
   /**
-   * カレンダーダイアログを選択日の月で開く
-   */
-  function openCalendarDialog() {
-    setCalendarMonthDate(parseDate(selectedDate));
-    setCalendarOpen(true);
-  }
-
-  /**
-   * カレンダーダイアログを閉じる
-   */
-  function closeCalendarDialog() {
-    setCalendarOpen(false);
-  }
-
-  /**
-   * カレンダーで日付を選択し、ダイアログを閉じる
+   * カレンダーで日付を選択し、下部の一覧もその日に切り替える
    */
   function selectCalendarDate(nextDate: string) {
+    if (suppressClick.current) {
+      suppressClick.current = false;
+      return;
+    }
     onSelectDate(nextDate);
-    setCalendarOpen(false);
+    setCalendarAnchorDate(parseDate(nextDate));
   }
 
   /**
-   * カレンダーの表示月を前後に動かす
+   * スワイプ後に続けて発火する click を1回だけ無視する
    */
-  function moveCalendarMonth(delta: number) {
-    const next = new Date(calendarMonthDate);
-    next.setMonth(next.getMonth() + delta, 1);
-    setCalendarMonthDate(next);
+  function ignoreNextClick() {
+    suppressClick.current = true;
+    globalThis.setTimeout(() => {
+      suppressClick.current = false;
+    }, 180);
   }
 
   /**
-   * 本日へジャンプして選択し、カレンダーを閉じる
+   * 週表示と月表示を切り替える
+   */
+  function toggleCalendarMode() {
+    if (suppressClick.current) {
+      suppressClick.current = false;
+      return;
+    }
+    setCalendarMode((current) => (current === 'week' ? 'month' : 'week'));
+  }
+
+  /**
+   * 今日の日付へジャンプする
    */
   function jumpToToday() {
-    const today = localDate(new Date());
-    onSelectDate(today);
-    setCalendarMonthDate(parseDate(today));
-    setCalendarOpen(false);
+    const nextDate = localDate(new Date());
+    onSelectDate(nextDate);
+    setCalendarAnchorDate(parseDate(nextDate));
+  }
+
+  /**
+   * 表示中の週または月を左右スワイプで移動する
+   */
+  function moveCalendarPage(delta: number) {
+    setCalendarAnchorDate((current) => moveCalendarAnchor(current, calendarMode, delta));
+  }
+
+  /**
+   * カレンダー本体のスワイプ開始位置を記録する
+   */
+  function startSwipe(event: PointerEvent<HTMLElement>) {
+    swipeStart.current = { x: event.clientX, y: event.clientY };
+  }
+
+  /**
+   * 下部バーのスワイプ開始位置を記録する
+   */
+  function startHandleSwipe(event: PointerEvent<HTMLButtonElement>) {
+    swipeStart.current = { x: event.clientX, y: event.clientY };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  /**
+   * カレンダー本体の左右スワイプを週/月移動として扱う
+   */
+  function finishCalendarSwipe(event: PointerEvent<HTMLElement>) {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start) return;
+    const diffX = event.clientX - start.x;
+    const diffY = event.clientY - start.y;
+    if (Math.abs(diffY) >= 44 && Math.abs(diffY) > Math.abs(diffX)) {
+      ignoreNextClick();
+      setCalendarMode(diffY > 0 ? 'month' : 'week');
+      return;
+    }
+    if (Math.abs(diffX) < 44 || Math.abs(diffX) <= Math.abs(diffY)) return;
+    ignoreNextClick();
+    moveCalendarPage(diffX < 0 ? 1 : -1);
+  }
+
+  /**
+   * 下部バーの上下スワイプで週表示と月表示を切り替える
+   */
+  function finishHandleSwipe(event: PointerEvent<HTMLButtonElement>) {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start) return;
+    const diffY = event.clientY - start.y;
+    const diffX = event.clientX - start.x;
+    if (Math.abs(diffY) < 28 || Math.abs(diffY) <= Math.abs(diffX)) return;
+    ignoreNextClick();
+    setCalendarMode(diffY > 0 ? 'month' : 'week');
   }
 
   return (
     <section className="screen active detail-screen">
-      <header className="topbar">
-        <div className="bar-row">
+      <header className={`home-calendar-shell ${calendarMode}`}>
+        <div className="home-calendar-head">
           <button
-            className="bar-btn"
+            className="home-calendar-title"
             type="button"
-            aria-label="前の日"
-            onClick={() => onMoveDate(-1)}
+            onClick={toggleCalendarMode}
           >
-            <ChevronLeft />
-          </button>
-          <button className="bar-title date-trigger" type="button" onClick={openCalendarDialog}>
-            {dateLabel}
+            <span>{selectedDateLabel}</span>
+            {calendarMode === 'week' ? <ChevronDown /> : <ChevronUp />}
           </button>
           <button
-            className="bar-btn right"
+            className="home-today-btn"
             type="button"
-            aria-label="次の日"
-            onClick={() => onMoveDate(1)}
+            onClick={jumpToToday}
+            aria-label="今日の日付へ移動"
           >
-            <ChevronRight />
+            今日
           </button>
         </div>
-        <div className="stats">
-          <div className="stat">
-            <span>合計種目数</span>
-            <strong>{selectedWorkouts.length}</strong>
-          </div>
-          <div className="stat">
-            <span>合計セット数</span>
-            <strong>{sets.length}</strong>
-          </div>
-          <div className="stat">
-            <span>合計レップ数</span>
-            <strong>{totalReps}</strong>
-          </div>
-          <div className="stat">
-            <span>合計秒数</span>
-            <strong>{totalSeconds}</strong>
-          </div>
-          <div className="stat">
-            <span>合計負荷量</span>
-            <strong>{Math.round(totalVolume)}</strong>
-          </div>
+        <div
+          className="home-calendar-grid"
+          onPointerDown={startSwipe}
+          onPointerUp={finishCalendarSwipe}
+          onPointerCancel={() => {
+            swipeStart.current = null;
+          }}
+        >
+          {weekdayLabels.map((day) => (
+            <div className="weekday" key={day}>
+              {day}
+            </div>
+          ))}
+          {calendarDays.map((cell) => {
+            const trained = trainedDates.has(cell.date);
+            const selected = cell.date === selectedDate;
+            const isToday = cell.date === today;
+            return (
+              <div className={`day-cell ${cell.inMonth ? '' : 'other'}`} key={cell.date}>
+                {cell.inMonth ? (
+                  <button
+                    className={`day-btn ${trained ? 'trained' : ''} ${isToday ? 'today' : ''} ${
+                      selected ? 'selected' : ''
+                    }`}
+                    type="button"
+                    onPointerDown={(event) => {
+                      event.stopPropagation();
+                    }}
+                    onPointerUp={(event) => {
+                      event.stopPropagation();
+                    }}
+                    onTouchEnd={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      selectCalendarDate(cell.date);
+                    }}
+                    onClick={() => selectCalendarDate(cell.date)}
+                  >
+                    {cell.day}
+                  </button>
+                ) : (
+                  <span aria-hidden="true" />
+                )}
+              </div>
+            );
+          })}
         </div>
+        <button
+          className="calendar-drag-handle"
+          type="button"
+          aria-label="カレンダーの週表示と月表示を切り替え"
+          onClick={toggleCalendarMode}
+          onPointerDown={startHandleSwipe}
+          onPointerUp={finishHandleSwipe}
+          onPointerCancel={() => {
+            swipeStart.current = null;
+          }}
+        />
       </header>
       <div className="preset-start">
         <select
@@ -366,73 +455,6 @@ export function HomeScreen() {
               </button>
               <button className="danger-button" type="button" onClick={confirmDelete}>
                 削除
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {calendarOpen && (
-        <div className="dialog-backdrop" role="presentation">
-          <div
-            className="calendar-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="home-calendar-title"
-          >
-            <div className="calendar-dialog-head">
-              <div className="confirm-title" id="home-calendar-title">
-                日付を選択
-              </div>
-              <div className="calendar-head compact">
-                <button
-                  className="month-btn icon"
-                  type="button"
-                  aria-label="前の月"
-                  onClick={() => moveCalendarMonth(-1)}
-                >
-                  <ChevronLeft />
-                </button>
-                <div className="calendar-month">
-                  {calendarYear}年 {String(calendarMonth + 1).padStart(2, '0')}月
-                </div>
-                <button
-                  className="month-btn icon"
-                  type="button"
-                  aria-label="次の月"
-                  onClick={() => moveCalendarMonth(1)}
-                >
-                  <ChevronRight />
-                </button>
-              </div>
-            </div>
-            <div className="calendar-grid home-calendar-grid">
-              {weekdayLabels.map((day) => (
-                <div className="weekday" key={day}>
-                  {day}
-                </div>
-              ))}
-              {calendarDays.map((cell) => {
-                const trained = trainedDates.has(cell.date);
-                const selected = cell.date === selectedDate;
-                return (
-                  <div className={`day-cell ${cell.inMonth ? '' : 'other'}`} key={cell.date}>
-                    <button
-                      className={`day-btn ${trained ? 'trained' : ''} ${selected ? 'selected' : ''}`}
-                      type="button"
-                      onClick={() => selectCalendarDate(cell.date)}
-                    >
-                      {cell.day}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="confirm-actions">
-              <button className="small-primary" type="button" onClick={jumpToToday}>
-                本日
-              </button>
-              <button className="calendar-cancel" type="button" onClick={closeCalendarDialog}>
-                キャンセル
               </button>
             </div>
           </div>
