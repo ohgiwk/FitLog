@@ -85,8 +85,6 @@ body {
    * body 自体はスクロールさせず、内側の `.app` をスクロール領域にすることで、
    * 限界以上にスクロールしても sticky なヘッダが一切追従しないようにする
    */
-  position: fixed;
-  inset: 0;
   height: 100%;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
