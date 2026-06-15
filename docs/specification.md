@@ -342,6 +342,7 @@ type PartSetting = {
 - トースト領域は `role="status"` `aria-live="polite"`。
 - 新しい Service Worker を検出したときは、画面下部に更新通知を表示する。「更新」ボタンを押すと新しい Service Worker を有効化し、ページを再読み込みする。
 - `detail` / `exerciseHistory` は `currentWorkout` がある場合のみ描画。
+- iOS のホーム画面 PWA では、ボトムナビの下にある安全領域をタブ背景色で塗り足し、ホームインジケータ周辺に余白が見えないようにする。
 
 #### 画面遷移の共通処理（`showScreen`）
 

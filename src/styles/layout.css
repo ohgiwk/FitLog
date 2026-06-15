@@ -146,6 +146,34 @@
   background: var(--tab);
 }
 
+.bottom-nav::after {
+  /**
+   * iOS standalone PWA で bottom: 0 がホームインジケータ上の領域で止まる場合に、
+   * ボトムナビ下の安全領域まで同じ背景色を延長する
+   */
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: calc(-1 * constant(safe-area-inset-bottom));
+  bottom: calc(-1 * env(safe-area-inset-bottom));
+  left: 0;
+  height: constant(safe-area-inset-bottom);
+  height: env(safe-area-inset-bottom);
+  background: var(--tab);
+  pointer-events: none;
+}
+
+@media (display-mode: standalone) {
+  .bottom-nav::after {
+    /**
+     * 一部の iOS PWA では safe-area-inset-bottom が 0 として扱われても
+     * 物理的なホームインジケータ領域が残るため、控えめな下限を持たせる
+     */
+    bottom: calc(-1 * max(env(safe-area-inset-bottom), 34px));
+    height: max(env(safe-area-inset-bottom), 34px);
+  }
+}
+
 .nav-item {
   display: grid;
   place-items: center;

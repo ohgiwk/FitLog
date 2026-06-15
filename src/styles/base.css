@@ -71,6 +71,16 @@ html {
   background: var(--bg);
 }
 
+@media (display-mode: standalone) {
+  html {
+    /**
+     * iOS のホーム画面 PWA では、固定要素の外側にある最下部の安全領域が
+     * html 背景として見える場合があるため、タブと同じ色で塗っておく
+     */
+    background: var(--tab);
+  }
+}
+
 body {
   /**
    * 文書全体のスクロール（オーバースクロールのバウンス）を止める。
