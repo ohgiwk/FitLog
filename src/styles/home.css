@@ -244,12 +244,30 @@
   white-space: nowrap;
 }
 
+.home-calendar-viewport {
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.home-calendar-track {
+  display: flex;
+  width: 100%;
+  will-change: transform;
+}
+
+.home-calendar-track.animating {
+  transition: transform 0.22s ease;
+}
+
+.home-calendar-page {
+  flex: 0 0 100%;
+}
+
 .home-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   row-gap: 10px;
   padding: 0 12px 12px;
-  touch-action: pan-y;
 }
 
 .home-calendar-shell.month .home-calendar-grid {

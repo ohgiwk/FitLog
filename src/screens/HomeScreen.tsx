@@ -8,6 +8,7 @@ import { appVersion } from '../version';
 
 const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
 type HomeCalendarMode = 'week' | 'month';
+const calendarPageOffsets = [-1, 0, 1];
 
 /**
  * 指定日を含む日曜始まりの1週間を作る
@@ -96,7 +97,11 @@ export function HomeScreen() {
   const [deleteTarget, setDeleteTarget] = useState<Workout | null>(null);
   const [calendarMode, setCalendarMode] = useState<HomeCalendarMode>('week');
   const [calendarAnchorDate, setCalendarAnchorDate] = useState(() => parseDate(selectedDate));
-  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const [calendarDragOffset, setCalendarDragOffset] = useState(0);
+  const [calendarAnimating, setCalendarAnimating] = useState(false);
+  const swipeStart = useRef<{ x: number; y: number; width: number } | null>(null);
+  const pendingCalendarMove = useRef<number | null>(null);
+  const calendarTransitionTimer = useRef<number | null>(null);
   const suppressClick = useRef(false);
   const calendarYear = calendarAnchorDate.getFullYear();
   const calendarMonth = calendarAnchorDate.getMonth();
@@ -104,12 +109,19 @@ export function HomeScreen() {
   const selectedDateObject = parseDate(selectedDate);
   const selectedDateLabel = `${selectedDate.replaceAll('-', '/')}(${weekdayLabels[selectedDateObject.getDay()]})`;
   const trainedDates = useMemo(() => new Set(workouts.map((workout) => workout.date)), [workouts]);
-  const calendarDays = useMemo(
+  const calendarPages = useMemo(
     () =>
-      calendarMode === 'week'
-        ? weekCells(calendarAnchorDate)
-        : calendarCells(calendarYear, calendarMonth),
-    [calendarAnchorDate, calendarMode, calendarMonth, calendarYear],
+      calendarPageOffsets.map((offset) => {
+        const anchorDate = moveCalendarAnchor(calendarAnchorDate, calendarMode, offset);
+        const year = anchorDate.getFullYear();
+        const month = anchorDate.getMonth();
+        return {
+          key: `${calendarMode}-${localDate(anchorDate)}-${offset}`,
+          offset,
+          days: calendarMode === 'week' ? weekCells(anchorDate) : calendarCells(year, month),
+        };
+      }),
+    [calendarAnchorDate, calendarMode],
   );
 
   /**
@@ -161,7 +173,16 @@ export function HomeScreen() {
     suppressClick.current = true;
     globalThis.setTimeout(() => {
       suppressClick.current = false;
-    }, 180);
+    }, 240);
+  }
+
+  /**
+   * カレンダーのスナップ完了待ちタイマーを解除する
+   */
+  function clearCalendarTransitionTimer() {
+    if (calendarTransitionTimer.current === null) return;
+    globalThis.clearTimeout(calendarTransitionTimer.current);
+    calendarTransitionTimer.current = null;
   }
 
   /**
@@ -172,6 +193,10 @@ export function HomeScreen() {
       suppressClick.current = false;
       return;
     }
+    pendingCalendarMove.current = null;
+    clearCalendarTransitionTimer();
+    setCalendarDragOffset(0);
+    setCalendarAnimating(false);
     setCalendarMode((current) => (current === 'week' ? 'month' : 'week'));
   }
 
@@ -181,29 +206,47 @@ export function HomeScreen() {
   function jumpToToday() {
     const nextDate = localDate(new Date());
     onSelectDate(nextDate);
+    pendingCalendarMove.current = null;
+    clearCalendarTransitionTimer();
+    setCalendarDragOffset(0);
+    setCalendarAnimating(false);
     setCalendarAnchorDate(parseDate(nextDate));
   }
 
   /**
    * 表示中の週または月を左右スワイプで移動する
    */
-  function moveCalendarPage(delta: number) {
-    setCalendarAnchorDate((current) => moveCalendarAnchor(current, calendarMode, delta));
-  }
-
-  /**
-   * カレンダー本体のスワイプ開始位置を記録する
-   */
   function startSwipe(event: PointerEvent<HTMLElement>) {
-    swipeStart.current = { x: event.clientX, y: event.clientY };
+    if (calendarAnimating) return;
+    const width = event.currentTarget.getBoundingClientRect().width;
+    swipeStart.current = { x: event.clientX, y: event.clientY, width };
+    pendingCalendarMove.current = null;
+    setCalendarDragOffset(0);
+    event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   /**
    * 下部バーのスワイプ開始位置を記録する
    */
   function startHandleSwipe(event: PointerEvent<HTMLButtonElement>) {
-    swipeStart.current = { x: event.clientX, y: event.clientY };
+    swipeStart.current = {
+      x: event.clientX,
+      y: event.clientY,
+      width: event.currentTarget.getBoundingClientRect().width,
+    };
     event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  /**
+   * カレンダー本体を指の動きに追従させる
+   */
+  function moveCalendarSwipe(event: PointerEvent<HTMLElement>) {
+    const start = swipeStart.current;
+    if (!start) return;
+    const diffX = event.clientX - start.x;
+    const diffY = event.clientY - start.y;
+    if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 12) return;
+    setCalendarDragOffset(Math.max(Math.min(diffX, start.width), -start.width));
   }
 
   /**
@@ -220,9 +263,36 @@ export function HomeScreen() {
       setCalendarMode(diffY > 0 ? 'month' : 'week');
       return;
     }
-    if (Math.abs(diffX) < 44 || Math.abs(diffX) <= Math.abs(diffY)) return;
+    if (Math.abs(diffX) < Math.max(56, start.width * 0.18) || Math.abs(diffX) <= Math.abs(diffY)) {
+      pendingCalendarMove.current = null;
+      setCalendarAnimating(calendarDragOffset !== 0);
+      setCalendarDragOffset(0);
+      if (calendarDragOffset !== 0) {
+        clearCalendarTransitionTimer();
+        calendarTransitionTimer.current = globalThis.setTimeout(finishCalendarTransition, 260);
+      }
+      return;
+    }
+    const nextMove = diffX < 0 ? 1 : -1;
+    pendingCalendarMove.current = nextMove;
     ignoreNextClick();
-    moveCalendarPage(diffX < 0 ? 1 : -1);
+    setCalendarAnimating(true);
+    setCalendarDragOffset(-nextMove * start.width);
+    clearCalendarTransitionTimer();
+    calendarTransitionTimer.current = globalThis.setTimeout(finishCalendarTransition, 260);
+  }
+
+  /**
+   * スナップアニメーション完了後に表示基準日を更新する
+   */
+  function finishCalendarTransition() {
+    clearCalendarTransitionTimer();
+    const nextMove = pendingCalendarMove.current;
+    pendingCalendarMove.current = null;
+    setCalendarAnimating(false);
+    setCalendarDragOffset(0);
+    if (!nextMove) return;
+    setCalendarAnchorDate((current) => moveCalendarAnchor(current, calendarMode, nextMove));
   }
 
   /**
@@ -261,51 +331,74 @@ export function HomeScreen() {
           </button>
         </div>
         <div
-          className="home-calendar-grid"
+          className="home-calendar-viewport"
           onPointerDown={startSwipe}
+          onPointerMove={moveCalendarSwipe}
           onPointerUp={finishCalendarSwipe}
           onPointerCancel={() => {
             swipeStart.current = null;
+            pendingCalendarMove.current = null;
+            setCalendarAnimating(calendarDragOffset !== 0);
+            setCalendarDragOffset(0);
+            if (calendarDragOffset !== 0) {
+              clearCalendarTransitionTimer();
+              calendarTransitionTimer.current = globalThis.setTimeout(finishCalendarTransition, 260);
+            }
           }}
         >
-          {weekdayLabels.map((day) => (
-            <div className="weekday" key={day}>
-              {day}
-            </div>
-          ))}
-          {calendarDays.map((cell) => {
-            const trained = trainedDates.has(cell.date);
-            const selected = cell.date === selectedDate;
-            const isToday = cell.date === today;
-            return (
-              <div className={`day-cell ${cell.inMonth ? '' : 'other'}`} key={cell.date}>
-                {cell.inMonth ? (
-                  <button
-                    className={`day-btn ${trained ? 'trained' : ''} ${isToday ? 'today' : ''} ${
-                      selected ? 'selected' : ''
-                    }`}
-                    type="button"
-                    onPointerDown={(event) => {
-                      event.stopPropagation();
-                    }}
-                    onPointerUp={(event) => {
-                      event.stopPropagation();
-                    }}
-                    onTouchEnd={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      selectCalendarDate(cell.date);
-                    }}
-                    onClick={() => selectCalendarDate(cell.date)}
-                  >
-                    {cell.day}
-                  </button>
-                ) : (
-                  <span aria-hidden="true" />
-                )}
+          <div
+            className={`home-calendar-track ${calendarAnimating ? 'animating' : ''}`}
+            style={{ transform: `translateX(calc(-100% + ${calendarDragOffset}px))` }}
+            onTransitionEnd={finishCalendarTransition}
+          >
+            {calendarPages.map((page) => (
+              <div className="home-calendar-page" key={page.key}>
+                <div className="home-calendar-grid">
+                  {weekdayLabels.map((day) => (
+                    <div className="weekday" key={day}>
+                      {day}
+                    </div>
+                  ))}
+                  {page.days.map((cell) => {
+                    const trained = trainedDates.has(cell.date);
+                    const selected = cell.date === selectedDate;
+                    const isToday = cell.date === today;
+                    return (
+                      <div
+                        className={`day-cell ${cell.inMonth ? '' : 'other'}`}
+                        key={cell.date}
+                      >
+                        {cell.inMonth ? (
+                          <button
+                            className={`day-btn ${trained ? 'trained' : ''} ${
+                              isToday ? 'today' : ''
+                            } ${selected ? 'selected' : ''}`}
+                            type="button"
+                            onPointerDown={(event) => {
+                              event.stopPropagation();
+                            }}
+                            onPointerUp={(event) => {
+                              event.stopPropagation();
+                            }}
+                            onTouchEnd={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              selectCalendarDate(cell.date);
+                            }}
+                            onClick={() => selectCalendarDate(cell.date)}
+                          >
+                            {cell.day}
+                          </button>
+                        ) : (
+                          <span aria-hidden="true" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
         <button
           className="calendar-drag-handle"
