@@ -1,5 +1,5 @@
 .history-wrap {
-  min-height: calc(100vh - 146px);
+  min-height: calc(100dvh - 146px);
   background: var(--surface);
   padding: 12px 0 24px;
 }
@@ -55,7 +55,7 @@
 }
 
 .exercise-history-wrap {
-  min-height: calc(100vh - 146px);
+  min-height: calc(100dvh - 146px);
   padding: 28px 11px 26px;
   background: var(--history-bg);
 }

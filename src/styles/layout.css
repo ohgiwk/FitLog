@@ -133,45 +133,11 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   max-width: 480px;
-  /**
-   * iOS PWA では border-box の min-height と safe-area padding を併用すると、
-   * パディング分が要素の外側に描画されず下に余白ができるため content-box にする
-   */
-  box-sizing: content-box;
-  min-height: 70px;
+  height: var(--bottom-nav-total-height);
   margin: 0 auto;
   border-top: 1px solid var(--border-medium);
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: var(--safe-area-bottom);
   background: var(--tab);
-}
-
-.bottom-nav::after {
-  /**
-   * iOS standalone PWA で bottom: 0 がホームインジケータ上の領域で止まる場合に、
-   * ボトムナビ下の安全領域まで同じ背景色を延長する
-   */
-  content: '';
-  position: absolute;
-  right: 0;
-  bottom: calc(-1 * constant(safe-area-inset-bottom));
-  bottom: calc(-1 * env(safe-area-inset-bottom));
-  left: 0;
-  height: constant(safe-area-inset-bottom);
-  height: env(safe-area-inset-bottom);
-  background: var(--tab);
-  pointer-events: none;
-}
-
-@media (display-mode: standalone) {
-  .bottom-nav::after {
-    /**
-     * 一部の iOS PWA では safe-area-inset-bottom が 0 として扱われても
-     * 物理的なホームインジケータ領域が残るため、控えめな下限を持たせる
-     */
-    bottom: calc(-1 * max(env(safe-area-inset-bottom), 34px));
-    height: max(env(safe-area-inset-bottom), 34px);
-  }
 }
 
 .nav-item {
@@ -201,8 +167,7 @@
 .toast {
   position: fixed;
   right: 16px;
-  bottom: calc(86px + constant(safe-area-inset-bottom));
-  bottom: calc(86px + env(safe-area-inset-bottom));
+  bottom: var(--bottom-floating-offset);
   left: 16px;
   z-index: 30;
   max-width: 440px;
@@ -228,8 +193,7 @@
 .update-banner {
   position: fixed;
   right: 16px;
-  bottom: calc(86px + constant(safe-area-inset-bottom));
-  bottom: calc(86px + env(safe-area-inset-bottom));
+  bottom: var(--bottom-floating-offset);
   left: 16px;
   z-index: 35;
   display: grid;
