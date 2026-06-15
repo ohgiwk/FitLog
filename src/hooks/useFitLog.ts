@@ -117,6 +117,7 @@ export function useFitLog() {
       setHistoryPartFilter: ui.setHistoryPartFilter,
       setScreen: nav.showScreen,
       setEditMode: ui.setEditMode,
+      startWorkoutDay: workout.startWorkoutDay,
       startPreset: presets.startPreset,
       addTrainingPlan: trainingPlan.addTrainingPlan,
       upsertTrainingPlan: trainingPlan.upsertTrainingPlan,

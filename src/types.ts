@@ -76,6 +76,7 @@ export type PartSetting = {
 export type State = {
   exercises: Exercise[];
   workouts: Workout[];
+  workoutStartTimes: Record<string, string>;
   presets: Preset[];
   trainingDays: TrainingDay[];
   trainingPlans: TrainingPlan[];

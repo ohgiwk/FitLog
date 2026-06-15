@@ -25,6 +25,7 @@ function useHomeScreenModel() {
   return {
     selectedDate,
     workouts: state.workouts,
+    workoutStartTime: state.workoutStartTimes[selectedDate],
     selectedWorkouts,
     selectedPlannedParts,
     presets: state.presets,
@@ -38,6 +39,7 @@ function useHomeScreenModel() {
       actions.setCurrentWorkoutId(null);
     },
     onSelectPreset: actions.selectPreset,
+    onStartWorkoutDay: actions.startWorkoutDay,
     onStartPreset: actions.startPreset,
     onOpenPresets: () => actions.setScreen('preset'),
     onOpenSelect: () => actions.setScreen('select'),
@@ -53,6 +55,7 @@ export function HomeScreen() {
   const {
     selectedDate,
     workouts,
+    workoutStartTime,
     selectedWorkouts,
     selectedPlannedParts,
     presets,
@@ -60,6 +63,7 @@ export function HomeScreen() {
     onMoveDate,
     onSelectDate,
     onSelectPreset,
+    onStartWorkoutDay,
     onStartPreset,
     onOpenPresets,
     onOpenSelect,
@@ -260,12 +264,23 @@ export function HomeScreen() {
           <span>予定: {selectedPlannedParts.join(' / ')}</span>
         </div>
       )}
+      {workoutStartTime && (
+        <div className="workout-start-time-row">
+          <span>開始時刻：{workoutStartTime}</span>
+        </div>
+      )}
       <div className="content">
         {!selectedWorkouts.length ? (
           <div className="empty">
             <div>
               <strong>この日の種目はまだありません</strong>
-              <span>右下の＋から種目を選択して、詳細画面でセットを入力できます。</span>
+              <button
+                className="primary start-training-button"
+                type="button"
+                onClick={onStartWorkoutDay}
+              >
+                トレーニングを開始
+              </button>
             </div>
           </div>
         ) : (

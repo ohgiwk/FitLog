@@ -17,7 +17,10 @@ import { defaultExerciseCategory, uid } from './utils';
  * 旧データ(カテゴリ未設定)を読み込むときのフォールバックに使う
  */
 const starterCategoryByKey = new Map(
-  starterExercises.map((exercise) => [exerciseKey(exercise.part, exercise.name), exercise.category]),
+  starterExercises.map((exercise) => [
+    exerciseKey(exercise.part, exercise.name),
+    exercise.category,
+  ]),
 );
 
 /**
@@ -71,6 +74,7 @@ function createDefaultState(): State {
   return {
     exercises: starterExercises,
     workouts: [],
+    workoutStartTimes: {},
     presets: defaultPresets,
     trainingDays: [],
     trainingPlans: [],
@@ -124,10 +128,17 @@ export function normalizeState(saved: Partial<State> | null | undefined): State 
   return {
     exercises: mergedExercises,
     workouts,
+    workoutStartTimes: normalizeWorkoutStartTimes(saved.workoutStartTimes),
     presets: normalizePresets(saved.presets),
     trainingDays,
     trainingPlans,
-    parts: normalizePartSettings(saved.parts, mergedExercises, workouts, trainingDays, trainingPlans),
+    parts: normalizePartSettings(
+      saved.parts,
+      mergedExercises,
+      workouts,
+      trainingDays,
+      trainingPlans,
+    ),
     catalogVersion: starterCatalogVersion,
   };
 }
@@ -153,7 +164,8 @@ function normalizePartSettings(
       const record = item as Record<string, unknown>;
       const name = typeof record.name === 'string' ? record.name.trim() : '';
       if (!name || name === REST_PART || seen.has(name)) return;
-      const color = typeof record.color === 'string' && record.color ? record.color : defaultPartColor;
+      const color =
+        typeof record.color === 'string' && record.color ? record.color : defaultPartColor;
       seen.add(name);
       parts.push({ name, color });
     });
@@ -210,6 +222,16 @@ function normalizeTrainingDays(trainingDays: unknown): State['trainingDays'] {
     byDate.set(item.date, existingParts);
   });
   return [...byDate].map(([date, parts]) => ({ date, parts: [...parts] }));
+}
+
+function normalizeWorkoutStartTimes(value: unknown): State['workoutStartTimes'] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([date, time]) => {
+      if (typeof time !== 'string' || !/^\d{2}:\d{2}$/.test(time)) return [];
+      return [[date, time]];
+    }),
+  );
 }
 
 function normalizeParts(value: unknown) {

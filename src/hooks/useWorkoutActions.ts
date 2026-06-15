@@ -29,6 +29,22 @@ export function useWorkoutActions({
   selectedWorkouts,
 }: WorkoutActionsDeps) {
   /**
+   * トレーニング開始時刻を保存し、種目選択画面へ進む
+   */
+  function startWorkoutDay() {
+    const now = new Date();
+    const startTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    saveState((prev) => ({
+      ...prev,
+      workoutStartTimes: {
+        ...prev.workoutStartTimes,
+        [selectedDate]: startTime,
+      },
+    }));
+    showScreen('select');
+  }
+
+  /**
    * 詳細画面を開く。セットが5つ未満なら空セットを補充する
    */
   function openWorkoutDetail(workoutId: string) {
@@ -166,6 +182,7 @@ export function useWorkoutActions({
 
   return {
     openWorkoutDetail,
+    startWorkoutDay,
     addExerciseToToday,
     addSet,
     updateSet,

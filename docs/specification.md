@@ -187,6 +187,7 @@ useFitLogCore (state + 永続化 + トースト)
 | --- | --- | --- |
 | `exercises` | `Exercise[]` | 種目マスタ（部位・名前・計測方法・器具カテゴリ） |
 | `workouts` | `Workout[]` | 日付ごとの記録（セットを含む） |
+| `workoutStartTimes` | `Record<string, string>` | 日付ごとのトレーニング開始時刻（`HH:mm`） |
 | `presets` | `Preset[]` | よく使う種目のまとまり |
 | `trainingDays` | `TrainingDay[]` | 日付ごとの実施部位（履歴の補助情報） |
 | `trainingPlans` | `TrainingPlan[]` | 部位ごとの分割計画 |
@@ -225,6 +226,8 @@ type Workout = {
   measurementType: MeasurementType;
   sets: WorkoutSet[];
 };
+
+type WorkoutStartTimes = Record<string, string>; // date(YYYY-MM-DD) -> HH:mm
 
 type Preset = {
   id: string;
@@ -299,6 +302,7 @@ type PartSetting = {
 - `exercises`: スターター種目（`data/starterExercises.ts`）。
 - `presets`: 既定プリセット 4 件（`胸の日` / `背中の日` / `脚の日` / `肩の日`、いずれも種目空）。
 - `workouts` / `trainingDays` / `trainingPlans`: 空配列。
+- `workoutStartTimes`: 空オブジェクト。
 - `catalogVersion`: `starterCatalogVersion`（現在 `3`）。
 
 ### 5.5 正規化・移行（`normalizeState`）
@@ -310,6 +314,7 @@ type PartSetting = {
 - 各フィールドの正規化方針:
   - `Exercise`: `id` / `part` / `name` がすべて文字列でなければ除外。`measurementType` は `'seconds'` 以外を `'reps'` に丸める。`category` は 5 種のいずれかに丸め、未設定・不正値のときは初期種目マスタに同名があればそのカテゴリを、なければ `'free'` を使う。
   - `Workout`: `id` / `exerciseId` / `date` / `name` / `part` が文字列でなければ除外。
+  - `workoutStartTimes`: オブジェクトのみ採用。値が `HH:mm` 形式のものだけを日付キーごとに保持する。
   - `WorkoutSet`: `id` が文字列でなければ除外。`weight` / `recordValue` は文字列・数値以外を `''` に。`recordValue` は旧フィールド `reps` からも引き継ぐ。`intensity` は 1〜5 のみ採用、それ以外は `undefined`。`note` は文字列以外を `''`。
   - `TrainingDay`: 同一日付をマージし、`parts` を trim + 重複排除。旧フィールド `part`（単数）からも取り込む。
   - `TrainingPlan`: `part` 必須。`mode` は `'interval'` 以外を `'weekly'`。`weekdays` は 0〜6 の整数のみ・重複排除・ソート。`intervalDays` は正の整数（既定 1）。
@@ -350,6 +355,8 @@ type PartSetting = {
   - 合計種目数、合計セット数、合計レップ数（reps 種目の `recordValue` 合計）、合計秒数（seconds 種目の `recordValue` 合計）、合計負荷量（reps 種目の `weight × recordValue` 合計を四捨五入）。
 - **プリセット開始バー**: プリセット選択 select + 「開始」+「管理」（プリセット一覧へ）。
 - **予定表示**: 選択日に分割計画で予定された部位があれば「予定: A / B」を表示。
+- **空状態**: 種目が無い日は「トレーニングを開始」ボタンを表示。押した時刻（時・分）を選択日の開始時刻として保存し、種目選択画面へ進む。
+- **開始時刻表示**: 選択日の開始時刻がある場合、予定表示と種目一覧の間の右側に「開始時刻：HH:mm」を小さなグレー文字で表示。
 - **種目一覧**: `selectedWorkouts` をカード表示。各カードは `role="button"` でタップ / Enter / Space で詳細へ。
   - カードヘッダに「部位 - 種目名」と削除ボタン。
   - セットは表形式（`HomeSetRow`）でセット番号・重さ・記録・RM を表示。

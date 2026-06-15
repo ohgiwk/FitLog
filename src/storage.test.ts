@@ -16,6 +16,7 @@ function makeValidSaved() {
   return {
     exercises: [{ id: 'e1', part: '胸', name: 'ベンチプレス', measurementType: 'reps' }],
     workouts: [],
+    workoutStartTimes: {},
     presets: [],
     trainingDays: [],
     trainingPlans: [],
@@ -122,6 +123,21 @@ describe('normalizeState', () => {
     };
     const result = normalizeState(saved as unknown as Partial<State>);
     expect(result?.trainingDays[0]).toEqual({ date: '2026-01-01', parts: ['胸'] });
+  });
+
+  it('開始時刻を日付ごとに正規化する', () => {
+    const saved = {
+      exercises: [{ id: 'e1', part: '胸', name: 'ベンチ', measurementType: 'reps' }],
+      workouts: [],
+      workoutStartTimes: {
+        '2026-01-01': '09:30',
+        '2026-01-02': '9:30',
+        broken: 123,
+      },
+      catalogVersion: starterCatalogVersion,
+    };
+    const result = normalizeState(saved as unknown as Partial<State>);
+    expect(result?.workoutStartTimes).toEqual({ '2026-01-01': '09:30' });
   });
 
   it('catalogVersion は常に最新へ更新される', () => {
