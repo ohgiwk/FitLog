@@ -578,6 +578,7 @@ weight === 0 または reps === 0 → '0.0'
 - ボタン・入力欄はタッチしやすいサイズにする。
 - CSS は `src/styles.css` を入口に、`src/styles/` 配下で役割ごとに分割（`base` / `layout` / `home` / `detail` / `history` / `partEdit` / `presets` / `select` / `controls` / `responsive`）。
 - トーストは画面下部に短時間表示（1800ms）。ダイアログはバックドロップ + `role="dialog"` `aria-modal="true"`。
+- メインスクロール領域（`.app`）はスクロール操作を維持しつつ、スクロールバー自体は表示しない。
 
 ---
 

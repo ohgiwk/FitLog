@@ -131,8 +131,13 @@ input {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: none;
+  scrollbar-width: none;
   background: var(--bg);
   padding-bottom: var(--bottom-nav-total-height);
+}
+
+.app::-webkit-scrollbar {
+  display: none;
 }
 
 .screen {
