@@ -106,8 +106,7 @@ export function HomeScreen() {
   const calendarYear = calendarAnchorDate.getFullYear();
   const calendarMonth = calendarAnchorDate.getMonth();
   const today = localDate(new Date());
-  const selectedDateObject = parseDate(selectedDate);
-  const selectedDateLabel = `${selectedDate.replaceAll('-', '/')}(${weekdayLabels[selectedDateObject.getDay()]})`;
+  const calendarMonthLabel = `${calendarYear}年${calendarMonth + 1}月`;
   const trainedDates = useMemo(() => new Set(workouts.map((workout) => workout.date)), [workouts]);
   const calendarPages = useMemo(
     () =>
@@ -318,7 +317,7 @@ export function HomeScreen() {
             type="button"
             onClick={toggleCalendarMode}
           >
-            <span>{selectedDateLabel}</span>
+            <span>{calendarMonthLabel}</span>
             {calendarMode === 'week' ? <ChevronDown /> : <ChevronUp />}
           </button>
           <button
