@@ -44,17 +44,24 @@ function moveCalendarAnchor(anchorDate: Date, mode: HomeCalendarMode, delta: num
  * ホーム画面が必要とする state・派生値・操作を Context から組み立てる view-model フック
  */
 function useHomeScreenModel() {
-  const { selectedDate, state, selectedWorkouts, selectedPlannedParts, currentPreset, actions } =
-    useFitLogContext();
+  const {
+    selectedDate,
+    state,
+    selectedWorkouts,
+    selectedPlannedParts,
+    currentPreset,
+    partColors,
+    actions,
+  } = useFitLogContext();
 
   return {
     selectedDate,
     workouts: state.workouts,
-    workoutStartTime: state.workoutStartTimes[selectedDate],
     selectedWorkouts,
     selectedPlannedParts,
     presets: state.presets,
     currentPreset,
+    partColors,
     weightUnit: state.weightUnit,
     /**
      * 日付を選択し、対象日のホーム内容へ移動する
@@ -82,11 +89,11 @@ export function HomeScreen() {
   const {
     selectedDate,
     workouts,
-    workoutStartTime,
     selectedWorkouts,
     selectedPlannedParts,
     presets,
     currentPreset,
+    partColors,
     weightUnit,
     onSelectDate,
     onSelectPreset,
@@ -489,11 +496,6 @@ export function HomeScreen() {
           <span>予定: {selectedPlannedParts.join(' / ')}</span>
         </div>
       )}
-      {workoutStartTime && (
-        <div className="workout-start-time-row">
-          <span>開始時刻：{workoutStartTime}</span>
-        </div>
-      )}
       <div className="content">
         {!selectedWorkouts.length ? (
           <div className="empty">
@@ -518,7 +520,10 @@ export function HomeScreen() {
               onClick={() => onOpenDetail(workout.id)}
               onKeyDown={(event) => openDetailFromKey(event, workout.id)}
             >
-              <header className="exercise-head">
+              <header
+                className="exercise-head"
+                style={{ borderLeftColor: partColors.get(workout.part) }}
+              >
                 <h2>
                   {workout.part} - {workout.name}
                 </h2>

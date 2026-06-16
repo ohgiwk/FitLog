@@ -46,19 +46,6 @@
   padding: 0 18px;
 }
 
-.workout-start-time-row {
-  display: flex;
-  justify-content: flex-end;
-  padding: 8px 13px 0;
-}
-
-.workout-start-time-row span {
-  color: var(--text-muted-light);
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
 .exercise-body {
   position: relative;
 }
