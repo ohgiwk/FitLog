@@ -1,13 +1,15 @@
-import { Workout, WorkoutSet } from '../types';
+import { WeightUnit, Workout, WorkoutSet } from '../types';
 import { IntensityIcon } from '../components/IntensityIcon';
 import { ChevronLeft } from '../icons';
 import {
   calcRm,
+  formatWeight,
   isBlank,
   isRepsMeasurement,
   measurementLabel,
   measurementUnit,
   number,
+  weightUnitLabel,
 } from '../utils';
 import { useFitLogContext } from '../hooks/FitLogContext';
 
@@ -20,6 +22,7 @@ function useExerciseHistoryScreenModel() {
   return {
     workout: currentWorkout,
     workouts: state.workouts,
+    weightUnit: state.weightUnit,
     onBack: () => actions.setScreen('detail'),
   };
 }
@@ -28,12 +31,12 @@ function useExerciseHistoryScreenModel() {
  * 種目別の履歴画面。ベスト記録と日別のセット履歴を一覧表示する
  */
 export function ExerciseHistoryScreen() {
-  const { workout, workouts, onBack } = useExerciseHistoryScreenModel();
+  const { workout, workouts, weightUnit, onBack } = useExerciseHistoryScreenModel();
   if (!workout) return null;
   const histories = workouts
     .filter((item) => item.exerciseId === workout.exerciseId && item.sets.some(hasRecordedValue))
     .sort((a, b) => b.date.localeCompare(a.date));
-  const bestRecord = buildBestRecord(histories, workout.measurementType);
+  const bestRecord = buildBestRecord(histories, workout.measurementType, weightUnit);
   return (
     <section className="screen active">
       <header className="topbar">
@@ -78,7 +81,11 @@ export function ExerciseHistoryScreen() {
                     <div className="history-card-date">{item.date.replaceAll('-', '/')}</div>
                     <div className="history-card-total">
                       {isReps
-                        ? `TOTAL : ${total.toFixed(1)}Kg MAX 1RM : ${maxRm.toFixed(1)}Kg`
+                        ? `TOTAL : ${formatWeight(total, weightUnit)}${weightUnitLabel(
+                            weightUnit,
+                          )} MAX 1RM : ${formatWeight(maxRm, weightUnit)}${weightUnitLabel(
+                            weightUnit,
+                          )}`
                         : `TOTAL : ${total}秒 MAX 1RM : -`}
                     </div>
                   </header>
@@ -99,6 +106,7 @@ export function ExerciseHistoryScreen() {
                           set={set}
                           index={index}
                           measurementType={item.measurementType}
+                          weightUnit={weightUnit}
                         />
                       ))}
                     </tbody>
@@ -159,6 +167,7 @@ function BestRecordSummary({ bestRecord }: { bestRecord: BestRecord }) {
 function buildBestRecord(
   histories: Workout[],
   measurementType: Workout['measurementType'],
+  weightUnit: WeightUnit,
 ): BestRecord | null {
   const sets = histories.flatMap((item) =>
     item.sets.filter(hasRecordedValue).map((set) => ({ date: item.date, set })),
@@ -184,11 +193,17 @@ function buildBestRecord(
     return {
       date: bestRm.date,
       mainLabel: 'MAX 1RM',
-      mainValue: `${bestRm.value.toFixed(1)}kg`,
+      mainValue: `${formatWeight(bestRm.value, weightUnit)}${weightUnitLabel(weightUnit)}`,
       subRecords: [
-        { label: '最大重量', value: `${maxWeight.toFixed(1)}kg` },
+        {
+          label: '最大重量',
+          value: `${formatWeight(maxWeight, weightUnit)}${weightUnitLabel(weightUnit)}`,
+        },
         { label: '最大回数', value: `${maxReps}回` },
-        { label: '最大負荷量', value: `${maxVolume.toFixed(1)}kg` },
+        {
+          label: '最大負荷量',
+          value: `${formatWeight(maxVolume, weightUnit)}${weightUnitLabel(weightUnit)}`,
+        },
       ],
     };
   }
@@ -212,7 +227,12 @@ function buildBestRecord(
     mainLabel: '最長記録',
     mainValue: `${bestSeconds.value}秒`,
     subRecords: [
-      { label: '最大重量', value: maxWeight ? `${maxWeight.toFixed(1)}kg` : '自重' },
+      {
+        label: '最大重量',
+        value: maxWeight
+          ? `${formatWeight(maxWeight, weightUnit)}${weightUnitLabel(weightUnit)}`
+          : '自重',
+      },
       { label: '最大合計秒数', value: `${maxTotalSeconds}秒` },
     ],
   };
@@ -225,10 +245,12 @@ function ExerciseHistorySetRow({
   set,
   index,
   measurementType,
+  weightUnit,
 }: {
   set: WorkoutSet;
   index: number;
   measurementType: Workout['measurementType'];
+  weightUnit: WeightUnit;
 }) {
   const weight = number(set.weight);
   const recordValue = number(set.recordValue);
@@ -239,8 +261,8 @@ function ExerciseHistorySetRow({
       <td className="history-weight">
         {weight ? (
           <>
-            {weight.toFixed(1)}
-            <small> kg</small>
+            {formatWeight(weight, weightUnit)}
+            <small> {weightUnitLabel(weightUnit)}</small>
           </>
         ) : (
           '自重'
@@ -250,7 +272,11 @@ function ExerciseHistorySetRow({
         {recordValue}
         <small> {measurementUnit(measurementType)}</small>
       </td>
-      <td className="history-rm">{isReps && weight ? `${calcRm(weight, recordValue)}kg` : '-'}</td>
+      <td className="history-rm">
+        {isReps && weight
+          ? `${formatWeight(calcRm(weight, recordValue), weightUnit)}${weightUnitLabel(weightUnit)}`
+          : '-'}
+      </td>
       <td className="history-assist">
         <IntensityIcon intensity={set.intensity} />
       </td>

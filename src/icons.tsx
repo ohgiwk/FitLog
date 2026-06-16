@@ -9,6 +9,7 @@ import {
   IconGripVertical,
   IconHistory,
   IconHome,
+  IconMenu2,
   IconPencil,
   IconPlus,
   IconSettings,
@@ -54,6 +55,10 @@ export function HistoryIcon() {
 
 export function HomeIcon() {
   return <IconHome />;
+}
+
+export function MenuIcon() {
+  return <IconMenu2 />;
 }
 
 export function CalendarIcon() {

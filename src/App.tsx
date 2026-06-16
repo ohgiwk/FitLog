@@ -9,6 +9,7 @@ import { PartEditScreen } from './screens/PartEditScreen';
 import { PresetEditScreen } from './screens/PresetEditScreen';
 import { PresetListScreen } from './screens/PresetListScreen';
 import { SelectScreen } from './screens/SelectScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
 
 type UpdateServiceWorker = (reloadPage?: boolean) => Promise<void>;
 
@@ -56,6 +57,7 @@ function AppShell() {
         {screen === 'presetEdit' && <PresetEditScreen />}
         {screen === 'history' && <HistoryScreen />}
         {screen === 'partEdit' && <PartEditScreen />}
+        {screen === 'settings' && <SettingsScreen />}
       </main>
 
       <nav className="bottom-nav">

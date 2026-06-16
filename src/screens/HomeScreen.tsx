@@ -1,5 +1,5 @@
 import { KeyboardEvent, MouseEvent, PointerEvent, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, PlusIcon, TrashIcon } from '../icons';
+import { ChevronDown, ChevronUp, MenuIcon, PlusIcon, SettingsIcon, TrashIcon } from '../icons';
 import { Workout } from '../types';
 import { calendarCells, isUnstartedWorkout, localDate, parseDate } from '../utils';
 import { HomeSetRow } from '../components/HomeSetRow';
@@ -55,6 +55,7 @@ function useHomeScreenModel() {
     selectedPlannedParts,
     presets: state.presets,
     currentPreset,
+    weightUnit: state.weightUnit,
     /**
      * 日付を選択し、対象日のホーム内容へ移動する
      */
@@ -68,6 +69,7 @@ function useHomeScreenModel() {
     onStartPreset: actions.startPreset,
     onOpenPresets: () => actions.setScreen('preset'),
     onOpenSelect: () => actions.setScreen('select'),
+    onOpenSettings: () => actions.setScreen('settings'),
     onOpenDetail: actions.openWorkoutDetail,
     onDeleteWorkout: actions.deleteWorkout,
   };
@@ -85,16 +87,19 @@ export function HomeScreen() {
     selectedPlannedParts,
     presets,
     currentPreset,
+    weightUnit,
     onSelectDate,
     onSelectPreset,
     onStartWorkoutDay,
     onStartPreset,
     onOpenPresets,
     onOpenSelect,
+    onOpenSettings,
     onOpenDetail,
     onDeleteWorkout,
   } = useHomeScreenModel();
   const [deleteTarget, setDeleteTarget] = useState<Workout | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [calendarMode, setCalendarMode] = useState<HomeCalendarMode>('week');
   const [calendarAnchorDate, setCalendarAnchorDate] = useState(() => parseDate(selectedDate));
   const [calendarDragOffset, setCalendarDragOffset] = useState(0);
@@ -212,6 +217,11 @@ export function HomeScreen() {
     setCalendarAnchorDate(parseDate(nextDate));
   }
 
+  function openSettings() {
+    setDrawerOpen(false);
+    onOpenSettings();
+  }
+
   /**
    * 表示中の週または月を左右スワイプで移動する
    */
@@ -313,6 +323,15 @@ export function HomeScreen() {
       <header className={`home-calendar-shell ${calendarMode}`}>
         <div className="home-calendar-head">
           <button
+            className="home-menu-btn"
+            type="button"
+            aria-label="メニューを開く"
+            aria-expanded={drawerOpen}
+            onClick={() => setDrawerOpen(true)}
+          >
+            <MenuIcon />
+          </button>
+          <button
             className="home-calendar-title"
             type="button"
             onClick={toggleCalendarMode}
@@ -329,6 +348,31 @@ export function HomeScreen() {
             今日
           </button>
         </div>
+        {drawerOpen && (
+          <div className="drawer-layer" role="presentation" onClick={() => setDrawerOpen(false)}>
+            <aside
+              className="home-drawer"
+              role="dialog"
+              aria-modal="true"
+              aria-label="メニュー"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="drawer-head">
+                <strong>メニュー</strong>
+                <button className="drawer-close" type="button" onClick={() => setDrawerOpen(false)}>
+                  閉じる
+                </button>
+              </div>
+              <button className="drawer-link" type="button" onClick={openSettings}>
+                <SettingsIcon />
+                <span>設定</span>
+              </button>
+              <div className="drawer-version" aria-label={`アプリバージョン ${appVersion}`}>
+                {appVersion}
+              </div>
+            </aside>
+          </div>
+        )}
         <div
           className="home-calendar-viewport"
           onPointerDown={startSwipe}
@@ -505,6 +549,7 @@ export function HomeScreen() {
                         set={set}
                         index={setIndex}
                         measurementType={workout.measurementType}
+                        weightUnit={weightUnit}
                       />
                     ))}
                   </tbody>
@@ -524,9 +569,6 @@ export function HomeScreen() {
       <button className="fab" type="button" aria-label="種目を追加" onClick={onOpenSelect}>
         <PlusIcon />
       </button>
-      <div className="app-version" aria-label={`アプリバージョン ${appVersion}`}>
-        {appVersion}
-      </div>
       {deleteTarget && (
         <div className="dialog-backdrop" role="presentation">
           <div

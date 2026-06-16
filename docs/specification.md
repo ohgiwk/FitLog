@@ -192,6 +192,7 @@ useFitLogCore (state + 永続化 + トースト)
 | `trainingDays` | `TrainingDay[]` | 日付ごとの実施部位（履歴の補助情報） |
 | `trainingPlans` | `TrainingPlan[]` | 部位ごとの分割計画 |
 | `parts` | `PartSetting[]` | 部位の表示設定（表示順は配列順、`color` に表示色 HEX）。「レスト」は対象外 |
+| `weightUnit` | `WeightUnit` | アプリ内の重量入力・表示に使う単位（`kg` / `lbs`）。保存値は kg のまま保持する |
 | `catalogVersion` | `number` | 種目マスタのカタログ版（追補判定に使用） |
 
 ### 4.2 各型
@@ -200,6 +201,7 @@ useFitLogCore (state + 永続化 + トースト)
 type MeasurementType = 'reps' | 'seconds';
 type SetIntensity = 1 | 2 | 3 | 4 | 5;
 type ExerciseCategory = 'free' | 'machine' | 'dumbbell' | 'cable' | 'bodyweight';
+type WeightUnit = 'kg' | 'lbs';
 
 type Exercise = {
   id: string;
@@ -211,7 +213,7 @@ type Exercise = {
 
 type WorkoutSet = {
   id: string;
-  weight: string | number;      // 重量（kg）。入力中は文字列、計算時に数値化
+  weight: string | number;      // 重量（保存値は kg）。入力中は文字列、計算時に数値化
   recordValue: string | number; // 回数 or 秒数
   intensity?: SetIntensity;     // 主観強度（任意）
   note: string;                 // メモ（現状 UI 入力経路は限定的）
@@ -303,6 +305,7 @@ type PartSetting = {
 - `presets`: 既定プリセット 4 件（`胸の日` / `背中の日` / `脚の日` / `肩の日`、いずれも種目空）。
 - `workouts` / `trainingDays` / `trainingPlans`: 空配列。
 - `workoutStartTimes`: 空オブジェクト。
+- `weightUnit`: `'kg'`。
 - `catalogVersion`: `starterCatalogVersion`（現在 `3`）。
 
 ### 5.5 正規化・移行（`normalizeState`）
@@ -319,6 +322,7 @@ type PartSetting = {
   - `TrainingDay`: 同一日付をマージし、`parts` を trim + 重複排除。旧フィールド `part`（単数）からも取り込む。
   - `TrainingPlan`: `part` 必須。`mode` は `'interval'` 以外を `'weekly'`。`weekdays` は 0〜6 の整数のみ・重複排除・ソート。`intervalDays` は正の整数（既定 1）。
   - `parts`（`normalizePartSettings`）: 保存済み設定（`name` + `color`、空名・重複・「レスト」は除外、色が無ければ既定色）を順序を保って取り込み、その後、種目・記録・実施日・計画に現れる未登録の部位を末尾へ追加してパレット色を割り当てる。旧データに `parts` が無くても、ここで既存部位から自動生成される。
+  - `weightUnit`: `'lbs'` のみ lbs として採用し、それ以外・未設定は `'kg'` に丸める。
 - **初期状態の `parts`**: スターター種目の部位（胸 / 背中 / 脚 / 肩 / 腕）をその順序で生成し、パレット色を循環で割り当てる。
 
 ### 5.6 エクスポート / インポート（`useBackup`）
@@ -333,7 +337,7 @@ type PartSetting = {
 
 ## 6. 画面仕様
 
-`Screen` 型: `'home' | 'select' | 'detail' | 'exerciseHistory' | 'preset' | 'presetEdit' | 'history' | 'partEdit'`。
+`Screen` 型: `'home' | 'select' | 'detail' | 'exerciseHistory' | 'preset' | 'presetEdit' | 'history' | 'partEdit' | 'settings'`。
 
 ### 6.1 アプリ外枠とナビゲーション（`App.tsx`）
 
@@ -352,6 +356,7 @@ type PartSetting = {
 ### 6.2 ホーム（`HomeScreen`）
 
 - **常設カレンダー**: 画面上部に選択日用のカレンダーを表示する。
+  - ヘッダ左のハンバーガーメニューからドロワを開き、「設定」へ遷移できる。
   - 初期表示は選択日を含む 1 週間（日曜始まり）。
   - タイトルは表示中カレンダーの月を `YYYY年M月` で表示する。タイトルのボタンまたは下部バーのタップで週表示 / 月表示を切り替える。
   - 下部バーは上下スワイプにも対応し、下方向で月表示、上方向で週表示に切り替える。
@@ -365,12 +370,12 @@ type PartSetting = {
 - **開始時刻表示**: 選択日の開始時刻がある場合、予定表示と種目一覧の間の右側に「開始時刻：HH:mm」を小さなグレー文字で表示。
 - **種目一覧**: `selectedWorkouts` をカード表示。各カードは `role="button"` でタップ / Enter / Space で詳細へ。
   - カードヘッダに「部位 - 種目名」と削除ボタン。
-  - セットは表形式（`HomeSetRow`）でセット番号・重さ・記録・RM を表示。
+  - セットは表形式（`HomeSetRow`）でセット番号・重さ・記録・RM を表示。重さと RM は設定中の重量単位を主表示にし、補助列には反対側の単位を表示する。
   - 未開始ワークアウト（後述）は「＋」オーバーレイを表示。
   - 一覧が空のときは空状態メッセージ。
 - **FAB（＋）**: 種目選択画面へ。
 - **削除確認ダイアログ**: 記録ありの種目を削除しようとすると確認ダイアログを表示。未開始ワークアウトは確認なしで即削除。
-- **バージョン表示**: ホーム画面の下部中央にアプリバージョン（現在 `v0.0.1`）を小さなグレー文字で表示。
+- **バージョン表示**: ホームのドロワメニュー下部にアプリバージョン（現在 `v0.0.1`）を小さなグレー文字で表示。
 
 ### 6.3 種目選択（`SelectScreen`）
 
@@ -392,7 +397,8 @@ type PartSetting = {
 
 - トップバー: 戻る / 種目名 / 履歴（種目別履歴へ）。
 - **前回記録**（`LastRecord`）を表示。
-- **セット入力テーブル**: 各行に番号・重量入力（`kg`、step 0.5）・記録入力（`回`/`秒`、step 1）・RM 表示・削除ボタン・強度ピッカー（5 段階トグル）。
+- **セット入力テーブル**: 各行に番号・重量入力（設定中の重量単位。`kg` は step 0.5、`lbs` は step 1）・記録入力（`回`/`秒`、step 1）・RM 表示・削除ボタン・強度ピッカー（5 段階トグル）。
+  - 入力欄の表示・入力単位は設定に従うが、保存する `WorkoutSet.weight` は kg に換算した値を保持する。
   - reps 種目のみ RM を表示、seconds 種目は `-`。
 - **レストタイマー**（`RestTimer`、後述）。
 - **FAB（＋）**: 空セットを 1 つ追加。
@@ -405,7 +411,7 @@ type PartSetting = {
 - **ベスト記録（BEST）サマリ**:
   - reps 種目: 主要記録 = MAX 1RM（達成日付つき）。関連 = 最大重量 / 最大回数 / 最大負荷量。
   - seconds 種目: 主要記録 = 最長記録（秒）。関連 = 最大重量（無ければ「自重」）/ 最大合計秒数。
-- **日別カード**: 日付・TOTAL（reps は重量×回数の合計 kg、seconds は合計秒）・MAX 1RM（reps のみ）。
+- **日別カード**: 日付・TOTAL（reps は重量×回数の合計を設定中の重量単位で表示、seconds は合計秒）・MAX 1RM（reps のみ）。
   - セット表: セット番号・重さ（0 なら「自重」）・記録・RM・強度アイコン。
 
 ### 6.6 プリセット一覧（`PresetListScreen`）/ 編集（`PresetEditScreen`）
@@ -439,6 +445,13 @@ type PartSetting = {
 - 削除は「その部位の種目が残っていない」場合のみ可能。削除時はその部位の分割計画（`trainingPlans`）も合わせて取り除く。種目がある部位は削除不可（トースト通知）。
 - 選んだ表示色・並び順は、種目選択画面と計画タブの各部位ヘッダ左色・並び順に反映される。
 
+### 6.9 設定（`SettingsScreen`）
+
+- ホーム画面のドロワメニューから遷移する。トップバーの戻るでホームへ戻る。
+- **単位**: kg / Lbs の切り替えスイッチを表示する。
+  - 切り替えた単位は `state.weightUnit` に保存され、重量入力欄、ホームのセット行、前回記録、種目別履歴の重量・RM・負荷量表示に反映される。
+  - 既存記録の保存値は kg のまま維持し、lbs 表示時のみ換算する。
+
 ---
 
 ## 7. ロジック・計算仕様
@@ -464,7 +477,10 @@ weight === 0 または reps === 0 → '0.0'
 
 - `number(value)`: `Number(value) || 0`。
 - `isBlank(value)`: trim して空文字なら true。
-- `formatWeight(value)`: 数値化して小数 1 桁。
+- `formatWeight(value, unit)`: 保存値 kg を指定単位へ換算し、小数 1 桁で表示する。`unit` 省略時は `kg`。
+- `formatStoredWeightInput(value, unit)`: 詳細画面の重量入力欄用に、保存値 kg を設定単位へ換算する。
+- `formatWeightForStorageInput(value, unit)`: 詳細画面の入力値を kg 保存値へ戻す。
+- `weightUnitLabel(unit)`: `kg` / `Lbs` の表示ラベルを返す。
 - `measurementUnit` / `measurementLabel`: `'seconds'` → `秒`/`秒数`、`'reps'` → `回`/`回数`。
 - `exerciseCategories` / `defaultExerciseCategory`: 器具カテゴリの表示順・ラベル（フリーウエイト種目 / マシン種目 / ダンベル種目 / ケーブル種目 / 自重種目）と、未設定時の既定値（`'free'`）。
 

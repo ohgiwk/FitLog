@@ -1,5 +1,15 @@
 import { ChevronLeft, HistoryIcon, PlusIcon, TrashIcon } from '../icons';
-import { calcRm, intensityOptions, isRepsMeasurement, measurementUnit, number } from '../utils';
+import {
+  calcRm,
+  formatStoredWeightInput,
+  formatWeight,
+  formatWeightForStorageInput,
+  intensityOptions,
+  isRepsMeasurement,
+  measurementUnit,
+  number,
+  weightUnitLabel,
+} from '../utils';
 import { LastRecord } from '../components/LastRecord';
 import { IntensityIcon } from '../components/IntensityIcon';
 import { RestTimer } from '../components/RestTimer';
@@ -15,6 +25,7 @@ function useDetailScreenModel() {
     workout: currentWorkout,
     selectedDate,
     workouts: state.workouts,
+    weightUnit: state.weightUnit,
     onBack: () => actions.setScreen('home'),
     onOpenHistory: () => actions.setScreen('exerciseHistory'),
     onUpdateSet: actions.updateSet,
@@ -32,6 +43,7 @@ export function DetailScreen() {
     workout,
     selectedDate,
     workouts,
+    weightUnit,
     onBack,
     onOpenHistory,
     onUpdateSet,
@@ -56,7 +68,12 @@ export function DetailScreen() {
         </div>
       </header>
       <div className="content">
-        <LastRecord workout={workout} selectedDate={selectedDate} workouts={workouts} />
+        <LastRecord
+          workout={workout}
+          selectedDate={selectedDate}
+          workouts={workouts}
+          weightUnit={weightUnit}
+        />
         <div className="detail-table">
           {workout.sets.map((set, index) => (
             <div className="detail-row" key={set.id}>
@@ -64,13 +81,19 @@ export function DetailScreen() {
               <label className="field">
                 <input
                   type="number"
-                  step="0.5"
+                  step={weightUnit === 'lbs' ? '1' : '0.5'}
                   min="0"
                   inputMode="decimal"
-                  value={set.weight}
-                  onChange={(event) => onUpdateSet(set.id, 'weight', event.target.value)}
+                  value={formatStoredWeightInput(set.weight, weightUnit)}
+                  onChange={(event) =>
+                    onUpdateSet(
+                      set.id,
+                      'weight',
+                      formatWeightForStorageInput(event.target.value, weightUnit),
+                    )
+                  }
                 />
-                <span className="unit">kg</span>
+                <span className="unit">{weightUnitLabel(weightUnit)}</span>
               </label>
               <label className="field">
                 <input
@@ -84,7 +107,12 @@ export function DetailScreen() {
                 <span className="unit">{unit}</span>
               </label>
               <div className="rm-value">
-                {isReps ? `${calcRm(number(set.weight), number(set.recordValue))} kg` : '-'}
+                {isReps
+                  ? `${formatWeight(
+                      calcRm(number(set.weight), number(set.recordValue)),
+                      weightUnit,
+                    )} ${weightUnitLabel(weightUnit)}`
+                  : '-'}
               </div>
               <button
                 className="check"

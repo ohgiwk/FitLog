@@ -6,11 +6,14 @@ export type Screen =
   | 'preset'
   | 'presetEdit'
   | 'history'
-  | 'partEdit';
+  | 'partEdit'
+  | 'settings';
 
 export type MeasurementType = 'reps' | 'seconds';
 
 export type SetIntensity = 1 | 2 | 3 | 4 | 5;
+
+export type WeightUnit = 'kg' | 'lbs';
 
 /**
  * 種目の器具カテゴリ。種目リスト内をさらに分類して表示・設定するために使う
@@ -81,6 +84,7 @@ export type State = {
   trainingDays: TrainingDay[];
   trainingPlans: TrainingPlan[];
   parts: PartSetting[];
+  weightUnit: WeightUnit;
   catalogVersion: number;
 };
 

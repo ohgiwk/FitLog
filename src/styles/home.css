@@ -206,6 +206,15 @@
   padding: 0 18px 10px;
 }
 
+.home-menu-btn {
+  grid-column: 1;
+  width: 42px;
+  height: 42px;
+  justify-self: start;
+  border-radius: 8px;
+  color: var(--ink);
+}
+
 .home-calendar-title {
   grid-column: 2;
   display: inline-grid;
@@ -242,6 +251,67 @@
   font-weight: 900;
   text-align: right;
   white-space: nowrap;
+}
+
+.drawer-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: var(--overlay);
+}
+
+.home-drawer {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  width: min(78vw, 320px);
+  min-height: 100dvh;
+  padding: max(18px, env(safe-area-inset-top)) 14px 18px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 8px 0 24px var(--shadow-strong);
+}
+
+.drawer-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  min-height: 52px;
+  border-bottom: 1px solid var(--line);
+}
+
+.drawer-head strong {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.drawer-close {
+  min-height: 38px;
+  border-radius: 8px;
+  padding: 0 10px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.drawer-link {
+  grid-template-columns: auto 1fr;
+  justify-content: start;
+  justify-items: start;
+  gap: 12px;
+  width: 100%;
+  min-height: 54px;
+  margin-top: 12px;
+  border-radius: 8px;
+  padding: 0 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 900;
+  text-align: left;
+}
+
+.drawer-link svg {
+  color: var(--red);
 }
 
 .home-calendar-viewport {
@@ -344,10 +414,11 @@
   content: '';
 }
 
-.app-version {
-  margin: 6px auto 12px;
+.drawer-version {
+  align-self: end;
+  padding-top: 18px;
   color: var(--text-muted-light);
   font-size: 11px;
   font-weight: 700;
-  text-align: center;
+  text-align: left;
 }

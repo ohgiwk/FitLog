@@ -145,6 +145,19 @@ describe('normalizeState', () => {
     expect(result?.catalogVersion).toBe(starterCatalogVersion);
   });
 
+  it('単位設定が無い保存データは kg として読み込む', () => {
+    const result = normalizeState(makeValidSaved() as unknown as Partial<State>);
+    expect(result?.weightUnit).toBe('kg');
+  });
+
+  it('単位設定が lbs なら保持する', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      weightUnit: 'lbs',
+    } as unknown as Partial<State>);
+    expect(result?.weightUnit).toBe('lbs');
+  });
+
   it('古い catalogVersion では初期種目を補完する', () => {
     const saved = {
       exercises: [{ id: 'custom', part: 'カスタム', name: '独自種目', measurementType: 'reps' }],

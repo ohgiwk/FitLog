@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   calcRm,
   calendarCells,
+  formatStoredWeightInput,
+  formatWeightForStorageInput,
   formatWeight,
   groupExercises,
   intensityOptions,
@@ -85,6 +87,25 @@ describe('formatWeight', () => {
     expect(formatWeight('60')).toBe('60.0');
     expect(formatWeight(2.5)).toBe('2.5');
     expect(formatWeight('abc')).toBe('0.0');
+  });
+
+  it('lbs 指定では kg から lbs へ換算する', () => {
+    expect(formatWeight(100, 'lbs')).toBe('220.5');
+  });
+});
+
+describe('formatWeightForStorageInput', () => {
+  it('kg 入力は入力中の文字列を保つ', () => {
+    expect(formatStoredWeightInput('60.', 'kg')).toBe('60.');
+    expect(formatWeightForStorageInput('60.', 'kg')).toBe('60.');
+  });
+
+  it('lbs 入力を kg 保存値へ換算する', () => {
+    expect(formatWeightForStorageInput('220.462', 'lbs')).toBe('100');
+  });
+
+  it('空入力は空文字のまま扱う', () => {
+    expect(formatWeightForStorageInput('', 'lbs')).toBe('');
   });
 });
 

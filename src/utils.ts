@@ -4,6 +4,7 @@ import {
   ExerciseCategory,
   MeasurementType,
   SetIntensity,
+  WeightUnit,
   Workout,
   WorkoutSet,
 } from './types';
@@ -60,6 +61,24 @@ export function calcRm(weight: number, reps: number) {
   return (weight * (1 + reps / 30)).toFixed(reps > 3 ? 1 : 2);
 }
 
+export function weightUnitLabel(unit: WeightUnit) {
+  return unit === 'lbs' ? 'Lbs' : 'kg';
+}
+
+export function oppositeWeightUnit(unit: WeightUnit): WeightUnit {
+  return unit === 'lbs' ? 'kg' : 'lbs';
+}
+
+export function convertWeightFromKg(value: string | number, unit: WeightUnit) {
+  const weight = number(value);
+  return unit === 'lbs' ? weight * 2.20462 : weight;
+}
+
+export function convertWeightToKg(value: string | number, unit: WeightUnit) {
+  const weight = number(value);
+  return unit === 'lbs' ? weight / 2.20462 : weight;
+}
+
 export function measurementUnit(measurementType: MeasurementType) {
   return measurementType === 'seconds' ? '秒' : '回';
 }
@@ -80,8 +99,23 @@ export function isBlank(value: string | number) {
   return String(value ?? '').trim() === '';
 }
 
-export function formatWeight(value: string | number) {
-  return number(value).toFixed(1);
+export function formatWeight(value: string | number, unit: WeightUnit = 'kg') {
+  return convertWeightFromKg(value, unit).toFixed(1);
+}
+
+export function formatStoredWeightInput(value: string | number, unit: WeightUnit) {
+  if (isBlank(value)) return '';
+  if (unit === 'kg') return String(value);
+  return formatWeight(value, unit);
+}
+
+export function formatWeightForStorageInput(value: string, unit: WeightUnit) {
+  if (value.trim() === '') return '';
+  if (unit === 'kg') return value;
+  const converted = convertWeightToKg(value, unit);
+  if (!Number.isFinite(converted)) return '';
+  if (converted === 0) return '0';
+  return Number(converted.toFixed(4)).toString();
 }
 
 export function isUnstartedWorkout(workout: Workout) {

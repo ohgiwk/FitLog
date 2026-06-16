@@ -7,7 +7,9 @@
 .preset-delete,
 .preset-row-btn,
 .check,
-.history-btn {
+.history-btn,
+.home-menu-btn,
+.drawer-link {
   display: grid;
   place-items: center;
 }
@@ -94,7 +96,9 @@
 .preset-delete svg,
 .preset-row-btn svg,
 .check svg,
-.history-btn svg {
+.history-btn svg,
+.home-menu-btn svg,
+.drawer-link svg {
   stroke: currentColor;
   fill: none;
   stroke-linecap: round;
@@ -135,5 +139,12 @@
 .history-btn svg {
   width: 34px;
   height: 34px;
+  stroke-width: 2.7;
+}
+
+.home-menu-btn svg,
+.drawer-link svg {
+  width: 28px;
+  height: 28px;
   stroke-width: 2.7;
 }

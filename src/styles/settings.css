@@ -1,0 +1,60 @@
+.settings-content {
+  padding: 14px 11px calc(var(--bottom-nav-total-height) + 16px);
+}
+
+.settings-section {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.settings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 72px;
+  padding: 12px;
+}
+
+.settings-label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.settings-label span {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.settings-label strong {
+  color: var(--text-muted-light);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.unit-switch {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  width: 132px;
+  min-height: 40px;
+  border: 1px solid var(--red-border-soft);
+  border-radius: 999px;
+  padding: 3px;
+  background: var(--surface-muted);
+}
+
+.unit-switch-button {
+  min-width: 0;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.unit-switch-button.active {
+  background: var(--red);
+  color: var(--text-on-primary);
+}

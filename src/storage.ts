@@ -8,6 +8,7 @@ import {
   SetIntensity,
   State,
   TrainingPlanMode,
+  WeightUnit,
   WorkoutSet,
 } from './types';
 import { defaultExerciseCategory, uid } from './utils';
@@ -79,6 +80,7 @@ function createDefaultState(): State {
     trainingDays: [],
     trainingPlans: [],
     parts: buildPartsFromNames(starterExercises.map((exercise) => exercise.part)),
+    weightUnit: 'kg',
     catalogVersion: starterCatalogVersion,
   };
 }
@@ -139,8 +141,13 @@ export function normalizeState(saved: Partial<State> | null | undefined): State 
       trainingDays,
       trainingPlans,
     ),
+    weightUnit: normalizeWeightUnit(saved.weightUnit),
     catalogVersion: starterCatalogVersion,
   };
+}
+
+function normalizeWeightUnit(value: unknown): WeightUnit {
+  return value === 'lbs' ? 'lbs' : 'kg';
 }
 
 /**

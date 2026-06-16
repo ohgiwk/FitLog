@@ -8,6 +8,7 @@ import { usePartActions } from './usePartActions';
 import { usePresetActions } from './usePresetActions';
 import { useTrainingPlanActions } from './useTrainingPlanActions';
 import { useWorkoutActions } from './useWorkoutActions';
+import { WeightUnit } from '../types';
 
 /**
  * 各フックを束ね、画面に渡す state・派生値・操作(actions)をまとめる統合フック
@@ -71,6 +72,10 @@ export function useFitLog() {
     setCurrentEditingPresetId: presets.setCurrentEditingPresetId,
   });
 
+  function setWeightUnit(weightUnit: WeightUnit) {
+    core.saveState((current) => ({ ...current, weightUnit }));
+  }
+
   return {
     currentPreset: presets.currentPreset,
     currentWorkout: nav.currentWorkout,
@@ -117,6 +122,7 @@ export function useFitLog() {
       setHistoryPartFilter: ui.setHistoryPartFilter,
       setScreen: nav.showScreen,
       setEditMode: ui.setEditMode,
+      setWeightUnit,
       startWorkoutDay: workout.startWorkoutDay,
       startPreset: presets.startPreset,
       addTrainingPlan: trainingPlan.addTrainingPlan,
