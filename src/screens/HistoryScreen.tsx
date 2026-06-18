@@ -1,7 +1,7 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { TrainingDay, TrainingPlan, TrainingPlanMode, Workout } from '../types';
 import { calendarCells, localDate, nextMonthLabel, parseDate, prevMonthLabel } from '../utils';
-import { ExportIcon, ImportIcon, PartsIcon, SettingsIcon } from '../icons';
+import { ExportIcon, ImportIcon, SettingsIcon } from '../icons';
 import { useFitLogContext } from '../hooks/FitLogContext';
 
 const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
@@ -22,7 +22,6 @@ function useHistoryScreenModel() {
     partColors,
     partFilter: historyPartFilter,
     onPartFilter: actions.setHistoryPartFilter,
-    onEditParts: () => actions.setScreen('partEdit'),
     /**
      * 日付を選択し、ワークアウト選択を解除してホーム画面へ戻る
      */
@@ -56,7 +55,6 @@ export function HistoryScreen() {
     onImport,
     onMoveMonth,
     onUpsertTrainingPlan,
-    onEditParts,
   } = useHistoryScreenModel();
   const [activeView, setActiveView] = useState<'history' | 'plan'>('history');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -124,17 +122,6 @@ export function HistoryScreen() {
                 <button type="button" role="menuitem" onClick={openImport}>
                   <ImportIcon />
                   <span>記録を読み込む</span>
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onEditParts();
-                  }}
-                >
-                  <PartsIcon />
-                  <span>部位を編集</span>
                 </button>
               </div>
             )}

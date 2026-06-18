@@ -11,7 +11,7 @@ function usePartEditScreenModel() {
   const { orderedParts, actions } = useFitLogContext();
   return {
     orderedParts,
-    onBack: () => actions.setScreen('history'),
+    onBack: () => actions.setScreen('settings'),
     onAddPart: actions.addPart,
     onDeletePart: actions.deletePart,
     onMovePart: actions.movePart,

@@ -1,4 +1,4 @@
-import { ChevronLeft } from '../icons';
+import { ChevronLeft, PartsIcon } from '../icons';
 import { WeightUnit } from '../types';
 import { weightUnitLabel } from '../utils';
 import { useFitLogContext } from '../hooks/FitLogContext';
@@ -14,6 +14,7 @@ function useSettingsScreenModel() {
   return {
     weightUnit: state.weightUnit,
     onBack: () => actions.setScreen('home'),
+    onEditParts: () => actions.setScreen('partEdit'),
     onChangeWeightUnit: actions.setWeightUnit,
   };
 }
@@ -22,7 +23,7 @@ function useSettingsScreenModel() {
  * アプリ全体の表示・入力設定を変更する画面
  */
 export function SettingsScreen() {
-  const { weightUnit, onBack, onChangeWeightUnit } = useSettingsScreenModel();
+  const { weightUnit, onBack, onEditParts, onChangeWeightUnit } = useSettingsScreenModel();
 
   return (
     <section className="screen active settings-screen">
@@ -56,6 +57,12 @@ export function SettingsScreen() {
               ))}
             </div>
           </div>
+        </section>
+        <section className="settings-section" aria-label="部位設定">
+          <button className="settings-link-row" type="button" onClick={onEditParts}>
+            <PartsIcon />
+            <span>部位を編集</span>
+          </button>
         </section>
       </div>
     </section>
