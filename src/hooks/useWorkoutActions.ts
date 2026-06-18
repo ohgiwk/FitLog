@@ -97,15 +97,27 @@ export function useWorkoutActions({
   }
 
   /**
-   * セットの重量・回数(秒数)・メモを更新する
+   * セットの重量・回数(秒数)を更新する
    */
-  function updateSet(setId: string, field: 'weight' | 'recordValue' | 'note', value: string) {
+  function updateSet(setId: string, field: 'weight' | 'recordValue', value: string) {
     saveState((prev) => ({
       ...prev,
       workouts: prev.workouts.map((workout) => ({
         ...workout,
         sets: workout.sets.map((set) => (set.id === setId ? { ...set, [field]: value } : set)),
       })),
+    }));
+  }
+
+  /**
+   * ワークアウト単位のメモを更新する
+   */
+  function updateWorkoutNote(workoutId: string, note: string) {
+    saveState((prev) => ({
+      ...prev,
+      workouts: prev.workouts.map((workout) =>
+        workout.id === workoutId ? { ...workout, note } : workout,
+      ),
     }));
   }
 
@@ -186,6 +198,7 @@ export function useWorkoutActions({
     addExerciseToToday,
     addSet,
     updateSet,
+    updateWorkoutNote,
     updateSetIntensity,
     deleteSet,
     deleteWorkout,

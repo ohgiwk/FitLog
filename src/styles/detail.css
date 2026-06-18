@@ -19,6 +19,40 @@
   background: var(--surface);
 }
 
+.workout-note {
+  display: grid;
+  gap: 8px;
+  margin: 0 14px 24px;
+}
+
+.workout-note > span {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.workout-note textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  border: 1px solid var(--input-line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  outline: none;
+}
+
+.workout-note textarea::placeholder {
+  color: var(--text-placeholder);
+}
+
+.workout-note textarea:focus {
+  border-color: var(--red);
+}
+
 .detail-row {
   display: grid;
   grid-template-columns: 34px 1fr 1fr 62px 36px;

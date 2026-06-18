@@ -33,7 +33,6 @@ export type WorkoutSet = {
   weight: string | number;
   recordValue: string | number;
   intensity?: SetIntensity;
-  note: string;
 };
 
 export type Workout = {
@@ -44,6 +43,7 @@ export type Workout = {
   part: string;
   measurementType: MeasurementType;
   sets: WorkoutSet[];
+  note: string;
 };
 
 export type Preset = {

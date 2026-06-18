@@ -45,7 +45,7 @@ export function calendarCells(year: number, month: number): CalendarCell[] {
 }
 
 export function newSet(): WorkoutSet {
-  return { id: uid(), weight: '', recordValue: '', note: '' };
+  return { id: uid(), weight: '', recordValue: '' };
 }
 
 export const intensityOptions: { value: SetIntensity; label: string }[] = [

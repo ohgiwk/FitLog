@@ -29,6 +29,7 @@ function useDetailScreenModel() {
     onBack: () => actions.setScreen('home'),
     onOpenHistory: () => actions.setScreen('exerciseHistory'),
     onUpdateSet: actions.updateSet,
+    onUpdateWorkoutNote: actions.updateWorkoutNote,
     onUpdateSetIntensity: actions.updateSetIntensity,
     onDeleteSet: actions.deleteSet,
     onAddSet: actions.addSet,
@@ -47,6 +48,7 @@ export function DetailScreen() {
     onBack,
     onOpenHistory,
     onUpdateSet,
+    onUpdateWorkoutNote,
     onUpdateSetIntensity,
     onDeleteSet,
     onAddSet,
@@ -144,6 +146,16 @@ export function DetailScreen() {
             </div>
           ))}
         </div>
+        <label className="workout-note">
+          <span>メモ</span>
+          <textarea
+            maxLength={1000}
+            placeholder="この種目のメモを入力"
+            rows={5}
+            value={workout.note}
+            onChange={(event) => onUpdateWorkoutNote(workout.id, event.target.value)}
+          />
+        </label>
       </div>
       <RestTimer />
       <button

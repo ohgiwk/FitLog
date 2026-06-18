@@ -114,6 +114,28 @@ describe('normalizeState', () => {
     expect(result?.workouts[0].sets[0].intensity).toBeUndefined();
   });
 
+  it('種目メモを保持し、旧セットメモは破棄する', () => {
+    const saved = {
+      exercises: [{ id: 'e1', part: '胸', name: 'ベンチ', measurementType: 'reps' }],
+      workouts: [
+        {
+          id: 'w1',
+          exerciseId: 'e1',
+          date: '2026-01-01',
+          name: 'ベンチ',
+          part: '胸',
+          measurementType: 'reps',
+          note: 'フォームを意識',
+          sets: [{ id: 's1', weight: 50, recordValue: 10, note: '旧セットメモ' }],
+        },
+      ],
+      catalogVersion: starterCatalogVersion,
+    };
+    const result = normalizeState(saved as unknown as Partial<State>);
+    expect(result?.workouts[0].note).toBe('フォームを意識');
+    expect(result?.workouts[0].sets[0]).not.toHaveProperty('note');
+  });
+
   it('trainingDays の part を parts へ移行する', () => {
     const saved = {
       exercises: [{ id: 'e1', part: '胸', name: 'ベンチ', measurementType: 'reps' }],

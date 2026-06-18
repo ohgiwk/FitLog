@@ -142,5 +142,6 @@ export function createWorkout(exercise: Exercise, date: string): Workout {
     part: exercise.part,
     measurementType: exercise.measurementType,
     sets: Array.from({ length: 5 }, () => newSet()),
+    note: '',
   };
 }

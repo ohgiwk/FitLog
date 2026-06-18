@@ -134,6 +134,7 @@ export function useFitLog() {
       selectPart: ui.selectPart,
       updateExercise: exercise.updateExercise,
       updateSet: workout.updateSet,
+      updateWorkoutNote: workout.updateWorkoutNote,
       updateSetIntensity: workout.updateSetIntensity,
     },
   };

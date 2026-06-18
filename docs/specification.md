@@ -216,7 +216,6 @@ type WorkoutSet = {
   weight: string | number;      // 重量（保存値は kg）。入力中は文字列、計算時に数値化
   recordValue: string | number; // 回数 or 秒数
   intensity?: SetIntensity;     // 主観強度（任意）
-  note: string;                 // メモ（現状 UI 入力経路は限定的）
 };
 
 type Workout = {
@@ -227,6 +226,7 @@ type Workout = {
   part: string;          // 記録時点の部位のスナップショット
   measurementType: MeasurementType;
   sets: WorkoutSet[];
+  note: string;          // その日の種目記録に対するメモ
 };
 
 type WorkoutStartTimes = Record<string, string>; // date(YYYY-MM-DD) -> HH:mm
@@ -264,7 +264,7 @@ type PartSetting = {
 ### 4.3 種目マスタと記録の責務分離
 
 - `Exercise` は「何を行うか」の軽量マスタ（`id` / `part` / `name` / `measurementType` / `category`）。
-- 実際の重量・回数（秒数）・強度・メモは `WorkoutSet` に保存する。
+- 実際の重量・回数（秒数）・強度は `WorkoutSet`、種目単位のメモは `Workout.note` に保存する。
 - `Workout` は `name` / `part` / `measurementType` を記録時点のスナップショットとして保持するため、後でマスタを編集しても過去の記録表示は変わらない（種目の並び替え時のみ後述の同期がある）。
 
 ---
@@ -316,9 +316,9 @@ type PartSetting = {
 - **既定プリセット補完**: 名前が一致しない既定プリセットを末尾に追加（`mergeDefaultPresets`）。
 - 各フィールドの正規化方針:
   - `Exercise`: `id` / `part` / `name` がすべて文字列でなければ除外。`measurementType` は `'seconds'` 以外を `'reps'` に丸める。`category` は 5 種のいずれかに丸め、未設定・不正値のときは初期種目マスタに同名があればそのカテゴリを、なければ `'free'` を使う。
-  - `Workout`: `id` / `exerciseId` / `date` / `name` / `part` が文字列でなければ除外。
+  - `Workout`: `id` / `exerciseId` / `date` / `name` / `part` が文字列でなければ除外。`note` は文字列のみ採用し、未設定・不正値は `''`。
   - `workoutStartTimes`: オブジェクトのみ採用。値が `HH:mm` 形式のものだけを日付キーごとに保持する。
-  - `WorkoutSet`: `id` が文字列でなければ除外。`weight` / `recordValue` は文字列・数値以外を `''` に。`recordValue` は旧フィールド `reps` からも引き継ぐ。`intensity` は 1〜5 のみ採用、それ以外は `undefined`。`note` は文字列以外を `''`。
+  - `WorkoutSet`: `id` が文字列でなければ除外。`weight` / `recordValue` は文字列・数値以外を `''` に。`recordValue` は旧フィールド `reps` からも引き継ぐ。`intensity` は 1〜5 のみ採用、それ以外は `undefined`。旧セットメモ `note` は取り込まず破棄する。
   - `TrainingDay`: 同一日付をマージし、`parts` を trim + 重複排除。旧フィールド `part`（単数）からも取り込む。
   - `TrainingPlan`: `part` 必須。`mode` は `'interval'` 以外を `'weekly'`。`weekdays` は 0〜6 の整数のみ・重複排除・ソート。`intervalDays` は正の整数（既定 1）。
   - `parts`（`normalizePartSettings`）: 保存済み設定（`name` + `color`、空名・重複・「レスト」は除外、色が無ければ既定色）を順序を保って取り込み、その後、種目・記録・実施日・計画に現れる未登録の部位を末尾へ追加してパレット色を割り当てる。旧データに `parts` が無くても、ここで既存部位から自動生成される。
@@ -400,6 +400,7 @@ type PartSetting = {
 - **セット入力テーブル**: 各行に番号・重量入力（設定中の重量単位。`kg` は step 0.5、`lbs` は step 1）・記録入力（`回`/`秒`、step 1）・RM 表示・削除ボタン・強度ピッカー（5 段階トグル）。
   - 入力欄の表示・入力単位は設定に従うが、保存する `WorkoutSet.weight` は kg に換算した値を保持する。
   - reps 種目のみ RM を表示、seconds 種目は `-`。
+- **メモ**: セット一覧の下に「メモ」テキストエリアを表示し、その日の種目記録の `Workout.note` として保存する（最大 1000 文字）。
 - **レストタイマー**（`RestTimer`、後述）。
 - **FAB（＋）**: 空セットを 1 つ追加。
 - 詳細を開く際、セットが 5 未満なら 5 まで空セットを補充（`openWorkoutDetail`）。
@@ -529,7 +530,8 @@ weight === 0 または reps === 0 → '0.0'
 - `openWorkoutDetail`: セットを 5 まで補充して詳細を開く。
 - `addExerciseToToday`: 選択日に同一種目があれば再利用、無ければ新規作成して詳細を開く。
 - `addSet`: 空セットを 1 つ追加し詳細を開く。
-- `updateSet`: 指定セットの `weight` / `recordValue` / `note` を更新（全ワークアウトを走査して該当 ID を更新）。
+- `updateSet`: 指定セットの `weight` / `recordValue` を更新（全ワークアウトを走査して該当 ID を更新）。
+- `updateWorkoutNote`: 指定ワークアウトの種目メモ `note` を更新。
 - `updateSetIntensity`: 強度を設定。同じ強度を再タップ、または `undefined` で強度を解除（フィールド削除）。
 - `deleteSet`: 現在のワークアウトから指定セットを削除。
 - `deleteWorkout`: ワークアウトごと削除。対象が `currentWorkoutId` なら解除し、トースト表示。

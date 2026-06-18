@@ -359,6 +359,7 @@ function normalizeWorkouts(workouts: unknown): State['workouts'] {
         part: item.part,
         measurementType: normalizeMeasurementType(item.measurementType),
         sets: normalizeSets(item.sets),
+        note: typeof item.note === 'string' ? item.note : '',
       },
     ];
   });
@@ -376,7 +377,6 @@ function normalizeSets(sets: unknown): WorkoutSet[] {
         weight: normalizeSetValue(item.weight),
         recordValue: normalizeSetValue(item.recordValue ?? item.reps),
         intensity: normalizeIntensity(item.intensity),
-        note: typeof item.note === 'string' ? item.note : '',
       },
     ];
   });

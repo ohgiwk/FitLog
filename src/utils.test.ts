@@ -34,6 +34,7 @@ function makeWorkout(sets: WorkoutSet[]): Workout {
     part: '胸',
     measurementType: 'reps',
     sets,
+    note: '',
   };
 }
 
