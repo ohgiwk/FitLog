@@ -2,6 +2,7 @@ import {
   CalendarCell,
   Exercise,
   ExerciseCategory,
+  ExerciseGoal,
   MeasurementType,
   SetIntensity,
   WeightUnit,
@@ -97,6 +98,19 @@ export function number(value: string | number) {
 
 export function isBlank(value: string | number) {
   return String(value ?? '').trim() === '';
+}
+
+/**
+ * 入力済みセットの重量と回数・秒数が、種目目標の両方に到達しているか判定する
+ */
+export function isExerciseGoalAchieved(sets: WorkoutSet[], goal: ExerciseGoal) {
+  return sets.some(
+    (set) =>
+      !isBlank(set.weight) &&
+      !isBlank(set.recordValue) &&
+      number(set.weight) >= goal.weight &&
+      number(set.recordValue) >= goal.recordValue,
+  );
 }
 
 export function formatWeight(value: string | number, unit: WeightUnit = 'kg') {

@@ -1,4 +1,4 @@
-import { Exercise, ExerciseCategory, MeasurementType, State } from '../types';
+import { Exercise, ExerciseCategory, ExerciseGoal, MeasurementType, State } from '../types';
 import { uid } from '../utils';
 import { paletteColorAt } from '../data/partColors';
 
@@ -94,6 +94,25 @@ export function useExerciseActions({ state, saveState, showToast }: ExerciseActi
   }
 
   /**
+   * 種目ごとの目標を更新する。undefined の場合は目標を解除する
+   */
+  function updateExerciseGoal(exerciseId: string, goal?: ExerciseGoal) {
+    saveState((prev) => ({
+      ...prev,
+      exercises: prev.exercises.map((exercise) => {
+        if (exercise.id !== exerciseId) return exercise;
+        if (!goal) {
+          const nextExercise = { ...exercise };
+          delete nextExercise.goal;
+          return nextExercise;
+        }
+        return { ...exercise, goal };
+      }),
+    }));
+    showToast(goal ? '目標を更新しました' : '目標を解除しました');
+  }
+
+  /**
    * 指定部位の種目を、与えられたレイアウト(並び順＋カテゴリ)へ反映する。
    * 部位内の種目だけを並び替え、他部位の種目はマスタ配列内の位置を保つ。
    * カテゴリをまたいでドロップした種目は、移動先のカテゴリへ変更される
@@ -142,6 +161,7 @@ export function useExerciseActions({ state, saveState, showToast }: ExerciseActi
   return {
     addExerciseToPart,
     updateExercise,
+    updateExerciseGoal,
     reorderPartExercises,
     deleteExercise,
   };

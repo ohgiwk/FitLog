@@ -20,12 +20,18 @@ export type WeightUnit = 'kg' | 'lbs';
  */
 export type ExerciseCategory = 'free' | 'machine' | 'dumbbell' | 'cable' | 'bodyweight';
 
+export type ExerciseGoal = {
+  weight: number;
+  recordValue: number;
+};
+
 export type Exercise = {
   id: string;
   part: string;
   name: string;
   measurementType: MeasurementType;
   category: ExerciseCategory;
+  goal?: ExerciseGoal;
 };
 
 export type WorkoutSet = {

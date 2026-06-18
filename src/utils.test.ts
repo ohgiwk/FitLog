@@ -4,6 +4,7 @@ import {
   calendarCells,
   formatStoredWeightInput,
   formatWeightForStorageInput,
+  isExerciseGoalAchieved,
   formatWeight,
   groupExercises,
   intensityOptions,
@@ -80,6 +81,38 @@ describe('isBlank', () => {
     expect(isBlank('0')).toBe(false);
     expect(isBlank(0)).toBe(false);
     expect(isBlank('5')).toBe(false);
+  });
+});
+
+describe('isExerciseGoalAchieved', () => {
+  it('重量と回数の両方が目標以上のセットがあれば true', () => {
+    expect(
+      isExerciseGoalAchieved([{ id: 's1', weight: 82.5, recordValue: 10 }], {
+        weight: 80,
+        recordValue: 10,
+      }),
+    ).toBe(true);
+  });
+
+  it('条件が別々のセットに分かれている場合は false', () => {
+    expect(
+      isExerciseGoalAchieved(
+        [
+          { id: 's1', weight: 82.5, recordValue: 8 },
+          { id: 's2', weight: 75, recordValue: 10 },
+        ],
+        { weight: 80, recordValue: 10 },
+      ),
+    ).toBe(false);
+  });
+
+  it('未入力の値は 0 の目標でも達成扱いにしない', () => {
+    expect(
+      isExerciseGoalAchieved([{ id: 's1', weight: '', recordValue: 30 }], {
+        weight: 0,
+        recordValue: 30,
+      }),
+    ).toBe(false);
   });
 });
 
@@ -194,8 +227,20 @@ describe('groupExercises', () => {
   it('部位ごとにまとめる', () => {
     const exercises: Exercise[] = [
       { id: '1', part: '胸', name: 'ベンチプレス', measurementType: 'reps', category: 'free' },
-      { id: '2', part: '背中', name: 'ラットプルダウン', measurementType: 'reps', category: 'machine' },
-      { id: '3', part: '胸', name: 'ダンベルフライ', measurementType: 'reps', category: 'dumbbell' },
+      {
+        id: '2',
+        part: '背中',
+        name: 'ラットプルダウン',
+        measurementType: 'reps',
+        category: 'machine',
+      },
+      {
+        id: '3',
+        part: '胸',
+        name: 'ダンベルフライ',
+        measurementType: 'reps',
+        category: 'dumbbell',
+      },
     ];
     const grouped = groupExercises(exercises);
     expect([...grouped.keys()]).toEqual(['胸', '背中']);

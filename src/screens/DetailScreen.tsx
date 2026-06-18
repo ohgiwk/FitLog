@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { ChevronLeft, HistoryIcon, PlusIcon, TrashIcon } from '../icons';
 import {
   calcRm,
@@ -20,9 +21,13 @@ import { useFitLogContext } from '../hooks/FitLogContext';
  */
 function useDetailScreenModel() {
   const { currentWorkout, selectedDate, state, actions } = useFitLogContext();
+  const exercise = currentWorkout
+    ? state.exercises.find((item) => item.id === currentWorkout.exerciseId)
+    : undefined;
 
   return {
     workout: currentWorkout,
+    exercise,
     selectedDate,
     workouts: state.workouts,
     weightUnit: state.weightUnit,
@@ -33,7 +38,114 @@ function useDetailScreenModel() {
     onUpdateSetIntensity: actions.updateSetIntensity,
     onDeleteSet: actions.deleteSet,
     onAddSet: actions.addSet,
+    onUpdateExerciseGoal: actions.updateExerciseGoal,
   };
+}
+
+function ExerciseGoalEditor({
+  exerciseId,
+  measurementType,
+  goal,
+  weightUnit,
+  onSave,
+}: {
+  exerciseId: string;
+  measurementType: 'reps' | 'seconds';
+  goal?: { weight: number; recordValue: number };
+  weightUnit: 'kg' | 'lbs';
+  onSave: (exerciseId: string, goal?: { weight: number; recordValue: number }) => void;
+}) {
+  const [weight, setWeight] = useState('');
+  const [recordValue, setRecordValue] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    setWeight(goal ? formatStoredWeightInput(goal.weight, weightUnit) : '');
+    setRecordValue(goal ? String(goal.recordValue) : '');
+    setIsEditing(false);
+  }, [goal, weightUnit]);
+
+  const canEdit = !goal || isEditing;
+  const storedWeight = formatWeightForStorageInput(weight, weightUnit);
+  const canSave =
+    weight.trim() !== '' &&
+    recordValue.trim() !== '' &&
+    Number(storedWeight) >= 0 &&
+    Number(recordValue) > 0;
+
+  return (
+    <section className="exercise-goal" aria-labelledby="exercise-goal-title">
+      <div className="exercise-goal-heading">
+        <div>
+          <span className="exercise-goal-kicker">CURRENT GOAL</span>
+          <h2 id="exercise-goal-title">現在の目標</h2>
+        </div>
+        {goal && !isEditing && (
+          <button className="goal-edit-button" type="button" onClick={() => setIsEditing(true)}>
+            編集
+          </button>
+        )}
+      </div>
+      <div className={`exercise-goal-form${canEdit ? '' : ' readonly'}`}>
+        <label>
+          <span>重量</span>
+          <div className="goal-input">
+            <input
+              type="number"
+              min="0"
+              step={weightUnit === 'lbs' ? '1' : '0.5'}
+              inputMode="decimal"
+              value={weight}
+              readOnly={!canEdit}
+              onChange={(event) => setWeight(event.target.value)}
+            />
+            <span>{weightUnitLabel(weightUnit)}</span>
+          </div>
+        </label>
+        <label>
+          <span>{measurementType === 'seconds' ? '秒数' : '回数'}</span>
+          <div className="goal-input">
+            <input
+              type="number"
+              min="1"
+              step="1"
+              inputMode="numeric"
+              value={recordValue}
+              readOnly={!canEdit}
+              onChange={(event) => setRecordValue(event.target.value)}
+            />
+            <span>{measurementUnit(measurementType)}</span>
+          </div>
+        </label>
+        {canEdit && (
+          <div className={`goal-actions${goal ? ' editing' : ''}`}>
+            {goal && (
+              <button
+                className="goal-delete-button"
+                type="button"
+                onClick={() => onSave(exerciseId, undefined)}
+              >
+                削除
+              </button>
+            )}
+            <button
+              className="goal-save-button"
+              type="button"
+              disabled={!canSave}
+              onClick={() =>
+                onSave(exerciseId, {
+                  weight: number(storedWeight),
+                  recordValue: number(recordValue),
+                })
+              }
+            >
+              {goal ? '更新' : '設定'}
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  );
 }
 
 /**
@@ -42,6 +154,7 @@ function useDetailScreenModel() {
 export function DetailScreen() {
   const {
     workout,
+    exercise,
     selectedDate,
     workouts,
     weightUnit,
@@ -52,6 +165,7 @@ export function DetailScreen() {
     onUpdateSetIntensity,
     onDeleteSet,
     onAddSet,
+    onUpdateExerciseGoal,
   } = useDetailScreenModel();
   if (!workout) return null;
   const isReps = isRepsMeasurement(workout.measurementType);
@@ -70,6 +184,15 @@ export function DetailScreen() {
         </div>
       </header>
       <div className="content">
+        {exercise && (
+          <ExerciseGoalEditor
+            exerciseId={exercise.id}
+            measurementType={exercise.measurementType}
+            goal={exercise.goal}
+            weightUnit={weightUnit}
+            onSave={onUpdateExerciseGoal}
+          />
+        )}
         <LastRecord
           workout={workout}
           selectedDate={selectedDate}

@@ -1,18 +1,25 @@
 import { useMemo, useState } from 'react';
 import { Screen, State } from '../types';
-import { isBlank, localDate, parseDate } from '../utils';
+import { isBlank, isExerciseGoalAchieved, localDate, parseDate } from '../utils';
 import { findCurrentWorkout } from '../selectors/fitLogSelectors';
+import { GoalAchievement } from './useFitLogUi';
 
 type NavigationDeps = {
   state: State;
   saveState: (updater: (draft: State) => State) => void;
   setEditMode: (value: boolean) => void;
+  setGoalAchievement: (value: GoalAchievement | null) => void;
 };
 
 /**
  * 画面遷移・選択中の日付・対象ワークアウトなど、ナビゲーション状態を管理するフック
  */
-export function useNavigation({ state, saveState, setEditMode }: NavigationDeps) {
+export function useNavigation({
+  state,
+  saveState,
+  setEditMode,
+  setGoalAchievement,
+}: NavigationDeps) {
   const [selectedDate, setSelectedDate] = useState(() => localDate(new Date()));
   const [screen, setScreen] = useState<Screen>('home');
   const [currentWorkoutId, setCurrentWorkoutId] = useState<string | null>(null);
@@ -56,6 +63,17 @@ export function useNavigation({ state, saveState, setEditMode }: NavigationDeps)
    * 画面を切り替える。離脱時の後片付けや編集モード解除も行う
    */
   function showScreen(next: Screen) {
+    if (screen === 'detail' && next !== 'detail' && currentWorkout) {
+      const exercise = state.exercises.find((item) => item.id === currentWorkout.exerciseId);
+      if (exercise?.goal && isExerciseGoalAchieved(currentWorkout.sets, exercise.goal)) {
+        setGoalAchievement({
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          measurementType: exercise.measurementType,
+          goal: exercise.goal,
+        });
+      }
+    }
     if (next !== 'detail' && next !== 'exerciseHistory') cleanupBlankDetailSets();
     if (next !== 'select') setEditMode(false);
     setScreen(next);

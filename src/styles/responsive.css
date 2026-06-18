@@ -29,6 +29,14 @@
     gap: 5px;
   }
 
+  .exercise-goal-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .goal-actions {
+    grid-column: 1 / -1;
+  }
+
   .intensity-picker {
     gap: 4px;
   }

@@ -180,6 +180,38 @@ describe('normalizeState', () => {
     expect(result?.weightUnit).toBe('lbs');
   });
 
+  it('種目目標を正規化して保持する', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      exercises: [
+        {
+          id: 'e1',
+          part: '胸',
+          name: 'ベンチプレス',
+          measurementType: 'reps',
+          goal: { weight: '80', recordValue: '10' },
+        },
+      ],
+    } as unknown as Partial<State>);
+    expect(result?.exercises[0].goal).toEqual({ weight: 80, recordValue: 10 });
+  });
+
+  it('不正な種目目標は破棄する', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      exercises: [
+        {
+          id: 'e1',
+          part: '胸',
+          name: 'ベンチプレス',
+          measurementType: 'reps',
+          goal: { weight: -1, recordValue: 0 },
+        },
+      ],
+    } as unknown as Partial<State>);
+    expect(result?.exercises[0].goal).toBeUndefined();
+  });
+
   it('古い catalogVersion では初期種目を補完する', () => {
     const saved = {
       exercises: [{ id: 'custom', part: 'カスタム', name: '独自種目', measurementType: 'reps' }],

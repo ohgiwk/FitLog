@@ -20,6 +20,7 @@ export function useFitLog() {
     state: core.state,
     saveState: core.saveState,
     setEditMode: ui.setEditMode,
+    setGoalAchievement: ui.setGoalAchievement,
   });
   const selectors = useFitLogSelectors(core.state, nav.selectedDate);
 
@@ -94,6 +95,7 @@ export function useFitLog() {
     splitPartOptions: selectors.splitPartOptions,
     state: core.state,
     toast: core.toast,
+    goalAchievement: ui.goalAchievement,
     actions: {
       addExerciseToPart: exercise.addExerciseToPart,
       addExerciseToPreset: presets.addExerciseToPreset,
@@ -133,6 +135,8 @@ export function useFitLog() {
       setPartColor: part.setPartColor,
       selectPart: ui.selectPart,
       updateExercise: exercise.updateExercise,
+      updateExerciseGoal: exercise.updateExerciseGoal,
+      clearGoalAchievement: () => ui.setGoalAchievement(null),
       updateSet: workout.updateSet,
       updateWorkoutNote: workout.updateWorkoutNote,
       updateSetIntensity: workout.updateSetIntensity,

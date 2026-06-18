@@ -2,6 +2,7 @@ import { starterCatalogVersion, starterExercises } from './data/starterExercises
 import { defaultPartColor, paletteColorAt } from './data/partColors';
 import {
   ExerciseCategory,
+  ExerciseGoal,
   MeasurementType,
   PartSetting,
   Preset,
@@ -314,9 +315,35 @@ function normalizeExercises(exercises: unknown): State['exercises'] {
         name: item.name,
         measurementType: normalizeMeasurementType(item.measurementType),
         category: normalizeExerciseCategory(item.category, item.part, item.name),
+        goal: normalizeExerciseGoal(item.goal),
       },
     ];
   });
+}
+
+/**
+ * 種目目標は、重量が 0 以上かつ回数・秒数が 1 以上の数値である場合だけ保持する
+ */
+function normalizeExerciseGoal(value: unknown): ExerciseGoal | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const item = value as Record<string, unknown>;
+  if (
+    (typeof item.weight !== 'string' && typeof item.weight !== 'number') ||
+    String(item.weight).trim() === ''
+  ) {
+    return undefined;
+  }
+  if (
+    (typeof item.recordValue !== 'string' && typeof item.recordValue !== 'number') ||
+    String(item.recordValue).trim() === ''
+  ) {
+    return undefined;
+  }
+  const weight = Number(item.weight);
+  const recordValue = Number(item.recordValue);
+  if (!Number.isFinite(weight) || weight < 0) return undefined;
+  if (!Number.isFinite(recordValue) || recordValue <= 0) return undefined;
+  return { weight, recordValue };
 }
 
 /**

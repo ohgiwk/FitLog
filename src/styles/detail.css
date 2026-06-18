@@ -1,3 +1,157 @@
+.exercise-goal {
+  display: grid;
+  gap: 14px;
+  margin: 0 14px 16px;
+  border: 1px solid var(--red-border-soft);
+  border-radius: 14px;
+  padding: 15px;
+  background: linear-gradient(145deg, var(--surface) 0%, var(--surface-soft) 100%);
+  box-shadow: 0 8px 22px var(--shadow-medium);
+}
+
+.exercise-goal-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.exercise-goal-kicker,
+.goal-achievement-kicker {
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.exercise-goal h2 {
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-size: 20px;
+}
+
+.goal-edit-button {
+  min-height: 36px;
+  border: 1px solid var(--red);
+  border-radius: 8px;
+  padding: 0 12px;
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.exercise-goal-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 9px;
+  align-items: end;
+}
+
+.exercise-goal-form.readonly {
+  grid-template-columns: 1fr 1fr;
+}
+
+.exercise-goal-form label,
+.next-goal-fields label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.goal-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+}
+
+.goal-input input {
+  min-width: 0;
+  height: 42px;
+  border: 1px solid var(--input-line);
+  border-radius: 8px;
+  padding: 0 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.goal-input input[readonly] {
+  height: 48px;
+  border-color: var(--border-medium);
+  border-radius: 10px;
+  background: var(--surface-muted);
+  font-size: 23px;
+  cursor: default;
+}
+
+.goal-input > span {
+  color: var(--text-soft);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.goal-actions {
+  display: grid;
+}
+
+.goal-actions.editing {
+  grid-template-columns: auto auto;
+  gap: 7px;
+}
+
+.goal-save-button,
+.goal-delete-button {
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 0 13px;
+  font-weight: 900;
+}
+
+.goal-save-button {
+  background: var(--red);
+  color: var(--text-on-primary);
+}
+
+.goal-delete-button {
+  border: 1px solid var(--red);
+  color: var(--red);
+}
+
+.goal-save-button:disabled {
+  background: var(--disabled-bg);
+}
+
+.goal-achievement-dialog {
+  gap: 16px;
+  text-align: center;
+}
+
+.goal-achievement-mark {
+  font-size: 44px;
+  line-height: 1;
+}
+
+.goal-achievement-dialog .confirm-title {
+  margin: 4px 0 0;
+}
+
+.next-goal-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  text-align: left;
+}
+
+.goal-achievement-dialog .confirm-actions {
+  grid-template-columns: minmax(90px, 0.7fr) minmax(0, 1.3fr);
+}
+
 .detail-summary {
   margin: 0 14px;
   border-radius: 12px 12px 0 0;
