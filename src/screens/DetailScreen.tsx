@@ -14,7 +14,7 @@ import {
 import { LastRecord } from '../components/LastRecord';
 import { IntensityIcon } from '../components/IntensityIcon';
 import { RestTimer } from '../components/RestTimer';
-import { useFitLogContext } from '../hooks/FitLogContext';
+import { useFitLogContext } from '../hooks/useFitLogContext';
 
 /**
  * 種目詳細画面が必要とする state・操作を Context から組み立てる view-model フック

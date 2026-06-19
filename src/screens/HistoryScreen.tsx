@@ -1,10 +1,21 @@
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { TrainingDay, TrainingPlan, TrainingPlanMode, Workout } from '../types';
-import { calendarCells, localDate, nextMonthLabel, parseDate, prevMonthLabel } from '../utils';
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { TrainingPlan, TrainingPlanMode } from '../types';
+import {
+  calendarCells,
+  hexToRgba,
+  localDate,
+  nextMonthLabel,
+  parseDate,
+  prevMonthLabel,
+  weekdayLabels,
+} from '../utils';
 import { ExportIcon, ImportIcon, SettingsIcon } from '../icons';
-import { useFitLogContext } from '../hooks/FitLogContext';
-
-const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+import { useFitLogContext } from '../hooks/useFitLogContext';
+import {
+  buildUpcomingPlans,
+  buildVisibleHistory,
+  plannedPartsForDate,
+} from '../selectors/fitLogSelectors';
 
 /**
  * 履歴/計画画面が必要とする state・操作を Context から組み立てる view-model フック
@@ -61,12 +72,28 @@ export function HistoryScreen() {
   const monthDate = parseDate(selectedDate);
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
-  const partTabs = ['ALL', ...orderedParts.map((part) => part.name)];
-  const planParts = orderedParts.map((part) => part.name).filter((part) => part !== 'レスト');
-  const trainingDayByDate = new Map(trainingDays.map((day) => [day.date, day.parts]));
-  const visibleHistory = buildVisibleHistory(workouts, trainingDays, partFilter);
-  const trainedDates = new Set(visibleHistory.map((day) => day.date));
-  const cells = calendarCells(year, month);
+  const partTabs = useMemo(() => ['ALL', ...orderedParts.map((part) => part.name)], [orderedParts]);
+  const planParts = useMemo(
+    () => orderedParts.map((part) => part.name).filter((part) => part !== 'レスト'),
+    [orderedParts],
+  );
+  const trainingDayByDate = useMemo(
+    () => new Map(trainingDays.map((day) => [day.date, day.parts])),
+    [trainingDays],
+  );
+  const visibleHistory = useMemo(
+    () => buildVisibleHistory(workouts, trainingDays, partFilter),
+    [partFilter, trainingDays, workouts],
+  );
+  const trainedDates = useMemo(
+    () => new Set(visibleHistory.map((day) => day.date)),
+    [visibleHistory],
+  );
+  const cells = useMemo(() => calendarCells(year, month), [month, year]);
+  const upcomingPlans = useMemo(
+    () => buildUpcomingPlans(selectedDate, trainingPlans),
+    [selectedDate, trainingPlans],
+  );
   const currentPartLabel = partFilter === 'ALL' ? 'すべて' : partFilter;
   const today = localDate(new Date());
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -187,7 +214,7 @@ export function HistoryScreen() {
               </button>
             </div>
             <div className="calendar-grid">
-              {['日', '月', '火', '水', '木', '金', '土'].map((day) => (
+              {weekdayLabels.map((day) => (
                 <div className="weekday" key={day}>
                   {day}
                 </div>
@@ -275,10 +302,11 @@ export function HistoryScreen() {
             <div className="schedule-preview">
               <strong className="schedule-preview-title">今後7日の予定</strong>
               <div className="schedule-preview-list">
-                {buildUpcomingPlans(selectedDate, trainingPlans).map((item) => (
+                {upcomingPlans.map((item) => (
                   <span className="schedule-preview-item" key={item.date}>
                     <span className="schedule-preview-date">
-                      {item.date.slice(5).replace('-', '/')}（{weekdays[parseDate(item.date).getDay()]}）
+                      {item.date.slice(5).replace('-', '/')}（
+                      {weekdayLabels[parseDate(item.date).getDay()]}）
                     </span>
                     <span className="schedule-preview-parts">
                       {item.parts.length ? item.parts.join(' / ') : '-'}
@@ -367,7 +395,7 @@ function PlanRow({ part, color, plan, fallbackStartDate, onChange }: PlanRowProp
       </div>
       {mode === 'weekly' ? (
         <div className="weekday-picker" aria-label={`${part}の曜日`}>
-          {weekdays.map((day, index) => (
+          {weekdayLabels.map((day, index) => (
             <button
               className={planWeekdays.includes(index) ? 'active' : ''}
               key={day}
@@ -404,73 +432,4 @@ function PlanRow({ part, color, plan, fallbackStartDate, onChange }: PlanRowProp
       )}
     </div>
   );
-}
-
-/**
- * ワークアウトとトレーニング日を日付ごとにまとめ、部位フィルターを適用した履歴を作る
- */
-function buildVisibleHistory(workouts: Workout[], trainingDays: TrainingDay[], partFilter: string) {
-  const byDate = new Map<string, { date: string; parts: Set<string>; workoutNames: string[] }>();
-  trainingDays.forEach((day) => {
-    byDate.set(day.date, { date: day.date, parts: new Set(day.parts), workoutNames: [] });
-  });
-  workouts.forEach((workout) => {
-    const item = byDate.get(workout.date) || {
-      date: workout.date,
-      parts: new Set<string>(),
-      workoutNames: [],
-    };
-    item.workoutNames.push(workout.name);
-    item.parts.add(workout.part);
-    byDate.set(workout.date, item);
-  });
-  return [...byDate.values()]
-    .filter((day) => partFilter === 'ALL' || day.parts.has(partFilter))
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map((day) => ({ ...day, parts: [...day.parts] }));
-}
-
-/**
- * 選択日から7日分の予定部位を組み立てる
- */
-function buildUpcomingPlans(selectedDate: string, trainingPlans: TrainingPlan[]) {
-  const start = parseDate(selectedDate);
-  return Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    const value = localDate(date);
-    return { date: value, parts: plannedPartsForDate(value, trainingPlans) };
-  });
-}
-
-/**
- * 部位色の HEX(#rrggbb) を指定した不透明度の rgba 文字列へ変換する。
- * 解釈できない値はそのまま返す
- */
-function hexToRgba(hex: string, alpha: number) {
-  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  if (!match) return hex;
-  const value = parseInt(match[1], 16);
-  const r = (value >> 16) & 255;
-  const g = (value >> 8) & 255;
-  const b = value & 255;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-/**
- * 指定日に計画で予定されている部位を求める(曜日指定・間隔指定の両方に対応)
- */
-function plannedPartsForDate(date: string, trainingPlans: TrainingPlan[]) {
-  const target = parseDate(date);
-  const weekday = target.getDay();
-  return [
-    ...new Set(
-      trainingPlans.flatMap((plan) => {
-        if (plan.mode === 'weekly') return plan.weekdays.includes(weekday) ? [plan.part] : [];
-        const start = plan.startDate ? parseDate(plan.startDate) : target;
-        const days = Math.floor((target.getTime() - start.getTime()) / 86400000);
-        return days >= 0 && days % plan.intervalDays === 0 ? [plan.part] : [];
-      }),
-    ),
-  ];
 }

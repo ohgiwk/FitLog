@@ -1,7 +1,7 @@
 import { ChevronLeft, TrophyIcon } from '../icons';
 import { ExerciseGoalAchievement } from '../types';
 import { formatWeight, measurementUnit, weightUnitLabel } from '../utils';
-import { useFitLogContext } from '../hooks/FitLogContext';
+import { useFitLogContext } from '../hooks/useFitLogContext';
 
 /**
  * 目標達成記録画面が必要とするデータと操作を Context から組み立てる

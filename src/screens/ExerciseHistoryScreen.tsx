@@ -11,7 +11,7 @@ import {
   number,
   weightUnitLabel,
 } from '../utils';
-import { useFitLogContext } from '../hooks/FitLogContext';
+import { useFitLogContext } from '../hooks/useFitLogContext';
 
 /**
  * 種目別の履歴画面が必要とする state・操作を Context から組み立てる view-model フック

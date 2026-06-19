@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { State } from '../types';
+import { Exercise, State } from '../types';
 import { groupExercises } from '../utils';
 import {
   buildOrderedParts,
@@ -36,7 +36,7 @@ export function useFitLogSelectors(state: State, selectedDate: string) {
    */
   const groupedExercises = useMemo(() => {
     const grouped = groupExercises(state.exercises);
-    const ordered = new Map<string, typeof state.exercises>();
+    const ordered = new Map<string, Exercise[]>();
     orderedParts.forEach((part) => {
       const exercises = grouped.get(part.name);
       if (exercises) ordered.set(part.name, exercises);

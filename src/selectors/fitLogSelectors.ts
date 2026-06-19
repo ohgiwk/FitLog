@@ -101,6 +101,53 @@ export function plannedPartsForDate(date: string, trainingPlans: State['training
   ];
 }
 
+export type HistoryDay = {
+  date: string;
+  parts: string[];
+  workoutNames: string[];
+};
+
+export function buildVisibleHistory(
+  workouts: Workout[],
+  trainingDays: State['trainingDays'],
+  partFilter: string,
+): HistoryDay[] {
+  const byDate = new Map<string, { date: string; parts: Set<string>; workoutNames: string[] }>();
+  trainingDays.forEach((day) => {
+    byDate.set(day.date, { date: day.date, parts: new Set(day.parts), workoutNames: [] });
+  });
+  workouts.forEach((workout) => {
+    const day = byDate.get(workout.date) ?? {
+      date: workout.date,
+      parts: new Set<string>(),
+      workoutNames: [],
+    };
+    day.parts.add(workout.part);
+    day.workoutNames.push(workout.name);
+    byDate.set(workout.date, day);
+  });
+  return [...byDate.values()]
+    .filter((day) => partFilter === 'ALL' || day.parts.has(partFilter))
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map((day) => ({ ...day, parts: [...day.parts] }));
+}
+
+export function buildUpcomingPlans(
+  selectedDate: string,
+  trainingPlans: State['trainingPlans'],
+  days = 7,
+) {
+  const start = parseDate(selectedDate);
+  return Array.from({ length: days }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+      date.getDate(),
+    ).padStart(2, '0')}`;
+    return { date: value, parts: plannedPartsForDate(value, trainingPlans) };
+  });
+}
+
 export function buildPartRecentLabels(
   groupedExercises: Map<string, Exercise[]>,
   workouts: Workout[],

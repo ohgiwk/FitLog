@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronUp, TrashIcon } from '../icons';
-import { useFitLogContext } from '../hooks/FitLogContext';
+import { useFitLogContext } from '../hooks/useFitLogContext';
 
 /**
  * プリセット編集画面が必要とする state・操作を Context から組み立てる view-model フック

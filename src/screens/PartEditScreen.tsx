@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react';
 import { PartSetting } from '../types';
 import { partColorPalette } from '../data/partColors';
 import { ChevronDown, ChevronUp, ChevronLeft, TrashIcon } from '../icons';
-import { useFitLogContext } from '../hooks/FitLogContext';
+import { useFitLogContext } from '../hooks/useFitLogContext';
 
 /**
  * 部位の編集画面が必要とする state・操作を Context から組み立てる view-model フック

@@ -1,15 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Screen, State } from '../types';
-import {
-  findExerciseGoalAchievementSet,
-  isBlank,
-  localDate,
-  number,
-  parseDate,
-  uid,
-} from '../utils';
+import { isBlank, localDate, parseDate } from '../utils';
 import { findCurrentWorkout } from '../selectors/fitLogSelectors';
 import { GoalAchievement } from './useFitLogUi';
+import { appendGoalAchievement, findGoalAchievement } from './goalAchievement';
 
 type NavigationDeps = {
   state: State;
@@ -78,48 +72,10 @@ export function useNavigation({
         if (next !== 'select') setEditMode(false);
         return;
       }
-      const exercise = state.exercises.find((item) => item.id === currentWorkout.exerciseId);
-      const achievedSet = exercise?.goal
-        ? findExerciseGoalAchievementSet(currentWorkout.sets, exercise.goal)
-        : undefined;
-      if (exercise?.goal && achievedSet) {
-        const goal = exercise.goal;
-        const achievement = {
-          exerciseId: exercise.id,
-          exerciseName: exercise.name,
-          measurementType: exercise.measurementType,
-          goal,
-        };
-        saveState((prev) => {
-          const alreadyRecorded = prev.goalAchievements.some(
-            (record) =>
-              record.exerciseId === exercise.id &&
-              record.date === currentWorkout.date &&
-              record.goalWeight === goal.weight &&
-              record.goalRecordValue === goal.recordValue,
-          );
-          if (alreadyRecorded) return prev;
-          return {
-            ...prev,
-            goalAchievements: [
-              ...prev.goalAchievements,
-              {
-                id: uid(),
-                exerciseId: exercise.id,
-                exerciseName: exercise.name,
-                measurementType: exercise.measurementType,
-                date: currentWorkout.date,
-                weight: number(achievedSet.weight),
-                recordValue: number(achievedSet.recordValue),
-                goalWeight: goal.weight,
-                goalRecordValue: goal.recordValue,
-              },
-            ],
-          };
-        });
-        setGoalAchievement({
-          ...achievement,
-        });
+      const goalResult = findGoalAchievement(state, currentWorkout);
+      if (goalResult) {
+        saveState((prev) => appendGoalAchievement(prev, currentWorkout, goalResult));
+        setGoalAchievement(goalResult.achievement);
       }
     }
     if (next !== 'detail' && next !== 'exerciseHistory') cleanupBlankDetailSets();

@@ -80,10 +80,11 @@ npm run format       # prettier --write
 | `src/App.tsx` | 画面切り替え・ボトムナビ・トースト |
 | `src/types.ts` | 共通の TypeScript 型 |
 | `src/utils.ts` | 日付・計算・汎用ヘルパー |
-| `src/storage.ts` | `localStorage` の読み込み・正規化・移行・退避 |
+| `src/storage.ts` | `localStorage` の読み込み・壊れたデータの退避 |
+| `src/storageNormalization.ts` | 保存データの既定値・正規化・後方互換処理 |
 | `src/icons.tsx` | アイコン |
 | `src/styles.css` | CSS の入口（`src/styles/` を読み込む） |
-| `src/hooks/` | 状態管理・操作フックと配布用 `FitLogContext.tsx` |
+| `src/hooks/` | 状態管理・操作フック、Context Provider・参照フック |
 | `src/hooks/useFitLog.ts` | 各ドメインフックを束ねる統合フック |
 | `src/selectors/fitLogSelectors.ts` | React 非依存の純粋な派生値計算（セレクタ） |
 | `src/screens/` | 各画面コンポーネント（view-model フックで Context から取得） |
@@ -113,7 +114,8 @@ FitLog/
     ├── App.tsx               # 画面切り替え・ナビ・トースト
     ├── types.ts              # 共通の型
     ├── utils.ts              # 日付・計算・汎用ヘルパー
-    ├── storage.ts            # localStorage の読み込み・正規化・移行
+    ├── storage.ts            # localStorage の読み込み・退避
+    ├── storageNormalization.ts # 保存データの正規化・互換処理
     ├── icons.tsx             # アイコン
     ├── styles.css            # CSS の入口
     ├── *.test.ts             # Vitest のテスト
@@ -158,6 +160,8 @@ useFitLogCore (state + 永続化 + トースト)
 | --- | --- | --- |
 | `useFitLogCore` | `hooks/useFitLogCore.ts` | `State` の保持、`localStorage` 保存（デバウンス・flush・失敗通知）、トースト管理、`saveState` / `setState` 提供 |
 | `useNavigation` | `hooks/useNavigation.ts` | `screen` / `selectedDate` / `currentWorkoutId` の管理、画面遷移、日付・月移動、離脱時の空セット掃除 |
+| `useHomeCalendar` | `hooks/useHomeCalendar.ts` | ホームの週/月カレンダー表示、スワイプ遷移、選択日の同期 |
+| `useExerciseReorder` | `hooks/useExerciseReorder.ts` | 種目のドラッグ中レイアウトとカテゴリを管理し、終了時に確定 |
 | `useFitLogUi` | `hooks/useFitLogUi.ts` | 保存しない一時 UI 状態（編集モード、種目選択画面で表示中の部位タブ `activePart`、ドラッグ対象、履歴フィルタ） |
 | `useFitLogSelectors` | `hooks/useFitLogSelectors.ts` | `state` と `selectedDate` から派生値を `useMemo` で計算 |
 | `usePresetActions` | `hooks/usePresetActions.ts` | プリセットの選択・作成・改名・削除・種目増減・並び替え・一括投入 |
@@ -171,7 +175,7 @@ useFitLogCore (state + 永続化 + トースト)
 ### 3.3 配布と view-model パターン
 
 - `FitLogProvider`（`hooks/FitLogContext.tsx`）が `useFitLog()` の戻り値を Context へ流す。
-- `useFitLogContext()` は Provider 外で呼ぶと例外を投げる。
+- `useFitLogContext()`（`hooks/useFitLogContext.ts`）は Provider 外で呼ぶと例外を投げる。
 - 各画面は props を受け取らず、画面固有の `useXScreenModel()` フックで Context から必要な値・操作だけを取り出す。
 - 画面ローカルの一時状態（削除確認ダイアログの対象、カレンダー開閉など）は画面コンポーネント内の `useState` で持つ。
 
@@ -293,7 +297,7 @@ type PartSetting = {
 
 ## 5. データ永続化・移行
 
-実装は `src/storage.ts` と `hooks/useFitLogCore.ts`。
+実装は `src/storage.ts`、`src/storageNormalization.ts`、`hooks/useFitLogCore.ts`。
 
 ### 5.1 ストレージキー
 

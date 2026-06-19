@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CalendarIcon, HomeIcon } from './icons';
-import { FitLogProvider, useFitLogContext } from './hooks/FitLogContext';
+import { FitLogProvider } from './hooks/FitLogContext';
+import { useFitLogContext } from './hooks/useFitLogContext';
 import { DetailScreen } from './screens/DetailScreen';
 import { ExerciseHistoryScreen } from './screens/ExerciseHistoryScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
@@ -93,7 +94,12 @@ function AppShell() {
       {updateServiceWorker && (
         <div className="update-banner" role="status" aria-live="polite">
           <span>新しいバージョンがあります</span>
-          <button className="update-button" type="button" disabled={updating} onClick={applyUpdate}>
+          <button
+            className="update-button"
+            type="button"
+            disabled={updating}
+            onClick={() => void applyUpdate()}
+          >
             {updating ? '更新中' : '更新'}
           </button>
         </div>

@@ -1,7 +1,7 @@
 import { ChevronLeft, PartsIcon } from '../icons';
 import { WeightUnit } from '../types';
 import { weightUnitLabel } from '../utils';
-import { useFitLogContext } from '../hooks/FitLogContext';
+import { useFitLogContext } from '../hooks/useFitLogContext';
 
 const unitOptions: WeightUnit[] = ['kg', 'lbs'];
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, TrashIcon } from '../icons';
 import { Preset } from '../types';
-import { useFitLogContext } from '../hooks/FitLogContext';
+import { useFitLogContext } from '../hooks/useFitLogContext';
 
 /**
  * プリセット管理画面が必要とする state・操作を Context から組み立てる view-model フック

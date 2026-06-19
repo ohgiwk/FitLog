@@ -1,30 +1,17 @@
-import { KeyboardEvent, MouseEvent, PointerEvent, useMemo, useRef, useState } from 'react';
-import {
-  ChevronDown,
-  ChevronUp,
-  MenuIcon,
-  PlusIcon,
-  SettingsIcon,
-  TrashIcon,
-  TrophyIcon,
-} from '../icons';
+import { KeyboardEvent, MouseEvent, useState } from 'react';
+import { PlusIcon, TrashIcon } from '../icons';
 import { Workout } from '../types';
 import {
   calculateWorkoutDurationMinutes,
-  calendarCells,
   formatWorkoutDuration,
   formatWorkoutTime,
   isRecordedSet,
   isUnstartedWorkout,
-  localDate,
-  parseDate,
 } from '../utils';
 import { HomeSetRow } from '../components/HomeSetRow';
-import { useFitLogContext } from '../hooks/FitLogContext';
-import { appVersion } from '../version';
+import { useFitLogContext } from '../hooks/useFitLogContext';
+import { HomeCalendar } from '../components/HomeCalendar';
 
-const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
-type HomeCalendarMode = 'week' | 'month';
 type WorkoutSummary = {
   startTime: string;
   endTime: string;
@@ -32,37 +19,6 @@ type WorkoutSummary = {
   exerciseCount: number;
   setCount: number;
 };
-const calendarPageOffsets = [-1, 0, 1];
-
-/**
- * 指定日を含む日曜始まりの1週間を作る
- */
-function weekCells(anchorDate: Date) {
-  const start = new Date(anchorDate);
-  start.setDate(anchorDate.getDate() - anchorDate.getDay());
-  return Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    return { date: localDate(date), day: date.getDate(), inMonth: true };
-  });
-}
-
-/**
- * 表示中の日付を週または月単位で移動する
- */
-function moveCalendarAnchor(anchorDate: Date, mode: HomeCalendarMode, delta: number) {
-  const next = new Date(anchorDate);
-  if (mode === 'week') {
-    next.setDate(next.getDate() + delta * 7);
-    return next;
-  }
-
-  const day = next.getDate();
-  next.setDate(1);
-  next.setMonth(next.getMonth() + delta);
-  next.setDate(Math.min(day, new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate()));
-  return next;
-}
 
 /**
  * ホーム画面が必要とする state・派生値・操作を Context から組み立てる view-model フック
@@ -142,34 +98,6 @@ export function HomeScreen() {
   const [deleteTarget, setDeleteTarget] = useState<Workout | null>(null);
   const [finishConfirmationOpen, setFinishConfirmationOpen] = useState(false);
   const [workoutSummary, setWorkoutSummary] = useState<WorkoutSummary | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [calendarMode, setCalendarMode] = useState<HomeCalendarMode>('week');
-  const [calendarAnchorDate, setCalendarAnchorDate] = useState(() => parseDate(selectedDate));
-  const [calendarDragOffset, setCalendarDragOffset] = useState(0);
-  const [calendarAnimating, setCalendarAnimating] = useState(false);
-  const swipeStart = useRef<{ x: number; y: number; width: number } | null>(null);
-  const pendingCalendarMove = useRef<number | null>(null);
-  const calendarTransitionTimer = useRef<number | null>(null);
-  const suppressClick = useRef(false);
-  const calendarYear = calendarAnchorDate.getFullYear();
-  const calendarMonth = calendarAnchorDate.getMonth();
-  const today = localDate(new Date());
-  const calendarMonthLabel = `${calendarYear}年${calendarMonth + 1}月`;
-  const trainedDates = useMemo(() => new Set(workouts.map((workout) => workout.date)), [workouts]);
-  const calendarPages = useMemo(
-    () =>
-      calendarPageOffsets.map((offset) => {
-        const anchorDate = moveCalendarAnchor(calendarAnchorDate, calendarMode, offset);
-        const year = anchorDate.getFullYear();
-        const month = anchorDate.getMonth();
-        return {
-          key: `${calendarMode}-${localDate(anchorDate)}-${offset}`,
-          offset,
-          days: calendarMode === 'week' ? weekCells(anchorDate) : calendarCells(year, month),
-        };
-      }),
-    [calendarAnchorDate, calendarMode],
-  );
 
   /**
    * キーボード操作(Enter/Space)で種目の詳細画面を開く
@@ -247,308 +175,15 @@ export function HomeScreen() {
     finishWorkout(true);
   }
 
-  /**
-   * カレンダーで日付を選択し、下部の一覧もその日に切り替える
-   */
-  function selectCalendarDate(nextDate: string) {
-    if (suppressClick.current) {
-      suppressClick.current = false;
-      return;
-    }
-    onSelectDate(nextDate);
-    setCalendarAnchorDate(parseDate(nextDate));
-  }
-
-  /**
-   * スワイプ後に続けて発火する click を1回だけ無視する
-   */
-  function ignoreNextClick() {
-    suppressClick.current = true;
-    globalThis.setTimeout(() => {
-      suppressClick.current = false;
-    }, 240);
-  }
-
-  /**
-   * カレンダーのスナップ完了待ちタイマーを解除する
-   */
-  function clearCalendarTransitionTimer() {
-    if (calendarTransitionTimer.current === null) return;
-    globalThis.clearTimeout(calendarTransitionTimer.current);
-    calendarTransitionTimer.current = null;
-  }
-
-  /**
-   * 週表示と月表示を切り替える
-   */
-  function toggleCalendarMode() {
-    if (suppressClick.current) {
-      suppressClick.current = false;
-      return;
-    }
-    pendingCalendarMove.current = null;
-    clearCalendarTransitionTimer();
-    setCalendarDragOffset(0);
-    setCalendarAnimating(false);
-    setCalendarMode((current) => (current === 'week' ? 'month' : 'week'));
-  }
-
-  /**
-   * 今日の日付へジャンプする
-   */
-  function jumpToToday() {
-    const nextDate = localDate(new Date());
-    onSelectDate(nextDate);
-    pendingCalendarMove.current = null;
-    clearCalendarTransitionTimer();
-    setCalendarDragOffset(0);
-    setCalendarAnimating(false);
-    setCalendarAnchorDate(parseDate(nextDate));
-  }
-
-  function openSettings() {
-    setDrawerOpen(false);
-    onOpenSettings();
-  }
-
-  function openGoalAchievements() {
-    setDrawerOpen(false);
-    onOpenGoalAchievements();
-  }
-
-  /**
-   * 表示中の週または月を左右スワイプで移動する
-   */
-  function startSwipe(event: PointerEvent<HTMLElement>) {
-    if (calendarAnimating) return;
-    const width = event.currentTarget.getBoundingClientRect().width;
-    swipeStart.current = { x: event.clientX, y: event.clientY, width };
-    pendingCalendarMove.current = null;
-    setCalendarDragOffset(0);
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
-
-  /**
-   * 下部バーのスワイプ開始位置を記録する
-   */
-  function startHandleSwipe(event: PointerEvent<HTMLButtonElement>) {
-    swipeStart.current = {
-      x: event.clientX,
-      y: event.clientY,
-      width: event.currentTarget.getBoundingClientRect().width,
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
-
-  /**
-   * カレンダー本体を指の動きに追従させる
-   */
-  function moveCalendarSwipe(event: PointerEvent<HTMLElement>) {
-    const start = swipeStart.current;
-    if (!start) return;
-    const diffX = event.clientX - start.x;
-    const diffY = event.clientY - start.y;
-    if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 12) return;
-    setCalendarDragOffset(Math.max(Math.min(diffX, start.width), -start.width));
-  }
-
-  /**
-   * カレンダー本体の左右スワイプを週/月移動として扱う
-   */
-  function finishCalendarSwipe(event: PointerEvent<HTMLElement>) {
-    const start = swipeStart.current;
-    swipeStart.current = null;
-    if (!start) return;
-    const diffX = event.clientX - start.x;
-    const diffY = event.clientY - start.y;
-    if (Math.abs(diffY) >= 44 && Math.abs(diffY) > Math.abs(diffX)) {
-      ignoreNextClick();
-      setCalendarMode(diffY > 0 ? 'month' : 'week');
-      return;
-    }
-    if (Math.abs(diffX) < Math.max(56, start.width * 0.18) || Math.abs(diffX) <= Math.abs(diffY)) {
-      pendingCalendarMove.current = null;
-      setCalendarAnimating(calendarDragOffset !== 0);
-      setCalendarDragOffset(0);
-      if (calendarDragOffset !== 0) {
-        clearCalendarTransitionTimer();
-        calendarTransitionTimer.current = globalThis.setTimeout(finishCalendarTransition, 260);
-      }
-      return;
-    }
-    const nextMove = diffX < 0 ? 1 : -1;
-    pendingCalendarMove.current = nextMove;
-    ignoreNextClick();
-    setCalendarAnimating(true);
-    setCalendarDragOffset(-nextMove * start.width);
-    clearCalendarTransitionTimer();
-    calendarTransitionTimer.current = globalThis.setTimeout(finishCalendarTransition, 260);
-  }
-
-  /**
-   * スナップアニメーション完了後に表示基準日を更新する
-   */
-  function finishCalendarTransition() {
-    clearCalendarTransitionTimer();
-    const nextMove = pendingCalendarMove.current;
-    pendingCalendarMove.current = null;
-    setCalendarAnimating(false);
-    setCalendarDragOffset(0);
-    if (!nextMove) return;
-    setCalendarAnchorDate((current) => moveCalendarAnchor(current, calendarMode, nextMove));
-  }
-
-  /**
-   * 下部バーの上下スワイプで週表示と月表示を切り替える
-   */
-  function finishHandleSwipe(event: PointerEvent<HTMLButtonElement>) {
-    const start = swipeStart.current;
-    swipeStart.current = null;
-    if (!start) return;
-    const diffY = event.clientY - start.y;
-    const diffX = event.clientX - start.x;
-    if (Math.abs(diffY) < 28 || Math.abs(diffY) <= Math.abs(diffX)) return;
-    ignoreNextClick();
-    setCalendarMode(diffY > 0 ? 'month' : 'week');
-  }
-
   return (
     <section className="screen active detail-screen">
-      <header className={`home-calendar-shell ${calendarMode}`}>
-        <div className="home-calendar-head">
-          <button
-            className="home-menu-btn"
-            type="button"
-            aria-label="メニューを開く"
-            aria-expanded={drawerOpen}
-            onClick={() => setDrawerOpen(true)}
-          >
-            <MenuIcon />
-          </button>
-          <button className="home-calendar-title" type="button" onClick={toggleCalendarMode}>
-            <span>{calendarMonthLabel}</span>
-            {calendarMode === 'week' ? <ChevronDown /> : <ChevronUp />}
-          </button>
-          <button
-            className="home-today-btn"
-            type="button"
-            onClick={jumpToToday}
-            aria-label="今日の日付へ移動"
-          >
-            今日
-          </button>
-        </div>
-        {drawerOpen && (
-          <div className="drawer-layer" role="presentation" onClick={() => setDrawerOpen(false)}>
-            <aside
-              className="home-drawer"
-              role="dialog"
-              aria-modal="true"
-              aria-label="メニュー"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="drawer-head">
-                <strong>メニュー</strong>
-                <button className="drawer-close" type="button" onClick={() => setDrawerOpen(false)}>
-                  閉じる
-                </button>
-              </div>
-              <button className="drawer-link" type="button" onClick={openSettings}>
-                <SettingsIcon />
-                <span>設定</span>
-              </button>
-              <button className="drawer-link" type="button" onClick={openGoalAchievements}>
-                <TrophyIcon />
-                <span>目標達成記録</span>
-              </button>
-              <div className="drawer-version" aria-label={`アプリバージョン ${appVersion}`}>
-                {appVersion}
-              </div>
-            </aside>
-          </div>
-        )}
-        <div
-          className="home-calendar-viewport"
-          onPointerDown={startSwipe}
-          onPointerMove={moveCalendarSwipe}
-          onPointerUp={finishCalendarSwipe}
-          onPointerCancel={() => {
-            swipeStart.current = null;
-            pendingCalendarMove.current = null;
-            setCalendarAnimating(calendarDragOffset !== 0);
-            setCalendarDragOffset(0);
-            if (calendarDragOffset !== 0) {
-              clearCalendarTransitionTimer();
-              calendarTransitionTimer.current = globalThis.setTimeout(
-                finishCalendarTransition,
-                260,
-              );
-            }
-          }}
-        >
-          <div
-            className={`home-calendar-track ${calendarAnimating ? 'animating' : ''}`}
-            style={{ transform: `translateX(calc(-100% + ${calendarDragOffset}px))` }}
-            onTransitionEnd={finishCalendarTransition}
-          >
-            {calendarPages.map((page) => (
-              <div className="home-calendar-page" key={page.key}>
-                <div className="home-calendar-grid">
-                  {weekdayLabels.map((day) => (
-                    <div className="weekday" key={day}>
-                      {day}
-                    </div>
-                  ))}
-                  {page.days.map((cell) => {
-                    const trained = trainedDates.has(cell.date);
-                    const selected = cell.date === selectedDate;
-                    const isToday = cell.date === today;
-                    return (
-                      <div className={`day-cell ${cell.inMonth ? '' : 'other'}`} key={cell.date}>
-                        {cell.inMonth ? (
-                          <button
-                            className={`day-btn ${trained ? 'trained' : ''} ${
-                              isToday ? 'today' : ''
-                            } ${selected ? 'selected' : ''}`}
-                            type="button"
-                            onPointerDown={(event) => {
-                              event.stopPropagation();
-                            }}
-                            onPointerUp={(event) => {
-                              event.stopPropagation();
-                            }}
-                            onTouchEnd={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              selectCalendarDate(cell.date);
-                            }}
-                            onClick={() => selectCalendarDate(cell.date)}
-                          >
-                            {cell.day}
-                          </button>
-                        ) : (
-                          <span aria-hidden="true" />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <button
-          className="calendar-drag-handle"
-          type="button"
-          aria-label="カレンダーの週表示と月表示を切り替え"
-          onClick={toggleCalendarMode}
-          onPointerDown={startHandleSwipe}
-          onPointerUp={finishHandleSwipe}
-          onPointerCancel={() => {
-            swipeStart.current = null;
-          }}
-        />
-      </header>
+      <HomeCalendar
+        selectedDate={selectedDate}
+        workouts={workouts}
+        onSelectDate={onSelectDate}
+        onOpenSettings={onOpenSettings}
+        onOpenGoalAchievements={onOpenGoalAchievements}
+      />
       <div className="preset-start">
         <select
           aria-label="プリセットを選択"

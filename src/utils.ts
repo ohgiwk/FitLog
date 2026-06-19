@@ -45,6 +45,15 @@ export function calendarCells(year: number, month: number): CalendarCell[] {
   });
 }
 
+export const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
+
+export function hexToRgba(hex: string, alpha: number) {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!match) return hex;
+  const value = parseInt(match[1], 16);
+  return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
+}
+
 export function newSet(): WorkoutSet {
   return { id: uid(), weight: '', recordValue: '' };
 }
