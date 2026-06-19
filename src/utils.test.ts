@@ -4,6 +4,7 @@ import {
   calendarCells,
   formatStoredWeightInput,
   formatWeightForStorageInput,
+  findExerciseGoalAchievementSet,
   isExerciseGoalAchieved,
   formatWeight,
   groupExercises,
@@ -113,6 +114,26 @@ describe('isExerciseGoalAchieved', () => {
         recordValue: 30,
       }),
     ).toBe(false);
+  });
+});
+
+describe('findExerciseGoalAchievementSet', () => {
+  it('目標を満たす最初のセットを返す', () => {
+    const sets = [
+      { id: 's1', weight: 80, recordValue: 8 },
+      { id: 's2', weight: 82.5, recordValue: 10 },
+      { id: 's3', weight: 85, recordValue: 12 },
+    ];
+    expect(findExerciseGoalAchievementSet(sets, { weight: 80, recordValue: 10 })).toEqual(sets[1]);
+  });
+
+  it('目標を満たすセットがなければ undefined', () => {
+    expect(
+      findExerciseGoalAchievementSet([{ id: 's1', weight: 80, recordValue: 8 }], {
+        weight: 80,
+        recordValue: 10,
+      }),
+    ).toBeUndefined();
   });
 });
 

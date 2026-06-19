@@ -5,6 +5,7 @@ import { DetailScreen } from './screens/DetailScreen';
 import { ExerciseHistoryScreen } from './screens/ExerciseHistoryScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
 import { HomeScreen } from './screens/HomeScreen';
+import { GoalAchievementScreen } from './screens/GoalAchievementScreen';
 import { PartEditScreen } from './screens/PartEditScreen';
 import { PresetEditScreen } from './screens/PresetEditScreen';
 import { PresetListScreen } from './screens/PresetListScreen';
@@ -60,6 +61,7 @@ function AppShell() {
         {screen === 'select' && <SelectScreen />}
         {screen === 'detail' && currentWorkout && <DetailScreen />}
         {screen === 'exerciseHistory' && currentWorkout && <ExerciseHistoryScreen />}
+        {screen === 'goalAchievements' && <GoalAchievementScreen />}
         {screen === 'preset' && <PresetListScreen />}
         {screen === 'presetEdit' && <PresetEditScreen />}
         {screen === 'history' && <HistoryScreen />}

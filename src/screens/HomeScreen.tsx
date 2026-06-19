@@ -1,5 +1,13 @@
 import { KeyboardEvent, MouseEvent, PointerEvent, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, MenuIcon, PlusIcon, SettingsIcon, TrashIcon } from '../icons';
+import {
+  ChevronDown,
+  ChevronUp,
+  MenuIcon,
+  PlusIcon,
+  SettingsIcon,
+  TrashIcon,
+  TrophyIcon,
+} from '../icons';
 import { Workout } from '../types';
 import { calendarCells, isUnstartedWorkout, localDate, parseDate } from '../utils';
 import { HomeSetRow } from '../components/HomeSetRow';
@@ -77,6 +85,7 @@ function useHomeScreenModel() {
     onOpenPresets: () => actions.setScreen('preset'),
     onOpenSelect: () => actions.setScreen('select'),
     onOpenSettings: () => actions.setScreen('settings'),
+    onOpenGoalAchievements: () => actions.setScreen('goalAchievements'),
     onOpenDetail: actions.openWorkoutDetail,
     onDeleteWorkout: actions.deleteWorkout,
   };
@@ -102,6 +111,7 @@ export function HomeScreen() {
     onOpenPresets,
     onOpenSelect,
     onOpenSettings,
+    onOpenGoalAchievements,
     onOpenDetail,
     onDeleteWorkout,
   } = useHomeScreenModel();
@@ -229,6 +239,11 @@ export function HomeScreen() {
     onOpenSettings();
   }
 
+  function openGoalAchievements() {
+    setDrawerOpen(false);
+    onOpenGoalAchievements();
+  }
+
   /**
    * 表示中の週または月を左右スワイプで移動する
    */
@@ -338,11 +353,7 @@ export function HomeScreen() {
           >
             <MenuIcon />
           </button>
-          <button
-            className="home-calendar-title"
-            type="button"
-            onClick={toggleCalendarMode}
-          >
+          <button className="home-calendar-title" type="button" onClick={toggleCalendarMode}>
             <span>{calendarMonthLabel}</span>
             {calendarMode === 'week' ? <ChevronDown /> : <ChevronUp />}
           </button>
@@ -374,6 +385,10 @@ export function HomeScreen() {
                 <SettingsIcon />
                 <span>設定</span>
               </button>
+              <button className="drawer-link" type="button" onClick={openGoalAchievements}>
+                <TrophyIcon />
+                <span>目標達成記録</span>
+              </button>
               <div className="drawer-version" aria-label={`アプリバージョン ${appVersion}`}>
                 {appVersion}
               </div>
@@ -392,7 +407,10 @@ export function HomeScreen() {
             setCalendarDragOffset(0);
             if (calendarDragOffset !== 0) {
               clearCalendarTransitionTimer();
-              calendarTransitionTimer.current = globalThis.setTimeout(finishCalendarTransition, 260);
+              calendarTransitionTimer.current = globalThis.setTimeout(
+                finishCalendarTransition,
+                260,
+              );
             }
           }}
         >
@@ -414,10 +432,7 @@ export function HomeScreen() {
                     const selected = cell.date === selectedDate;
                     const isToday = cell.date === today;
                     return (
-                      <div
-                        className={`day-cell ${cell.inMonth ? '' : 'other'}`}
-                        key={cell.date}
-                      >
+                      <div className={`day-cell ${cell.inMonth ? '' : 'other'}`} key={cell.date}>
                         {cell.inMonth ? (
                           <button
                             className={`day-btn ${trained ? 'trained' : ''} ${

@@ -212,6 +212,62 @@ describe('normalizeState', () => {
     expect(result?.exercises[0].goal).toBeUndefined();
   });
 
+  it('目標達成記録を正規化して保持する', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      goalAchievements: [
+        {
+          id: 'a1',
+          exerciseId: 'e1',
+          exerciseName: 'ベンチプレス',
+          measurementType: 'reps',
+          date: '2026-06-18',
+          weight: '82.5',
+          recordValue: '10',
+          goalWeight: '80',
+          goalRecordValue: '10',
+        },
+      ],
+    } as unknown as Partial<State>);
+    expect(result?.goalAchievements).toEqual([
+      {
+        id: 'a1',
+        exerciseId: 'e1',
+        exerciseName: 'ベンチプレス',
+        measurementType: 'reps',
+        date: '2026-06-18',
+        weight: 82.5,
+        recordValue: 10,
+        goalWeight: 80,
+        goalRecordValue: 10,
+      },
+    ]);
+  });
+
+  it('目標達成記録がない旧データは空配列として読み込む', () => {
+    const result = normalizeState(makeValidSaved() as unknown as Partial<State>);
+    expect(result?.goalAchievements).toEqual([]);
+  });
+
+  it('不正な目標達成記録は破棄する', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      goalAchievements: [
+        {
+          id: 'a1',
+          exerciseId: 'e1',
+          exerciseName: 'ベンチプレス',
+          date: '2026-06-18',
+          weight: 80,
+          recordValue: 0,
+          goalWeight: 80,
+          goalRecordValue: 10,
+        },
+      ],
+    } as unknown as Partial<State>);
+    expect(result?.goalAchievements).toEqual([]);
+  });
+
   it('古い catalogVersion では初期種目を補完する', () => {
     const saved = {
       exercises: [{ id: 'custom', part: 'カスタム', name: '独自種目', measurementType: 'reps' }],

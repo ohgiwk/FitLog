@@ -186,6 +186,7 @@ useFitLogCore (state + 永続化 + トースト)
 | フィールド | 型 | 内容 |
 | --- | --- | --- |
 | `exercises` | `Exercise[]` | 種目マスタ（部位・名前・計測方法・器具カテゴリ） |
+| `goalAchievements` | `ExerciseGoalAchievement[]` | 種目目標の達成記録（達成日・実際のセット値・達成時の目標値） |
 | `workouts` | `Workout[]` | 日付ごとの記録（セットを含む） |
 | `workoutStartTimes` | `Record<string, string>` | 日付ごとのトレーニング開始時刻（`HH:mm`） |
 | `presets` | `Preset[]` | よく使う種目のまとまり |
@@ -206,6 +207,18 @@ type WeightUnit = 'kg' | 'lbs';
 type ExerciseGoal = {
   weight: number;      // 目標重量（保存値は kg）
   recordValue: number; // 目標回数 or 秒数
+};
+
+type ExerciseGoalAchievement = {
+  id: string;
+  exerciseId: string;
+  exerciseName: string;             // 達成時点の種目名
+  measurementType: MeasurementType; // 達成時点の計測方法
+  date: string;                     // 達成日 YYYY-MM-DD
+  weight: number;                   // 達成セットの重量（kg）
+  recordValue: number;              // 達成セットの回数 or 秒数
+  goalWeight: number;               // 達成した目標重量（kg）
+  goalRecordValue: number;          // 達成した目標回数 or 秒数
 };
 
 type Exercise = {
@@ -270,6 +283,7 @@ type PartSetting = {
 ### 4.3 種目マスタと記録の責務分離
 
 - `Exercise` は「何を行うか」の軽量マスタ（`id` / `part` / `name` / `measurementType` / `category`）と、種目ごとの現在目標（`goal`）を持つ。
+- `ExerciseGoalAchievement` は達成時点の種目名・計測方法をスナップショットとして保持するため、後から種目を改名・削除しても履歴表示を維持する。
 - 実際の重量・回数（秒数）・強度は `WorkoutSet`、種目単位のメモは `Workout.note` に保存する。
 - `Workout` は `name` / `part` / `measurementType` を記録時点のスナップショットとして保持するため、後でマスタを編集しても過去の記録表示は変わらない（種目の並び替え時のみ後述の同期がある）。
 
@@ -310,6 +324,7 @@ type PartSetting = {
 - `exercises`: スターター種目（`data/starterExercises.ts`）。
 - `presets`: 既定プリセット 4 件（`胸の日` / `背中の日` / `脚の日` / `肩の日`、いずれも種目空）。
 - `workouts` / `trainingDays` / `trainingPlans`: 空配列。
+- `goalAchievements`: 空配列。
 - `workoutStartTimes`: 空オブジェクト。
 - `weightUnit`: `'kg'`。
 - `catalogVersion`: `starterCatalogVersion`（現在 `3`）。
@@ -322,6 +337,7 @@ type PartSetting = {
 - **既定プリセット補完**: 名前が一致しない既定プリセットを末尾に追加（`mergeDefaultPresets`）。
 - 各フィールドの正規化方針:
   - `Exercise`: `id` / `part` / `name` がすべて文字列でなければ除外。`measurementType` は `'seconds'` 以外を `'reps'` に丸める。`category` は 5 種のいずれかに丸め、未設定・不正値のときは初期種目マスタに同名があればそのカテゴリを、なければ `'free'` を使う。`goal` は重量が 0 以上、回数・秒数が 1 以上の有限数である場合だけ保持し、不正値・未設定は目標なしとして扱う。
+  - `ExerciseGoalAchievement`: ID・種目 ID・種目名・日付が文字列で、達成重量と目標重量が 0 以上、達成回数・秒数と目標回数・秒数が 1 以上の有限数である場合だけ保持する。未設定の旧データは空配列として扱う。
   - `Workout`: `id` / `exerciseId` / `date` / `name` / `part` が文字列でなければ除外。`note` は文字列のみ採用し、未設定・不正値は `''`。
   - `workoutStartTimes`: オブジェクトのみ採用。値が `HH:mm` 形式のものだけを日付キーごとに保持する。
   - `WorkoutSet`: `id` が文字列でなければ除外。`weight` / `recordValue` は文字列・数値以外を `''` に。`recordValue` は旧フィールド `reps` からも引き継ぐ。`intensity` は 1〜5 のみ採用、それ以外は `undefined`。旧セットメモ `note` は取り込まず破棄する。
@@ -343,7 +359,7 @@ type PartSetting = {
 
 ## 6. 画面仕様
 
-`Screen` 型: `'home' | 'select' | 'detail' | 'exerciseHistory' | 'preset' | 'presetEdit' | 'history' | 'partEdit' | 'settings'`。
+`Screen` 型: `'home' | 'select' | 'detail' | 'exerciseHistory' | 'goalAchievements' | 'preset' | 'presetEdit' | 'history' | 'partEdit' | 'settings'`。
 
 ### 6.1 アプリ外枠とナビゲーション（`App.tsx`）
 
@@ -362,7 +378,7 @@ type PartSetting = {
 ### 6.2 ホーム（`HomeScreen`）
 
 - **常設カレンダー**: 画面上部に選択日用のカレンダーを表示する。
-  - ヘッダ左のハンバーガーメニューからドロワを開き、「設定」へ遷移できる。
+  - ヘッダ左のハンバーガーメニューからドロワを開き、「設定」「目標達成記録」へ遷移できる。
   - 初期表示は選択日を含む 1 週間（日曜始まり）。
   - タイトルは表示中カレンダーの月を `YYYY年M月` で表示する。タイトルのボタンまたは下部バーのタップで週表示 / 月表示を切り替える。
   - 下部バーは上下スワイプにも対応し、下方向で月表示、上方向で週表示に切り替える。
@@ -417,6 +433,8 @@ type PartSetting = {
 - 詳細を開く際、セットが 5 未満なら 5 まで空セットを補充（`openWorkoutDetail`）。
 - 詳細から離れる際、記録ありセットが 1 つでもあれば未入力の空セットを取り除く（`cleanupBlankDetailSets`）。記録が 0 件のときは何もしない（5 セットのまま残す）。
 - 詳細から別画面へ遷移する際、同じ 1 セット内で重量と回数・秒数の両方が現在目標以上なら達成扱いにする。
+  - 条件を満たした最初のセットについて、達成日・実際の重量と回数/秒数・達成時の目標値を `goalAchievements` へ保存する。
+  - 同一種目・同一日・同一目標の記録が既にある場合は重複保存しない。
   - 遷移後に祝福ダイアログを表示し、次の目標重量と回数・秒数を入力できる。
   - 次の重量は既定で現在目標より kg 表示時は 2.5 kg、Lbs 表示時は 5 Lbs 高い値を提示し、回数・秒数は現在目標を引き継ぐ。
   - 「次の目標にする」で `Exercise.goal` を更新する。「あとで」は目標を変更せずダイアログだけ閉じるため、同じ目標のまま再度詳細を離れると再判定される。
@@ -430,13 +448,21 @@ type PartSetting = {
 - **日別カード**: 日付・TOTAL（reps は重量×回数の合計を設定中の重量単位で表示、seconds は合計秒）・MAX 1RM（reps のみ）。
   - セット表: セット番号・重さ（0 なら「自重」）・記録・RM・強度アイコン。
 
-### 6.6 プリセット一覧（`PresetListScreen`）/ 編集（`PresetEditScreen`）
+### 6.6 目標達成記録（`GoalAchievementScreen`）
+
+- ホームのドロワメニュー「目標達成記録」から遷移する。トップバーの戻るでホームへ戻る。
+- `goalAchievements` を種目ごとにグループ化し、各種目内は達成日の新しい順で表示する。
+- 種目カードには種目名・達成回数を表示し、各行に達成日・実際に達成した重量・回数/秒数を表示する。
+- 重量は保存値 kg を現在の重量単位へ換算して表示する。
+- 記録がない場合は空状態メッセージを表示する。
+
+### 6.7 プリセット一覧（`PresetListScreen`）/ 編集（`PresetEditScreen`）
 
 - 一覧: プリセットの作成・選択・編集画面への遷移。
 - 編集: 名称変更（空なら「名称未設定」）、種目の追加（重複は無視）・削除・並び替え、プリセット削除。
 - ホームの「開始」やプリセット一覧から `startPreset` を実行すると、プリセットの種目を選択日へ一括投入する（後述 8.3）。
 
-### 6.7 履歴/計画（`HistoryScreen`）
+### 6.8 履歴/計画（`HistoryScreen`）
 
 - トップバー右にデータメニュー（記録の書き出し / 読み込み）を表示する。
 - 「履歴」「計画」をタブ切り替え。
@@ -451,7 +477,7 @@ type PartSetting = {
   - 部位が 1 つも無ければ「部位がありません」。
   - 「今後7日の予定」プレビュー: 選択日から 7 日間の予定部位（日付に曜日付き、日付と部位で改行）。
 
-### 6.8 部位の編集（`PartEditScreen`）
+### 6.9 部位の編集（`PartEditScreen`）
 
 - 設定画面の「部位を編集」から遷移する。トップバーの戻るで設定画面へ戻る。
 - 追加フォーム: 部位名（最大 12 文字）を入力して「追加」。空・重複（`orderedParts` と一致）は不可。
@@ -461,7 +487,7 @@ type PartSetting = {
 - 削除は「その部位の種目が残っていない」場合のみ可能。削除時はその部位の分割計画（`trainingPlans`）も合わせて取り除く。種目がある部位は削除不可（トースト通知）。
 - 選んだ表示色・並び順は、種目選択画面と計画タブの各部位ヘッダ左色・並び順に反映される。
 
-### 6.9 設定（`SettingsScreen`）
+### 6.10 設定（`SettingsScreen`）
 
 - ホーム画面のドロワメニューから遷移する。トップバーの戻るでホームへ戻る。
 - **単位**: kg / Lbs の切り替えスイッチを表示する。
@@ -498,6 +524,7 @@ weight === 0 または reps === 0 → '0.0'
 - `formatStoredWeightInput(value, unit)`: 詳細画面の重量入力欄用に、保存値 kg を設定単位へ換算する。
 - `formatWeightForStorageInput(value, unit)`: 詳細画面の入力値を kg 保存値へ戻す。
 - `isExerciseGoalAchieved(sets, goal)`: 同じ入力済みセットの重量と回数・秒数が、目標の両方に到達していれば true。
+- `findExerciseGoalAchievementSet(sets, goal)`: 目標の両方を満たす最初の入力済みセットを返し、達成記録の保存に使用する。
 - `weightUnitLabel(unit)`: `kg` / `Lbs` の表示ラベルを返す。
 - `measurementUnit` / `measurementLabel`: `'seconds'` → `秒`/`秒数`、`'reps'` → `回`/`回数`。
 - `exerciseCategories` / `defaultExerciseCategory`: 器具カテゴリの表示順・ラベル（フリーウエイト種目 / マシン種目 / ダンベル種目 / ケーブル種目 / 自重種目）と、未設定時の既定値（`'free'`）。

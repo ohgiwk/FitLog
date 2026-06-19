@@ -13,6 +13,7 @@ import {
   IconPencil,
   IconPlus,
   IconSettings,
+  IconTrophy,
   IconTrash,
   IconUpload,
 } from '@tabler/icons-react';
@@ -67,6 +68,10 @@ export function CalendarIcon() {
 
 export function SettingsIcon() {
   return <IconSettings />;
+}
+
+export function TrophyIcon() {
+  return <IconTrophy />;
 }
 
 export function ExportIcon() {

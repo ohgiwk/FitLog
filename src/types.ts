@@ -3,6 +3,7 @@ export type Screen =
   | 'select'
   | 'detail'
   | 'exerciseHistory'
+  | 'goalAchievements'
   | 'preset'
   | 'presetEdit'
   | 'history'
@@ -23,6 +24,18 @@ export type ExerciseCategory = 'free' | 'machine' | 'dumbbell' | 'cable' | 'body
 export type ExerciseGoal = {
   weight: number;
   recordValue: number;
+};
+
+export type ExerciseGoalAchievement = {
+  id: string;
+  exerciseId: string;
+  exerciseName: string;
+  measurementType: MeasurementType;
+  date: string;
+  weight: number;
+  recordValue: number;
+  goalWeight: number;
+  goalRecordValue: number;
 };
 
 export type Exercise = {
@@ -84,6 +97,7 @@ export type PartSetting = {
 
 export type State = {
   exercises: Exercise[];
+  goalAchievements: ExerciseGoalAchievement[];
   workouts: Workout[];
   workoutStartTimes: Record<string, string>;
   presets: Preset[];

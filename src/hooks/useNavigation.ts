@@ -1,6 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Screen, State } from '../types';
-import { isBlank, isExerciseGoalAchieved, localDate, parseDate } from '../utils';
+import {
+  findExerciseGoalAchievementSet,
+  isBlank,
+  localDate,
+  number,
+  parseDate,
+  uid,
+} from '../utils';
 import { findCurrentWorkout } from '../selectors/fitLogSelectors';
 import { GoalAchievement } from './useFitLogUi';
 
@@ -65,12 +72,46 @@ export function useNavigation({
   function showScreen(next: Screen) {
     if (screen === 'detail' && next !== 'detail' && currentWorkout) {
       const exercise = state.exercises.find((item) => item.id === currentWorkout.exerciseId);
-      if (exercise?.goal && isExerciseGoalAchieved(currentWorkout.sets, exercise.goal)) {
-        setGoalAchievement({
+      const achievedSet = exercise?.goal
+        ? findExerciseGoalAchievementSet(currentWorkout.sets, exercise.goal)
+        : undefined;
+      if (exercise?.goal && achievedSet) {
+        const goal = exercise.goal;
+        const achievement = {
           exerciseId: exercise.id,
           exerciseName: exercise.name,
           measurementType: exercise.measurementType,
-          goal: exercise.goal,
+          goal,
+        };
+        saveState((prev) => {
+          const alreadyRecorded = prev.goalAchievements.some(
+            (record) =>
+              record.exerciseId === exercise.id &&
+              record.date === currentWorkout.date &&
+              record.goalWeight === goal.weight &&
+              record.goalRecordValue === goal.recordValue,
+          );
+          if (alreadyRecorded) return prev;
+          return {
+            ...prev,
+            goalAchievements: [
+              ...prev.goalAchievements,
+              {
+                id: uid(),
+                exerciseId: exercise.id,
+                exerciseName: exercise.name,
+                measurementType: exercise.measurementType,
+                date: currentWorkout.date,
+                weight: number(achievedSet.weight),
+                recordValue: number(achievedSet.recordValue),
+                goalWeight: goal.weight,
+                goalRecordValue: goal.recordValue,
+              },
+            ],
+          };
+        });
+        setGoalAchievement({
+          ...achievement,
         });
       }
     }

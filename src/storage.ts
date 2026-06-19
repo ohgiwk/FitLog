@@ -3,6 +3,7 @@ import { defaultPartColor, paletteColorAt } from './data/partColors';
 import {
   ExerciseCategory,
   ExerciseGoal,
+  ExerciseGoalAchievement,
   MeasurementType,
   PartSetting,
   Preset,
@@ -75,6 +76,7 @@ function buildPartsFromNames(names: string[]): PartSetting[] {
 function createDefaultState(): State {
   return {
     exercises: starterExercises,
+    goalAchievements: [],
     workouts: [],
     workoutStartTimes: {},
     presets: defaultPresets,
@@ -130,6 +132,7 @@ export function normalizeState(saved: Partial<State> | null | undefined): State 
   const trainingPlans = normalizeTrainingPlans(saved.trainingPlans);
   return {
     exercises: mergedExercises,
+    goalAchievements: normalizeGoalAchievements(saved.goalAchievements),
     workouts,
     workoutStartTimes: normalizeWorkoutStartTimes(saved.workoutStartTimes),
     presets: normalizePresets(saved.presets),
@@ -149,6 +152,62 @@ export function normalizeState(saved: Partial<State> | null | undefined): State 
 
 function normalizeWeightUnit(value: unknown): WeightUnit {
   return value === 'lbs' ? 'lbs' : 'kg';
+}
+
+/**
+ * 保存済みの目標達成記録を正規化し、不正な項目を除外する
+ */
+function normalizeGoalAchievements(value: unknown): ExerciseGoalAchievement[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((achievement) => {
+    if (!achievement || typeof achievement !== 'object') return [];
+    const item = achievement as Record<string, unknown>;
+    if (
+      typeof item.id !== 'string' ||
+      typeof item.exerciseId !== 'string' ||
+      typeof item.exerciseName !== 'string' ||
+      typeof item.date !== 'string' ||
+      (typeof item.weight !== 'string' && typeof item.weight !== 'number') ||
+      String(item.weight).trim() === '' ||
+      (typeof item.recordValue !== 'string' && typeof item.recordValue !== 'number') ||
+      String(item.recordValue).trim() === '' ||
+      (typeof item.goalWeight !== 'string' && typeof item.goalWeight !== 'number') ||
+      String(item.goalWeight).trim() === '' ||
+      (typeof item.goalRecordValue !== 'string' && typeof item.goalRecordValue !== 'number') ||
+      String(item.goalRecordValue).trim() === ''
+    ) {
+      return [];
+    }
+    const weight = Number(item.weight);
+    const recordValue = Number(item.recordValue);
+    const goalWeight = Number(item.goalWeight);
+    const goalRecordValue = Number(item.goalRecordValue);
+    if (
+      !Number.isFinite(weight) ||
+      weight < 0 ||
+      !Number.isFinite(recordValue) ||
+      recordValue <= 0 ||
+      !Number.isFinite(goalWeight) ||
+      goalWeight < 0 ||
+      !Number.isFinite(goalRecordValue) ||
+      goalRecordValue <= 0
+    ) {
+      return [];
+    }
+    return [
+      {
+        id: item.id,
+        exerciseId: item.exerciseId,
+        exerciseName: item.exerciseName,
+        measurementType: normalizeMeasurementType(item.measurementType),
+        date: item.date,
+        weight,
+        recordValue,
+        goalWeight,
+        goalRecordValue,
+      },
+    ];
+  });
 }
 
 /**

@@ -104,7 +104,14 @@ export function isBlank(value: string | number) {
  * 入力済みセットの重量と回数・秒数が、種目目標の両方に到達しているか判定する
  */
 export function isExerciseGoalAchieved(sets: WorkoutSet[], goal: ExerciseGoal) {
-  return sets.some(
+  return Boolean(findExerciseGoalAchievementSet(sets, goal));
+}
+
+/**
+ * 種目目標の重量と回数・秒数の両方を満たす最初の入力済みセットを返す
+ */
+export function findExerciseGoalAchievementSet(sets: WorkoutSet[], goal: ExerciseGoal) {
+  return sets.find(
     (set) =>
       !isBlank(set.weight) &&
       !isBlank(set.recordValue) &&
