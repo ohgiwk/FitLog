@@ -9,13 +9,29 @@ import {
   TrophyIcon,
 } from '../icons';
 import { Workout } from '../types';
-import { calendarCells, isUnstartedWorkout, localDate, parseDate } from '../utils';
+import {
+  calculateWorkoutDurationMinutes,
+  calendarCells,
+  formatWorkoutDuration,
+  formatWorkoutTime,
+  isRecordedSet,
+  isUnstartedWorkout,
+  localDate,
+  parseDate,
+} from '../utils';
 import { HomeSetRow } from '../components/HomeSetRow';
 import { useFitLogContext } from '../hooks/FitLogContext';
 import { appVersion } from '../version';
 
 const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
 type HomeCalendarMode = 'week' | 'month';
+type WorkoutSummary = {
+  startTime: string;
+  endTime: string;
+  duration: string;
+  exerciseCount: number;
+  setCount: number;
+};
 const calendarPageOffsets = [-1, 0, 1];
 
 /**
@@ -71,6 +87,8 @@ function useHomeScreenModel() {
     currentPreset,
     partColors,
     weightUnit: state.weightUnit,
+    workoutStartTime: state.workoutStartTimes[selectedDate],
+    workoutEndTime: state.workoutEndTimes[selectedDate],
     /**
      * 日付を選択し、対象日のホーム内容へ移動する
      */
@@ -81,6 +99,8 @@ function useHomeScreenModel() {
     },
     onSelectPreset: actions.selectPreset,
     onStartWorkoutDay: actions.startWorkoutDay,
+    onEndWorkoutDay: actions.endWorkoutDay,
+    onResumeWorkoutDay: actions.resumeWorkoutDay,
     onStartPreset: actions.startPreset,
     onOpenPresets: () => actions.setScreen('preset'),
     onOpenSelect: () => actions.setScreen('select'),
@@ -104,9 +124,13 @@ export function HomeScreen() {
     currentPreset,
     partColors,
     weightUnit,
+    workoutStartTime,
+    workoutEndTime,
     onSelectDate,
     onSelectPreset,
     onStartWorkoutDay,
+    onEndWorkoutDay,
+    onResumeWorkoutDay,
     onStartPreset,
     onOpenPresets,
     onOpenSelect,
@@ -116,6 +140,8 @@ export function HomeScreen() {
     onDeleteWorkout,
   } = useHomeScreenModel();
   const [deleteTarget, setDeleteTarget] = useState<Workout | null>(null);
+  const [finishConfirmationOpen, setFinishConfirmationOpen] = useState(false);
+  const [workoutSummary, setWorkoutSummary] = useState<WorkoutSummary | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [calendarMode, setCalendarMode] = useState<HomeCalendarMode>('week');
   const [calendarAnchorDate, setCalendarAnchorDate] = useState(() => parseDate(selectedDate));
@@ -173,6 +199,52 @@ export function HomeScreen() {
     if (!deleteTarget) return;
     onDeleteWorkout(deleteTarget.id);
     setDeleteTarget(null);
+  }
+
+  /**
+   * 指定した終了時刻から実施内容のサマリーを作り、ダイアログへ表示する
+   */
+  function showWorkoutSummary(endTime: string) {
+    if (!workoutStartTime) return;
+    const recordedWorkouts = selectedWorkouts.filter((workout) => workout.sets.some(isRecordedSet));
+    setWorkoutSummary({
+      startTime: formatWorkoutTime(workoutStartTime),
+      endTime: formatWorkoutTime(endTime),
+      duration: formatWorkoutDuration(calculateWorkoutDurationMinutes(workoutStartTime, endTime)),
+      exerciseCount: recordedWorkouts.length,
+      setCount: recordedWorkouts.reduce(
+        (total, workout) => total + workout.sets.filter(isRecordedSet).length,
+        0,
+      ),
+    });
+  }
+
+  /**
+   * 終了時刻を保存し、実施内容のサマリーをダイアログへ表示する
+   */
+  function finishWorkout(removeUnstartedWorkouts = false) {
+    const endTime = onEndWorkoutDay(removeUnstartedWorkouts);
+    if (!endTime) return;
+    showWorkoutSummary(endTime);
+  }
+
+  /**
+   * 未開始種目がある場合は確認し、無ければそのままトレーニングを終了する
+   */
+  function requestFinishWorkout() {
+    if (selectedWorkouts.some(isUnstartedWorkout)) {
+      setFinishConfirmationOpen(true);
+      return;
+    }
+    finishWorkout();
+  }
+
+  /**
+   * 未開始種目が残っていることを了承してトレーニングを終了する
+   */
+  function confirmFinishWorkout() {
+    setFinishConfirmationOpen(false);
+    finishWorkout(true);
   }
 
   /**
@@ -496,7 +568,7 @@ export function HomeScreen() {
         </select>
         <button
           className="small-primary"
-          disabled={!currentPreset}
+          disabled={!currentPreset || Boolean(workoutEndTime)}
           type="button"
           onClick={() => onStartPreset(currentPreset?.id || '')}
         >
@@ -516,13 +588,15 @@ export function HomeScreen() {
           <div className="empty">
             <div>
               <strong>この日の種目はまだありません</strong>
-              <button
-                className="primary start-training-button"
-                type="button"
-                onClick={onStartWorkoutDay}
-              >
-                トレーニングを開始
-              </button>
+              {!workoutStartTime && (
+                <button
+                  className="primary start-training-button"
+                  type="button"
+                  onClick={onStartWorkoutDay}
+                >
+                  トレーニングを開始
+                </button>
+              )}
             </div>
           </div>
         ) : (
@@ -542,14 +616,16 @@ export function HomeScreen() {
                 <h2>
                   {workout.part} - {workout.name}
                 </h2>
-                <button
-                  className="delete-workout"
-                  type="button"
-                  aria-label={`${workout.name}を削除`}
-                  onClick={(event) => requestDelete(event, workout)}
-                >
-                  <TrashIcon />
-                </button>
+                {!workoutEndTime && (
+                  <button
+                    className="delete-workout"
+                    type="button"
+                    aria-label={`${workout.name}を削除`}
+                    onClick={(event) => requestDelete(event, workout)}
+                  >
+                    <TrashIcon />
+                  </button>
+                )}
               </header>
               <div className="exercise-body">
                 <table className="set-table">
@@ -574,7 +650,7 @@ export function HomeScreen() {
                     ))}
                   </tbody>
                 </table>
-                {isUnstartedWorkout(workout) && (
+                {!workoutEndTime && isUnstartedWorkout(workout) && (
                   <div className="new-workout-overlay" aria-hidden="true">
                     <div className="new-workout-overlay-icon">
                       <PlusIcon />
@@ -585,10 +661,35 @@ export function HomeScreen() {
             </article>
           ))
         )}
+        {workoutStartTime && !workoutEndTime && !!selectedWorkouts.length && (
+          <button
+            className="primary workout-action-button"
+            type="button"
+            onClick={requestFinishWorkout}
+          >
+            トレーニングを終了
+          </button>
+        )}
+        {workoutStartTime && workoutEndTime && (
+          <div className="workout-completed-actions">
+            <button
+              className="workout-action-button workout-summary-button"
+              type="button"
+              onClick={() => showWorkoutSummary(workoutEndTime)}
+            >
+              トレーニング結果を見る
+            </button>
+            <button className="resume-workout-button" type="button" onClick={onResumeWorkoutDay}>
+              再開
+            </button>
+          </div>
+        )}
       </div>
-      <button className="fab" type="button" aria-label="種目を追加" onClick={onOpenSelect}>
-        <PlusIcon />
-      </button>
+      {!workoutEndTime && (
+        <button className="fab" type="button" aria-label="種目を追加" onClick={onOpenSelect}>
+          <PlusIcon />
+        </button>
+      )}
       {deleteTarget && (
         <div className="dialog-backdrop" role="presentation">
           <div
@@ -611,6 +712,76 @@ export function HomeScreen() {
                 削除
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {finishConfirmationOpen && (
+        <div className="dialog-backdrop" role="presentation">
+          <div
+            className="confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="workout-finish-confirm-title"
+          >
+            <div className="confirm-title" id="workout-finish-confirm-title">
+              トレーニングを終了しますか？
+            </div>
+            <p>
+              未開始の種目が
+              {selectedWorkouts.filter(isUnstartedWorkout).length}
+              種目あります。このまま終了しても記録には含まれません。
+            </p>
+            <div className="confirm-actions">
+              <button
+                className="small-outline"
+                type="button"
+                onClick={() => setFinishConfirmationOpen(false)}
+              >
+                キャンセル
+              </button>
+              <button className="danger-button" type="button" onClick={confirmFinishWorkout}>
+                終了する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {workoutSummary && (
+        <div className="dialog-backdrop" role="presentation">
+          <div
+            className="confirm-dialog workout-summary-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="workout-summary-title"
+          >
+            <div className="confirm-title" id="workout-summary-title">
+              お疲れ様でした！
+            </div>
+            <div className="workout-summary-stats">
+              <div>
+                <span>開始時間</span>
+                <strong>{workoutSummary.startTime}</strong>
+              </div>
+              <div>
+                <span>終了時間</span>
+                <strong>{workoutSummary.endTime}</strong>
+              </div>
+              <div>
+                <span>トレーニング時間</span>
+                <strong>{workoutSummary.duration}</strong>
+              </div>
+              <div>
+                <span>実施した種目数</span>
+                <strong>{workoutSummary.exerciseCount}種目</strong>
+              </div>
+              <div>
+                <span>合計セット数</span>
+                <strong>{workoutSummary.setCount}セット</strong>
+              </div>
+            </div>
+            <button className="primary" type="button" onClick={() => setWorkoutSummary(null)}>
+              閉じる
+            </button>
           </div>
         </div>
       )}

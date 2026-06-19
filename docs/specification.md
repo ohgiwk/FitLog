@@ -189,6 +189,7 @@ useFitLogCore (state + 永続化 + トースト)
 | `goalAchievements` | `ExerciseGoalAchievement[]` | 種目目標の達成記録（達成日・実際のセット値・達成時の目標値） |
 | `workouts` | `Workout[]` | 日付ごとの記録（セットを含む） |
 | `workoutStartTimes` | `Record<string, string>` | 日付ごとのトレーニング開始時刻（`HH:mm`） |
+| `workoutEndTimes` | `Record<string, string>` | 日付ごとのトレーニング終了時刻（`HH:mm`） |
 | `presets` | `Preset[]` | よく使う種目のまとまり |
 | `trainingDays` | `TrainingDay[]` | 日付ごとの実施部位（履歴の補助情報） |
 | `trainingPlans` | `TrainingPlan[]` | 部位ごとの分割計画 |
@@ -249,6 +250,7 @@ type Workout = {
 };
 
 type WorkoutStartTimes = Record<string, string>; // date(YYYY-MM-DD) -> HH:mm
+type WorkoutEndTimes = Record<string, string>; // date(YYYY-MM-DD) -> HH:mm
 
 type Preset = {
   id: string;
@@ -325,7 +327,7 @@ type PartSetting = {
 - `presets`: 既定プリセット 4 件（`胸の日` / `背中の日` / `脚の日` / `肩の日`、いずれも種目空）。
 - `workouts` / `trainingDays` / `trainingPlans`: 空配列。
 - `goalAchievements`: 空配列。
-- `workoutStartTimes`: 空オブジェクト。
+- `workoutStartTimes` / `workoutEndTimes`: 空オブジェクト。
 - `weightUnit`: `'kg'`。
 - `catalogVersion`: `starterCatalogVersion`（現在 `3`）。
 
@@ -340,6 +342,7 @@ type PartSetting = {
   - `ExerciseGoalAchievement`: ID・種目 ID・種目名・日付が文字列で、達成重量と目標重量が 0 以上、達成回数・秒数と目標回数・秒数が 1 以上の有限数である場合だけ保持する。未設定の旧データは空配列として扱う。
   - `Workout`: `id` / `exerciseId` / `date` / `name` / `part` が文字列でなければ除外。`note` は文字列のみ採用し、未設定・不正値は `''`。
   - `workoutStartTimes`: オブジェクトのみ採用。値が `HH:mm` 形式のものだけを日付キーごとに保持する。
+  - `workoutEndTimes`: オブジェクトのみ採用。値が `HH:mm` 形式のものだけを日付キーごとに保持する。
   - `WorkoutSet`: `id` が文字列でなければ除外。`weight` / `recordValue` は文字列・数値以外を `''` に。`recordValue` は旧フィールド `reps` からも引き継ぐ。`intensity` は 1〜5 のみ採用、それ以外は `undefined`。旧セットメモ `note` は取り込まず破棄する。
   - `TrainingDay`: 同一日付をマージし、`parts` を trim + 重複排除。旧フィールド `part`（単数）からも取り込む。
   - `TrainingPlan`: `part` 必須。`mode` は `'interval'` 以外を `'weekly'`。`weekdays` は 0〜6 の整数のみ・重複排除・ソート。`intervalDays` は正の整数（既定 1）。
@@ -389,7 +392,10 @@ type PartSetting = {
 - **プリセット開始バー**: プリセット選択 select + 「開始」+「管理」（プリセット一覧へ）。
 - **予定表示**: 選択日に分割計画で予定された部位があれば「予定: A / B」を表示。
 - **空状態**: 種目が無い日は「トレーニングを開始」ボタンを表示。押した時刻（時・分）を選択日の開始時刻として保存し、種目選択画面へ進む。
+- **FAB からの開始**: 「トレーニングを開始」を押さずに FAB から種目選択画面へ進んだ場合は、最初に種目を選択した時刻を開始時刻として保存する。開始時刻が既にある場合は上書きしない。
 - **開始時刻**: 選択日の開始時刻は内部データ（`workoutStartTimes`）として保存するが、ホーム画面には表示しない。
+- **トレーニング終了**: 開始済みで未終了の日は、最後の種目カードの下に「トレーニングを終了」ボタンを表示する。未開始の種目が残っている場合は、対象種目数と記録に含まれないことを示す確認ダイアログを表示し、了承後に未開始種目を削除して終了する。終了時刻を `workoutEndTimes` に保存し、「お疲れ様でした！」と開始時間・終了時間（`HH時mm分`）・トレーニング時間・実施種目数・合計セット数を示すダイアログを表示する。終了済みの日は同じ位置にグレー系の「トレーニング結果を見る」ボタンと小さな「再開」ボタンを表示する。「トレーニング結果を見る」は保存済みの開始・終了時刻からダイアログを再表示し、「再開」は終了時刻を削除して編集可能な状態へ戻す。実施種目数とセット数は、重量または回数・秒数が入力されたセットを対象に集計する。
+- **終了後の閲覧専用状態**: 終了済みの日は種目追加 FAB と種目削除を非表示にし、プリセット開始を無効化する。種目詳細ではセット値・強度・メモ・目標を読み取り専用にし、セット追加 FAB・セット削除・レストタイマーを表示しない。更新アクション側でも終了済み日の追加・更新・削除を受け付けない。
 - **種目一覧**: `selectedWorkouts` をカード表示。各カードは `role="button"` でタップ / Enter / Space で詳細へ。
   - カードヘッダに「部位 - 種目名」と削除ボタン。ヘッダ左のライン色は部位の表示色（`partColors`）を反映する。
   - セットは表形式（`HomeSetRow`）でセット番号・重さ・記録・RM を表示。重さと RM は設定中の重量単位を主表示にし、補助列には反対側の単位を表示する。

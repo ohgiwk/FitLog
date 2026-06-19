@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  calculateWorkoutDurationMinutes,
   calcRm,
   calendarCells,
   formatStoredWeightInput,
+  formatWorkoutDuration,
+  formatWorkoutTime,
   formatWeightForStorageInput,
   findExerciseGoalAchievementSet,
   isExerciseGoalAchieved,
@@ -196,6 +199,27 @@ describe('isUnstartedWorkout', () => {
   it('セット数が5でなければ未開始ではない', () => {
     const sets = Array.from({ length: 4 }, () => newSet());
     expect(isUnstartedWorkout(makeWorkout(sets))).toBe(false);
+  });
+});
+
+describe('トレーニング時間', () => {
+  it('同日内の経過分数を計算する', () => {
+    expect(calculateWorkoutDurationMinutes('09:30', '11:05')).toBe(95);
+  });
+
+  it('日付をまたぐ経過分数を計算する', () => {
+    expect(calculateWorkoutDurationMinutes('23:50', '00:20')).toBe(30);
+  });
+
+  it('分数を読みやすい時間表記にする', () => {
+    expect(formatWorkoutDuration(45)).toBe('45分');
+    expect(formatWorkoutDuration(60)).toBe('1時間');
+    expect(formatWorkoutDuration(95)).toBe('1時間35分');
+  });
+
+  it('開始・終了時刻を日本語の時分表記にする', () => {
+    expect(formatWorkoutTime('09:05')).toBe('09時05分');
+    expect(formatWorkoutTime('23:40')).toBe('23時40分');
   });
 });
 

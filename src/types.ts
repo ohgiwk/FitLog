@@ -100,6 +100,7 @@ export type State = {
   goalAchievements: ExerciseGoalAchievement[];
   workouts: Workout[];
   workoutStartTimes: Record<string, string>;
+  workoutEndTimes: Record<string, string>;
   presets: Preset[];
   trainingDays: TrainingDay[];
   trainingPlans: TrainingPlan[];

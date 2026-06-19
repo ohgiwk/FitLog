@@ -46,6 +46,66 @@
   padding: 0 18px;
 }
 
+.workout-action-button {
+  width: calc(100% - 32px);
+  min-height: 46px;
+  margin: 28px 16px 20px;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.workout-summary-button {
+  border: 1px solid var(--border-strong);
+  background: var(--disabled-surface);
+  color: var(--text-secondary-strong);
+}
+
+.workout-completed-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin: 28px 16px 20px;
+}
+
+.workout-completed-actions .workout-action-button {
+  width: auto;
+  margin: 0;
+}
+
+.resume-workout-button {
+  min-height: 46px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 0 14px;
+  color: var(--text-secondary-strong);
+  font-weight: 900;
+}
+
+.workout-summary-stats {
+  display: grid;
+  gap: 10px;
+}
+
+.workout-summary-stats > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface-muted);
+}
+
+.workout-summary-stats span {
+  color: var(--text-soft);
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.workout-summary-stats strong {
+  font-size: 17px;
+}
+
 .exercise-body {
   position: relative;
 }

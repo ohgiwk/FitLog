@@ -101,6 +101,43 @@ export function isBlank(value: string | number) {
 }
 
 /**
+ * 重量または回数・秒数が入力されているセットか判定する
+ */
+export function isRecordedSet(set: WorkoutSet) {
+  return !isBlank(set.weight) || !isBlank(set.recordValue);
+}
+
+/**
+ * HH:mm 形式の開始・終了時刻から経過分数を求める
+ */
+export function calculateWorkoutDurationMinutes(startTime: string, endTime: string) {
+  const [startHour, startMinute] = startTime.split(':').map(Number);
+  const [endHour, endMinute] = endTime.split(':').map(Number);
+  const start = startHour * 60 + startMinute;
+  const end = endHour * 60 + endMinute;
+  return end >= start ? end - start : 24 * 60 - start + end;
+}
+
+/**
+ * 経過分数をトレーニング時間の表示文言へ整形する
+ */
+export function formatWorkoutDuration(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (!hours) return `${remainingMinutes}分`;
+  if (!remainingMinutes) return `${hours}時間`;
+  return `${hours}時間${remainingMinutes}分`;
+}
+
+/**
+ * HH:mm 形式の時刻を日本語の時分表記へ整形する
+ */
+export function formatWorkoutTime(time: string) {
+  const [hours, minutes] = time.split(':');
+  return `${hours}時${minutes}分`;
+}
+
+/**
  * 入力済みセットの重量と回数・秒数が、種目目標の両方に到達しているか判定する
  */
 export function isExerciseGoalAchieved(sets: WorkoutSet[], goal: ExerciseGoal) {

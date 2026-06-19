@@ -31,6 +31,7 @@ function useDetailScreenModel() {
     selectedDate,
     workouts: state.workouts,
     weightUnit: state.weightUnit,
+    readOnly: Boolean(currentWorkout && state.workoutEndTimes[currentWorkout.date]),
     onBack: () => actions.setScreen('home'),
     onOpenHistory: () => actions.setScreen('exerciseHistory'),
     onUpdateSet: actions.updateSet,
@@ -47,12 +48,14 @@ function ExerciseGoalEditor({
   measurementType,
   goal,
   weightUnit,
+  readOnly,
   onSave,
 }: {
   exerciseId: string;
   measurementType: 'reps' | 'seconds';
   goal?: { weight: number; recordValue: number };
   weightUnit: 'kg' | 'lbs';
+  readOnly: boolean;
   onSave: (exerciseId: string, goal?: { weight: number; recordValue: number }) => void;
 }) {
   const [weight, setWeight] = useState('');
@@ -65,7 +68,7 @@ function ExerciseGoalEditor({
     setIsEditing(false);
   }, [goal, weightUnit]);
 
-  const canEdit = !goal || isEditing;
+  const canEdit = !readOnly && (!goal || isEditing);
   const storedWeight = formatWeightForStorageInput(weight, weightUnit);
   const canSave =
     weight.trim() !== '' &&
@@ -80,7 +83,7 @@ function ExerciseGoalEditor({
           <span className="exercise-goal-kicker">CURRENT GOAL</span>
           <h2 id="exercise-goal-title">現在の目標</h2>
         </div>
-        {goal && !isEditing && (
+        {!readOnly && goal && !isEditing && (
           <button className="goal-edit-button" type="button" onClick={() => setIsEditing(true)}>
             編集
           </button>
@@ -158,6 +161,7 @@ export function DetailScreen() {
     selectedDate,
     workouts,
     weightUnit,
+    readOnly,
     onBack,
     onOpenHistory,
     onUpdateSet,
@@ -190,6 +194,7 @@ export function DetailScreen() {
             measurementType={exercise.measurementType}
             goal={exercise.goal}
             weightUnit={weightUnit}
+            readOnly={readOnly}
             onSave={onUpdateExerciseGoal}
           />
         )}
@@ -209,6 +214,7 @@ export function DetailScreen() {
                   step={weightUnit === 'lbs' ? '1' : '0.5'}
                   min="0"
                   inputMode="decimal"
+                  readOnly={readOnly}
                   value={formatStoredWeightInput(set.weight, weightUnit)}
                   onChange={(event) =>
                     onUpdateSet(
@@ -226,6 +232,7 @@ export function DetailScreen() {
                   step="1"
                   min="0"
                   inputMode="numeric"
+                  readOnly={readOnly}
                   value={set.recordValue}
                   onChange={(event) => onUpdateSet(set.id, 'recordValue', event.target.value)}
                 />
@@ -239,20 +246,23 @@ export function DetailScreen() {
                     )} ${weightUnitLabel(weightUnit)}`
                   : '-'}
               </div>
-              <button
-                className="check"
-                type="button"
-                aria-label="セット削除"
-                onClick={() => onDeleteSet(set.id)}
-              >
-                <TrashIcon />
-              </button>
+              {!readOnly && (
+                <button
+                  className="check"
+                  type="button"
+                  aria-label="セット削除"
+                  onClick={() => onDeleteSet(set.id)}
+                >
+                  <TrashIcon />
+                </button>
+              )}
               <div className="intensity-picker" aria-label={`${index + 1}セット目の強度`}>
                 {intensityOptions.map((option) => (
                   <button
                     className={`intensity-button intensity-button-${option.value}${set.intensity === option.value ? ' active' : ''}`}
                     key={option.value}
                     type="button"
+                    disabled={readOnly}
                     aria-label={option.label}
                     aria-pressed={set.intensity === option.value}
                     onClick={() =>
@@ -275,20 +285,25 @@ export function DetailScreen() {
             maxLength={1000}
             placeholder="この種目のメモを入力"
             rows={5}
+            readOnly={readOnly}
             value={workout.note}
             onChange={(event) => onUpdateWorkoutNote(workout.id, event.target.value)}
           />
         </label>
       </div>
-      <RestTimer />
-      <button
-        className="fab"
-        type="button"
-        aria-label="セットを追加"
-        onClick={() => onAddSet(workout.id)}
-      >
-        <PlusIcon />
-      </button>
+      {!readOnly && (
+        <>
+          <RestTimer />
+          <button
+            className="fab"
+            type="button"
+            aria-label="セットを追加"
+            onClick={() => onAddSet(workout.id)}
+          >
+            <PlusIcon />
+          </button>
+        </>
+      )}
     </section>
   );
 }

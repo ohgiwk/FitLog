@@ -51,6 +51,7 @@ export function useNavigation({
    */
   function cleanupBlankDetailSets() {
     if (screen !== 'detail' || !currentWorkout) return;
+    if (state.workoutEndTimes[currentWorkout.date]) return;
     saveState((prev) => {
       const workout = prev.workouts.find((item) => item.id === currentWorkout.id);
       if (!workout) return prev;
@@ -70,7 +71,13 @@ export function useNavigation({
    * 画面を切り替える。離脱時の後片付けや編集モード解除も行う
    */
   function showScreen(next: Screen) {
+    const isReadOnlyWorkout = Boolean(currentWorkout && state.workoutEndTimes[currentWorkout.date]);
     if (screen === 'detail' && next !== 'detail' && currentWorkout) {
+      if (isReadOnlyWorkout) {
+        setScreen(next);
+        if (next !== 'select') setEditMode(false);
+        return;
+      }
       const exercise = state.exercises.find((item) => item.id === currentWorkout.exerciseId);
       const achievedSet = exercise?.goal
         ? findExerciseGoalAchievementSet(currentWorkout.sets, exercise.goal)

@@ -133,6 +133,7 @@ export function usePresetActions({
    * プリセットの種目を選択日に一括追加する(既に追加済みのものは除く)
    */
   function startPreset(presetId: string) {
+    if (state.workoutEndTimes[selectedDate]) return;
     const preset = state.presets.find((item) => item.id === presetId);
     if (!preset || !preset.exerciseIds.length)
       return showToast('プリセットに種目を追加してください');
