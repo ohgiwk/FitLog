@@ -73,18 +73,18 @@ export function HomeCalendar({
             <button
               className="drawer-link"
               type="button"
-              onClick={() => openFromDrawer(onOpenSettings)}
-            >
-              <SettingsIcon />
-              <span>設定</span>
-            </button>
-            <button
-              className="drawer-link"
-              type="button"
               onClick={() => openFromDrawer(onOpenGoalAchievements)}
             >
               <TrophyIcon />
               <span>目標達成記録</span>
+            </button>
+            <button
+              className="drawer-link"
+              type="button"
+              onClick={() => openFromDrawer(onOpenSettings)}
+            >
+              <SettingsIcon />
+              <span>設定</span>
             </button>
             <div className="drawer-version" aria-label={`アプリバージョン ${appVersion}`}>
               {appVersion}
