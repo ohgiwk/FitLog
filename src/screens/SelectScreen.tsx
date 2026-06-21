@@ -1,10 +1,7 @@
-import { useState } from 'react';
-import { Exercise } from '../types';
 import { ChevronLeft, DragHandle, EditIcon, PlusIcon, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import { exerciseCategories } from '../utils';
 import { useExerciseReorder } from '../hooks/useExerciseReorder';
-import { ExerciseDialog, ExerciseFormValue } from '../components/ExerciseDialog';
 
 function useSelectScreenModel() {
   const {
@@ -26,21 +23,15 @@ function useSelectScreenModel() {
     onBack: () => actions.setScreen('home'),
     onToggleEditMode: () => actions.setEditMode(!editMode),
     onAddExercise: actions.addExerciseToToday,
-    onAddExerciseToPart: actions.addExerciseToPart,
     onReorder: actions.reorderPartExercises,
     onDeleteExercise: actions.deleteExercise,
-    onUpdateExercise: actions.updateExercise,
+    onOpenExerciseEditor: actions.openExerciseEditor,
     onSelectPart: actions.selectPart,
   };
 }
 
 export function SelectScreen() {
   const model = useSelectScreenModel();
-  const selectableParts = model.orderedParts.length
-    ? model.orderedParts.map((part) => part.name)
-    : ['その他'];
-  const [dialogPart, setDialogPart] = useState<string | null>(null);
-  const [editExercise, setEditExercise] = useState<Exercise | null>(null);
   const tabs = [...model.groupedExercises.keys()];
   const currentPart =
     model.activePart && model.groupedExercises.has(model.activePart) ? model.activePart : tabs[0];
@@ -51,14 +42,6 @@ export function SelectScreen() {
       if (currentPart) model.onReorder(currentPart, layout);
     },
   });
-
-  function addExercise(value: ExerciseFormValue) {
-    return model.onAddExerciseToPart(value.part, value.name, value.measurementType, value.category);
-  }
-
-  function updateExercise(value: ExerciseFormValue) {
-    return editExercise ? model.onUpdateExercise(editExercise.id, value) : false;
-  }
 
   return (
     <section className="screen active">
@@ -106,7 +89,7 @@ export function SelectScreen() {
                   className="part-add"
                   type="button"
                   aria-label={`${currentPart}に種目を追加`}
-                  onClick={() => setDialogPart(currentPart)}
+                  onClick={() => model.onOpenExerciseEditor(currentPart)}
                 >
                   <PlusIcon />
                 </button>
@@ -139,7 +122,9 @@ export function SelectScreen() {
                             data-row-action
                             type="button"
                             aria-label="種目を編集"
-                            onClick={() => setEditExercise(exercise)}
+                            onClick={() =>
+                              model.onOpenExerciseEditor(exercise.part, exercise.id)
+                            }
                           >
                             <EditIcon />
                           </button>
@@ -184,36 +169,6 @@ export function SelectScreen() {
           </section>
         )}
       </div>
-      {dialogPart !== null && (
-        <ExerciseDialog
-          title="種目を追加"
-          submitLabel="追加"
-          initialValue={{
-            part: dialogPart,
-            name: '',
-            category: 'free',
-            measurementType: 'reps',
-          }}
-          parts={selectableParts}
-          onClose={() => setDialogPart(null)}
-          onSubmit={addExercise}
-        />
-      )}
-      {editExercise !== null && (
-        <ExerciseDialog
-          title="種目を編集"
-          submitLabel="保存"
-          initialValue={{
-            part: editExercise.part,
-            name: editExercise.name,
-            measurementType: editExercise.measurementType,
-            category: editExercise.category,
-          }}
-          parts={selectableParts}
-          onClose={() => setEditExercise(null)}
-          onSubmit={updateExercise}
-        />
-      )}
     </section>
   );
 }

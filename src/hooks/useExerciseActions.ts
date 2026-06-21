@@ -1,4 +1,12 @@
-import { Exercise, ExerciseCategory, ExerciseGoal, MeasurementType, State } from '../types';
+import {
+  Exercise,
+  ExerciseCategory,
+  ExerciseGoal,
+  GripStyleType,
+  GripType,
+  MeasurementType,
+  State,
+} from '../types';
 import { uid } from '../utils';
 import { paletteColorAt } from '../data/partColors';
 
@@ -21,6 +29,8 @@ export function useExerciseActions({ state, saveState, showToast }: ExerciseActi
     name: string,
     measurementType: MeasurementType,
     category: ExerciseCategory,
+    availableGrips: GripType[],
+    availableGripStyles: GripStyleType[],
   ) {
     const trimmedPart = part.trim() || 'その他';
     const trimmedName = name.trim();
@@ -34,6 +44,8 @@ export function useExerciseActions({ state, saveState, showToast }: ExerciseActi
       name: trimmedName,
       measurementType,
       category,
+      availableGrips,
+      availableGripStyles,
     };
     saveState((prev) => {
       const parts = prev.parts.some((item) => item.name === trimmedPart)
@@ -57,6 +69,8 @@ export function useExerciseActions({ state, saveState, showToast }: ExerciseActi
       name: string;
       measurementType: MeasurementType;
       category: ExerciseCategory;
+      availableGrips: GripType[];
+      availableGripStyles: GripStyleType[];
     },
   ) {
     const trimmedName = fields.name.trim();
@@ -80,6 +94,8 @@ export function useExerciseActions({ state, saveState, showToast }: ExerciseActi
                 name: trimmedName,
                 measurementType: fields.measurementType,
                 category: fields.category,
+                availableGrips: fields.availableGrips,
+                availableGripStyles: fields.availableGripStyles,
               }
             : exercise,
         ),

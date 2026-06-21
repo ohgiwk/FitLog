@@ -1,6 +1,7 @@
 export type Screen =
   | 'home'
   | 'select'
+  | 'exerciseEdit'
   | 'detail'
   | 'exerciseHistory'
   | 'goalAchievements'
@@ -13,6 +14,14 @@ export type Screen =
 export type MeasurementType = 'reps' | 'seconds';
 
 export type SetIntensity = 1 | 2 | 3 | 4 | 5;
+
+export const gripTypes = ['normal', 'reverse', 'parallel', 'alternate'] as const;
+
+export type GripType = (typeof gripTypes)[number];
+
+export const gripStyleTypes = ['thumbAround', 'thumbLess', 'thumbUp', 'hook'] as const;
+
+export type GripStyleType = (typeof gripStyleTypes)[number];
 
 export type WeightUnit = 'kg' | 'lbs';
 
@@ -44,6 +53,8 @@ export type Exercise = {
   name: string;
   measurementType: MeasurementType;
   category: ExerciseCategory;
+  availableGrips?: GripType[];
+  availableGripStyles?: GripStyleType[];
   goal?: ExerciseGoal;
 };
 
@@ -61,6 +72,8 @@ export type Workout = {
   name: string;
   part: string;
   measurementType: MeasurementType;
+  grip?: GripType;
+  gripStyle?: GripStyleType;
   sets: WorkoutSet[];
   note: string;
 };

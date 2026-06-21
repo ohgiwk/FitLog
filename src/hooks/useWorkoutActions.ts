@@ -1,4 +1,4 @@
-import { Screen, SetIntensity, State, Workout } from '../types';
+import { GripStyleType, GripType, Screen, SetIntensity, State, Workout } from '../types';
 import { isUnstartedWorkout, newSet } from '../utils';
 import { createWorkout } from '../selectors/fitLogSelectors';
 
@@ -220,6 +220,46 @@ export function useWorkoutActions({
   }
 
   /**
+   * 種目記録の握りの向きを設定する。未指定(undefined)なら選択を解除する
+   */
+  function updateWorkoutGrip(workoutId: string, grip?: GripType) {
+    const target = state.workouts.find((workout) => workout.id === workoutId);
+    if (!target || isWorkoutDayEnded(target.date)) return;
+    saveState((prev) => ({
+      ...prev,
+      workouts: prev.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
+        if (!grip) {
+          const nextWorkout = { ...workout };
+          delete nextWorkout.grip;
+          return nextWorkout;
+        }
+        return { ...workout, grip };
+      }),
+    }));
+  }
+
+  /**
+   * 種目記録の握り方を設定する。未指定(undefined)なら選択を解除する
+   */
+  function updateWorkoutGripStyle(workoutId: string, gripStyle?: GripStyleType) {
+    const target = state.workouts.find((workout) => workout.id === workoutId);
+    if (!target || isWorkoutDayEnded(target.date)) return;
+    saveState((prev) => ({
+      ...prev,
+      workouts: prev.workouts.map((workout) => {
+        if (workout.id !== workoutId) return workout;
+        if (!gripStyle) {
+          const nextWorkout = { ...workout };
+          delete nextWorkout.gripStyle;
+          return nextWorkout;
+        }
+        return { ...workout, gripStyle };
+      }),
+    }));
+  }
+
+  /**
    * 現在のワークアウトから指定セットを削除する
    */
   function deleteSet(setId: string) {
@@ -282,6 +322,8 @@ export function useWorkoutActions({
     updateSet,
     updateWorkoutNote,
     updateSetIntensity,
+    updateWorkoutGrip,
+    updateWorkoutGripStyle,
     deleteSet,
     deleteWorkout,
     moveWorkout,

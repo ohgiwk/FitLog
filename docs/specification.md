@@ -207,6 +207,8 @@ useFitLogCore (state + 永続化 + トースト)
 type MeasurementType = 'reps' | 'seconds';
 type SetIntensity = 1 | 2 | 3 | 4 | 5;
 type ExerciseCategory = 'free' | 'machine' | 'dumbbell' | 'cable' | 'bodyweight';
+type GripType = 'normal' | 'reverse' | 'parallel' | 'alternate';
+type GripStyleType = 'thumbAround' | 'thumbLess' | 'thumbUp' | 'hook';
 type WeightUnit = 'kg' | 'lbs';
 
 type ExerciseGoal = {
@@ -232,6 +234,8 @@ type Exercise = {
   name: string;          // 種目名
   measurementType: MeasurementType; // 記録単位（回数 / 秒数）
   category: ExerciseCategory; // 器具カテゴリ（種目リスト内の小見出し分類）
+  availableGrips?: GripType[]; // この種目で選択できる握りの向き
+  availableGripStyles?: GripStyleType[]; // この種目で選択できる握り方
   goal?: ExerciseGoal;   // 現在の目標（任意）
 };
 
@@ -249,6 +253,8 @@ type Workout = {
   name: string;          // 記録時点の種目名のスナップショット
   part: string;          // 記録時点の部位のスナップショット
   measurementType: MeasurementType;
+  grip?: GripType;       // この日の種目記録に対する握りの向き（任意）
+  gripStyle?: GripStyleType; // この日の種目記録に対する握り方（任意）
   sets: WorkoutSet[];
   note: string;          // その日の種目記録に対するメモ
 };
@@ -288,9 +294,9 @@ type PartSetting = {
 
 ### 4.3 種目マスタと記録の責務分離
 
-- `Exercise` は「何を行うか」の軽量マスタ（`id` / `part` / `name` / `measurementType` / `category`）と、種目ごとの現在目標（`goal`）を持つ。
+- `Exercise` は「何を行うか」の軽量マスタ（`id` / `part` / `name` / `measurementType` / `category`）と、種目ごとの握りの向き候補（`availableGrips`）、握り方候補（`availableGripStyles`）、現在目標（`goal`）を持つ。
 - `ExerciseGoalAchievement` は達成時点の種目名・計測方法をスナップショットとして保持するため、後から種目を改名・削除しても履歴表示を維持する。
-- 実際の重量・回数（秒数）・強度は `WorkoutSet`、種目単位のメモは `Workout.note` に保存する。
+- 実際の重量・回数（秒数）・強度は `WorkoutSet`、その日の種目単位の握りの向き・握り方・メモは `Workout` に保存する。
 - `Workout` は `name` / `part` / `measurementType` を記録時点のスナップショットとして保持するため、後でマスタを編集しても過去の記録表示は変わらない（種目の並び替え時のみ後述の同期がある）。
 
 ---
@@ -333,21 +339,23 @@ type PartSetting = {
 - `goalAchievements`: 空配列。
 - `workoutStartTimes` / `workoutEndTimes`: 空オブジェクト。
 - `weightUnit`: `'kg'`。
-- `catalogVersion`: `starterCatalogVersion`（現在 `3`）。
+- `catalogVersion`: `starterCatalogVersion`（現在 `5`）。
 
 ### 5.5 正規化・移行（`normalizeState`）
 
 - `exercises` か `workouts` が無ければ `null` を返す（＝壊れている扱い）。
 - 各配列を専用 normalize 関数で正規化し、不正要素は除外（`flatMap` で drop）。
 - **種目マスタ追補**: 保存データの `catalogVersion` が `starterCatalogVersion` 未満なら、`part::name` をキーに未収録のスターター種目だけを末尾へ追加（`mergeStarterExercises`）。正規化後は `catalogVersion` を最新へ更新。
+- **グリップ候補の初期化**: `catalogVersion` が 4 未満のデータは、全種目の「握りの向き」を4候補すべて有効にして移行する。移行後は種目編集で個別に変更できる。
+- **握り方候補の初期化**: `catalogVersion` が 5 未満のデータは、全種目の「握り方」を4候補すべて有効にして移行する。移行後は種目編集で個別に変更できる。
 - **既定プリセット補完**: 名前が一致しない既定プリセットを末尾に追加（`mergeDefaultPresets`）。
 - 各フィールドの正規化方針:
-  - `Exercise`: `id` / `part` / `name` がすべて文字列でなければ除外。`measurementType` は `'seconds'` 以外を `'reps'` に丸める。`category` は 5 種のいずれかに丸め、未設定・不正値のときは初期種目マスタに同名があればそのカテゴリを、なければ `'free'` を使う。`goal` は重量が 0 以上、回数・秒数が 1 以上の有限数である場合だけ保持し、不正値・未設定は目標なしとして扱う。
+  - `Exercise`: `id` / `part` / `name` がすべて文字列でなければ除外。`measurementType` は `'seconds'` 以外を `'reps'` に丸める。`category` は 5 種のいずれかに丸め、未設定・不正値のときは初期種目マスタに同名があればそのカテゴリを、なければ `'free'` を使う。`availableGrips` はノーマル・リバース・パラレル・オルタネイト、`availableGripStyles` はサムアラウンド・サムレス・サムアップ・フックのみを重複排除して保持し、未設定の旧データは各候補を全て有効にする。`goal` は重量が 0 以上、回数・秒数が 1 以上の有限数である場合だけ保持し、不正値・未設定は目標なしとして扱う。
   - `ExerciseGoalAchievement`: ID・種目 ID・種目名・日付が文字列で、達成重量と目標重量が 0 以上、達成回数・秒数と目標回数・秒数が 1 以上の有限数である場合だけ保持する。未設定の旧データは空配列として扱う。
-  - `Workout`: `id` / `exerciseId` / `date` / `name` / `part` が文字列でなければ除外。`note` は文字列のみ採用し、未設定・不正値は `''`。
+  - `Workout`: `id` / `exerciseId` / `date` / `name` / `part` が文字列でなければ除外。`grip` は4種類の握りの向き、`gripStyle` は4種類の握り方のみ採用する。`note` は文字列のみ採用し、未設定・不正値は `''`。
   - `workoutStartTimes`: オブジェクトのみ採用。値が `HH:mm` 形式のものだけを日付キーごとに保持する。
   - `workoutEndTimes`: オブジェクトのみ採用。値が `HH:mm` 形式のものだけを日付キーごとに保持する。
-  - `WorkoutSet`: `id` が文字列でなければ除外。`weight` / `recordValue` は文字列・数値以外を `''` に。`recordValue` は旧フィールド `reps` からも引き継ぐ。`intensity` は 1〜5 のみ採用、それ以外は `undefined`。旧セットメモ `note` は取り込まず破棄する。
+  - `WorkoutSet`: `id` が文字列でなければ除外。`weight` / `recordValue` は文字列・数値以外を `''` に。`recordValue` は旧フィールド `reps` からも引き継ぐ。`intensity` は 1〜5 のみ採用する。旧セットメモ `note` と旧セット単位のグリップ値はセットには取り込まない。
   - `TrainingDay`: 同一日付をマージし、`parts` を trim + 重複排除。旧フィールド `part`（単数）からも取り込む。
   - `TrainingPlan`: `part` 必須。`mode` は `'interval'` 以外を `'weekly'`。`weekdays` は 0〜6 の整数のみ・重複排除・ソート。`intervalDays` は正の整数（既定 1）。
   - `parts`（`normalizePartSettings`）: 保存済み設定（`name` + `color`、空名・重複・「レスト」は除外、色が無ければ既定色）を順序を保って取り込み、その後、種目・記録・実施日・計画に現れる未登録の部位を末尾へ追加してパレット色を割り当てる。旧データに `parts` が無くても、ここで既存部位から自動生成される。
@@ -421,12 +429,20 @@ type PartSetting = {
 - **編集モード**（「編集」ボタン）:
   - 通常モードと同じくカテゴリ小見出し付きで表示する。ドロップ先を選べるよう、種目が 0 件のカテゴリ区画も表示する。
   - 行をドラッグ（ハンドルから）で並び替え。**カテゴリをまたいでドロップすると、その種目は移動先カテゴリへ自動的に変更される**。並び替えは DOM を直接操作せず React の state で管理し（`useExerciseReorder`、ポインタ位置から挿入先カテゴリと位置を計算）、確定時に `reorderPartExercises` で対象部位の順序とカテゴリを反映する（他部位の位置は保持）。
-  - 行内に編集アイコン・削除ボタンを表示。削除時はプリセットからも該当 ID を除去。部位・種目名・カテゴリ・記録単位の編集は編集ダイアログで行う。
-  - リスト見出し右に「＋」ボタンを表示。押すと種目追加ダイアログを開く。
-- **種目追加ダイアログ**（編集モードの「＋」から）: 部位（`orderedParts` から選ぶセレクト。初期値は「＋」を押した部位）/ 種目名（最大 30 文字、必須）/ 器具カテゴリ（セレクト、既定はフリーウエイト）/ 「詳細設定」を開くと記録単位トグル。追加すると `addExerciseToPart` でマスタにのみ種目を追加し、**画面遷移せず編集モードに留まる**（記録は作らない）。
-- **種目編集ダイアログ**（編集モードの編集アイコンから）: 部位（`orderedParts` から選ぶセレクト）/ 種目名（最大 30 文字、必須）/ 器具カテゴリ（セレクト）/ 「詳細設定」を開くと記録単位トグル。保存すると `updateExercise` でマスタを更新し、編集モードに留まる。改名・部位変更時は既存ワークアウトの名前・部位スナップショットも追従する。
+  - 行内に編集アイコン・削除ボタンを表示。削除時はプリセットからも該当 ID を除去。編集アイコンを押すと種目編集画面へ遷移する。
+  - リスト見出し右に「＋」ボタンを表示。押すと種目追加画面へ遷移する。
 
-### 6.4 種目詳細（`DetailScreen`）
+### 6.4 種目追加 / 編集（`ExerciseEditScreen`）
+
+- 追加時は種目選択画面で選択していた部位を初期値にし、編集時は対象種目の保存値を表示する。
+- **基本設定**: 部位 / 種目名（最大30文字、必須）/ 器具カテゴリ / 記録単位。
+- **グリップ設定**:
+  - 握りの向き: ノーマルグリップ / リバースグリップ / パラレルグリップ / オルタネイトグリップ。
+  - 握り方: サムアラウンドグリップ / サムレスグリップ / サムアップグリップ / フックグリップ。
+  - 新規種目および旧データからの移行時は、両方とも全候補を有効にする。
+- 追加では `addExerciseToPart`、編集では `updateExercise` を実行し、成功後は対象部位を選択した種目選択画面へ戻る。改名・部位変更時は既存ワークアウトの名前・部位スナップショットも追従する。
+
+### 6.5 種目詳細（`DetailScreen`）
 
 - トップバー: 戻る / 種目名 / 履歴（種目別履歴へ）。
 - **現在の目標**: コンテンツ最上部に、目標重量と目標回数・秒数を表示する。
@@ -434,7 +450,7 @@ type PartSetting = {
   - 設定済み時は入力欄を読み取り専用にし、「編集」ボタンを表示する。「編集」を押すと入力可能になり、「更新」または「削除」を実行できる。
   - 重量は画面上では設定中の単位（kg / Lbs）を使い、`Exercise.goal.weight` には kg 換算値を保存する。
   - 回数・秒数は 1 以上、重量は 0 以上の場合に設定・更新できる。
-- **前回記録**（`LastRecord`）を表示。
+- **詳細記録**: 現在の目標の直下に折りたたみ式の「詳細記録」エリアを表示する。見出しを押すと開閉し、「握りの向き」と「握り方」を横並びに表示する。その日の `Workout.grip` / `Workout.gripStyle` として保存し、候補は種目マスタの `availableGrips` / `availableGripStyles` に従う。
 - **セット入力テーブル**: 各行に番号・重量入力（設定中の重量単位。`kg` は step 0.5、`lbs` は step 1）・記録入力（`回`/`秒`、step 1）・RM 表示・強度ピッカー（5 段階トグル）。
   - 編集可能な行を左へスワイプすると、右端にセット削除ボタンを表示する。右へ戻すか行をタップすると閉じる。
   - 入力欄の表示・入力単位は設定に従うが、保存する `WorkoutSet.weight` は kg に換算した値を保持する。
@@ -451,7 +467,7 @@ type PartSetting = {
   - 次の重量は既定で現在目標より kg 表示時は 2.5 kg、Lbs 表示時は 5 Lbs 高い値を提示し、回数・秒数は現在目標を引き継ぐ。
   - 「次の目標にする」で `Exercise.goal` を更新する。「あとで」は目標を変更せずダイアログだけ閉じるため、同じ目標のまま再度詳細を離れると再判定される。
 
-### 6.5 種目別履歴（`ExerciseHistoryScreen`）
+### 6.6 種目別履歴（`ExerciseHistoryScreen`）
 
 - 同一 `exerciseId` のうち、記録のあるセット（重量 or 記録値が 0 超）を含むワークアウトを新しい順に表示。
 - **ベスト記録（BEST）サマリ**:
@@ -460,7 +476,7 @@ type PartSetting = {
 - **日別カード**: 日付・TOTAL（reps は重量×回数の合計を設定中の重量単位で表示、seconds は合計秒）・MAX 1RM（reps のみ）。
   - セット表: セット番号・重さ（0 なら「自重」）・記録・RM・強度アイコン。
 
-### 6.6 目標達成記録（`GoalAchievementScreen`）
+### 6.7 目標達成記録（`GoalAchievementScreen`）
 
 - ホームのドロワメニュー「目標達成記録」から遷移する。トップバーの戻るでホームへ戻る。
 - `goalAchievements` を種目ごとにグループ化し、各種目内は達成日の新しい順で表示する。
@@ -468,13 +484,13 @@ type PartSetting = {
 - 重量は保存値 kg を現在の重量単位へ換算して表示する。
 - 記録がない場合は空状態メッセージを表示する。
 
-### 6.7 プリセット一覧（`PresetListScreen`）/ 編集（`PresetEditScreen`）
+### 6.8 プリセット一覧（`PresetListScreen`）/ 編集（`PresetEditScreen`）
 
 - 一覧: プリセットの作成・選択・編集画面への遷移。
 - 編集: 名称変更（空なら「名称未設定」）、種目の追加（重複は無視）・削除・並び替え、プリセット削除。
 - ホームの「開始」やプリセット一覧から `startPreset` を実行すると、プリセットの種目を選択日へ一括投入する（後述 8.3）。
 
-### 6.8 履歴/計画（`HistoryScreen`）
+### 6.9 履歴/計画（`HistoryScreen`）
 
 - トップバー右にデータメニュー（記録の書き出し / 読み込み）を表示する。
 - 「履歴」「計画」をタブ切り替え。
@@ -489,7 +505,7 @@ type PartSetting = {
   - 部位が 1 つも無ければ「部位がありません」。
   - 「今後7日の予定」プレビュー: 選択日から 7 日間の予定部位（日付に曜日付き、日付と部位で改行）。
 
-### 6.9 部位の編集（`PartEditScreen`）
+### 6.10 部位の編集（`PartEditScreen`）
 
 - 設定画面の「部位を編集」から遷移する。トップバーの戻るで設定画面へ戻る。
 - 追加フォーム: 部位名（最大 12 文字）を入力して「追加」。空・重複（`orderedParts` と一致）は不可。
@@ -499,11 +515,11 @@ type PartSetting = {
 - 削除は「その部位の種目が残っていない」場合のみ可能。削除時はその部位の分割計画（`trainingPlans`）も合わせて取り除く。種目がある部位は削除不可（トースト通知）。
 - 選んだ表示色・並び順は、種目選択画面と計画タブの各部位ヘッダ左色・並び順に反映される。
 
-### 6.10 設定（`SettingsScreen`）
+### 6.11 設定（`SettingsScreen`）
 
 - ホーム画面のドロワメニューから遷移する。トップバーの戻るでホームへ戻る。
 - **単位**: kg / Lbs の切り替えスイッチを表示する。
-  - 切り替えた単位は `state.weightUnit` に保存され、重量入力欄、ホームのセット行、前回記録、種目別履歴の重量・RM・負荷量表示に反映される。
+  - 切り替えた単位は `state.weightUnit` に保存され、重量入力欄、ホームのセット行、種目別履歴の重量・RM・負荷量表示に反映される。
   - 既存記録の保存値は kg のまま維持し、lbs 表示時のみ換算する。
 - **部位を編集**: 部位の追加・削除・並び替え・表示色変更を行う部位編集画面（`partEdit`）へ遷移する。
 
@@ -589,14 +605,16 @@ weight === 0 または reps === 0 → '0.0'
 - `updateSet`: 指定セットの `weight` / `recordValue` を更新（全ワークアウトを走査して該当 ID を更新）。
 - `updateWorkoutNote`: 指定ワークアウトの種目メモ `note` を更新。
 - `updateSetIntensity`: 強度を設定。同じ強度を再タップ、または `undefined` で強度を解除（フィールド削除）。
+- `updateWorkoutGrip`: 種目記録の握りの向きを設定。`undefined` で選択を解除（フィールド削除）。
+- `updateWorkoutGripStyle`: 種目記録の握り方を設定。`undefined` で選択を解除（フィールド削除）。
 - `deleteSet`: 現在のワークアウトから指定セットを削除。
 - `deleteWorkout`: ワークアウトごと削除。対象が `currentWorkoutId` なら解除し、トースト表示。
 - `moveWorkout`: 選択日内での表示順を 1 つ前後に入れ替え。
 
 ### 8.2 種目マスタ操作（`useExerciseActions`）
 
-- `addExerciseToPart(part, name, measurementType, category)`: 指定部位に新種目をマスタへ追加（部位は空なら「その他」、種目名は必須）。先頭に追加し、部位が未登録ならパレット色つきで `state.parts` に登録。画面遷移・記録作成はしない。追加できたら `true` を返す。
-- `updateExercise(exerciseId, { part, name, measurementType, category })`: 種目の部位・名前・記録単位・カテゴリをまとめて更新（種目名は必須、部位が空なら「その他」）。部位が未登録ならパレット色つきで `state.parts` に登録。改名・部位変更時は既存ワークアウトの `name` / `part` スナップショットも同期。更新できたら `true` を返す。
+- `addExerciseToPart(part, name, measurementType, category, availableGrips, availableGripStyles)`: 指定部位に新種目をマスタへ追加（部位は空なら「その他」、種目名は必須）。選択可能な握りの向き・握り方候補も保存する。先頭に追加し、部位が未登録ならパレット色つきで `state.parts` に登録。画面遷移・記録作成はしない。追加できたら `true` を返す。
+- `updateExercise(exerciseId, { part, name, measurementType, category, availableGrips, availableGripStyles })`: 種目の部位・名前・記録単位・カテゴリ・握りの向き候補・握り方候補をまとめて更新（種目名は必須、部位が空なら「その他」）。部位が未登録ならパレット色つきで `state.parts` に登録。改名・部位変更時は既存ワークアウトの `name` / `part` スナップショットも同期。更新できたら `true` を返す。候補から外した値も過去セットの保存値からは削除しない。
 - `updateExerciseGoal`: 指定種目の現在目標を設定・更新する。`undefined` の場合は目標を解除する。
 - `reorderPartExercises(part, layout)`: 指定部位の種目を `layout`（`{ id, category }` の配列＝並び順とカテゴリ）どおりに反映する。部位内の種目だけを並び替え、他部位の種目はマスタ配列内の位置を保つ。カテゴリをまたいでドロップした種目は移動先カテゴリへ変更される。
 - `deleteExercise`: 種目を削除し、全プリセットから該当 ID を除去。

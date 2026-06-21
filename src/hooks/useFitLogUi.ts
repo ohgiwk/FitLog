@@ -15,6 +15,10 @@ export function useFitLogUi() {
   const [historyPartFilter, setHistoryPartFilter] = useState('ALL');
   const [editMode, setEditMode] = useState(false);
   const [activePart, setActivePart] = useState<string | null>(null);
+  const [exerciseEditor, setExerciseEditor] = useState<{
+    exerciseId: string | null;
+    part: string;
+  } | null>(null);
   const [goalAchievement, setGoalAchievement] = useState<GoalAchievement | null>(null);
 
   /**
@@ -32,6 +36,8 @@ export function useFitLogUi() {
     activePart,
     setActivePart,
     selectPart,
+    exerciseEditor,
+    setExerciseEditor,
     goalAchievement,
     setGoalAchievement,
   };

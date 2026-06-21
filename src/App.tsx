@@ -4,6 +4,7 @@ import { FitLogProvider } from './hooks/FitLogContext';
 import { useFitLogContext } from './hooks/useFitLogContext';
 import { DetailScreen } from './screens/DetailScreen';
 import { ExerciseHistoryScreen } from './screens/ExerciseHistoryScreen';
+import { ExerciseEditScreen } from './screens/ExerciseEditScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { GoalAchievementScreen } from './screens/GoalAchievementScreen';
@@ -60,6 +61,7 @@ function AppShell() {
       <main className="app">
         {screen === 'home' && <HomeScreen />}
         {screen === 'select' && <SelectScreen />}
+        {screen === 'exerciseEdit' && <ExerciseEditScreen />}
         {screen === 'detail' && currentWorkout && <DetailScreen />}
         {screen === 'exerciseHistory' && currentWorkout && <ExerciseHistoryScreen />}
         {screen === 'goalAchievements' && <GoalAchievementScreen />}

@@ -1,26 +1,35 @@
 import { MouseEvent, PointerEvent, ReactNode, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, HistoryIcon, PlusIcon, TrashIcon } from '../icons';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronUp,
+  HistoryIcon,
+  PlusIcon,
+  TrashIcon,
+} from '../icons';
 import {
   calcRm,
   formatStoredWeightInput,
   formatWeight,
   formatWeightForStorageInput,
+  gripOptions,
+  gripStyleOptions,
   intensityOptions,
   isRepsMeasurement,
   measurementUnit,
   number,
   weightUnitLabel,
 } from '../utils';
-import { LastRecord } from '../components/LastRecord';
 import { IntensityIcon } from '../components/IntensityIcon';
 import { RestTimer } from '../components/RestTimer';
 import { useFitLogContext } from '../hooks/useFitLogContext';
+import { GripStyleType, GripType } from '../types';
 
 /**
  * 種目詳細画面が必要とする state・操作を Context から組み立てる view-model フック
  */
 function useDetailScreenModel() {
-  const { currentWorkout, selectedDate, state, actions } = useFitLogContext();
+  const { currentWorkout, state, actions } = useFitLogContext();
   const exercise = currentWorkout
     ? state.exercises.find((item) => item.id === currentWorkout.exerciseId)
     : undefined;
@@ -28,8 +37,6 @@ function useDetailScreenModel() {
   return {
     workout: currentWorkout,
     exercise,
-    selectedDate,
-    workouts: state.workouts,
     weightUnit: state.weightUnit,
     readOnly: Boolean(currentWorkout && state.workoutEndTimes[currentWorkout.date]),
     onBack: () => actions.setScreen('home'),
@@ -37,6 +44,8 @@ function useDetailScreenModel() {
     onUpdateSet: actions.updateSet,
     onUpdateWorkoutNote: actions.updateWorkoutNote,
     onUpdateSetIntensity: actions.updateSetIntensity,
+    onUpdateWorkoutGrip: actions.updateWorkoutGrip,
+    onUpdateWorkoutGripStyle: actions.updateWorkoutGripStyle,
     onDeleteSet: actions.deleteSet,
     onAddSet: actions.addSet,
     onUpdateExerciseGoal: actions.updateExerciseGoal,
@@ -147,6 +156,100 @@ function ExerciseGoalEditor({
           </div>
         )}
       </div>
+    </section>
+  );
+}
+
+function WorkoutGripEditor({
+  workout,
+  exercise,
+  readOnly,
+  onUpdateGrip,
+  onUpdateGripStyle,
+}: {
+  workout: NonNullable<ReturnType<typeof useDetailScreenModel>['workout']>;
+  exercise: ReturnType<typeof useDetailScreenModel>['exercise'];
+  readOnly: boolean;
+  onUpdateGrip: (workoutId: string, grip?: GripType) => void;
+  onUpdateGripStyle: (workoutId: string, gripStyle?: GripStyleType) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <section className="workout-grip-editor" aria-label="グリップ">
+      <button
+        className="workout-grip-toggle"
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>詳細記録</span>
+        {open ? <ChevronUp /> : <ChevronDown />}
+      </button>
+      {open && (
+        <div className="workout-grip-fields">
+          <label>
+            <span>握りの向き</span>
+            <select
+              value={workout.grip ?? ''}
+              disabled={readOnly}
+              onChange={(event) =>
+                onUpdateGrip(
+                  workout.id,
+                  event.target.value ? (event.target.value as GripType) : undefined,
+                )
+              }
+            >
+              <option value="">未選択</option>
+              {workout.grip && !exercise?.availableGrips?.includes(workout.grip) && (
+                <option value={workout.grip}>
+                  {gripOptions.find((option) => option.value === workout.grip)?.label ??
+                    workout.grip}
+                </option>
+              )}
+              {gripOptions
+                .filter((option) => exercise?.availableGrips?.includes(option.value))
+                .map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label>
+            <span>握り方</span>
+            <select
+              value={workout.gripStyle ?? ''}
+              disabled={readOnly}
+              onChange={(event) =>
+                onUpdateGripStyle(
+                  workout.id,
+                  event.target.value
+                    ? (event.target.value as GripStyleType)
+                    : undefined,
+                )
+              }
+            >
+              <option value="">未選択</option>
+              {workout.gripStyle &&
+                !exercise?.availableGripStyles?.includes(workout.gripStyle) && (
+                  <option value={workout.gripStyle}>
+                    {gripStyleOptions.find(
+                      (option) => option.value === workout.gripStyle,
+                    )?.label ?? workout.gripStyle}
+                  </option>
+                )}
+              {gripStyleOptions
+                .filter((option) => exercise?.availableGripStyles?.includes(option.value))
+                .map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+            </select>
+          </label>
+        </div>
+      )}
     </section>
   );
 }
@@ -289,8 +392,6 @@ export function DetailScreen() {
   const {
     workout,
     exercise,
-    selectedDate,
-    workouts,
     weightUnit,
     readOnly,
     onBack,
@@ -298,6 +399,8 @@ export function DetailScreen() {
     onUpdateSet,
     onUpdateWorkoutNote,
     onUpdateSetIntensity,
+    onUpdateWorkoutGrip,
+    onUpdateWorkoutGripStyle,
     onDeleteSet,
     onAddSet,
     onUpdateExerciseGoal,
@@ -321,21 +424,24 @@ export function DetailScreen() {
       </header>
       <div className="content">
         {exercise && (
-          <ExerciseGoalEditor
-            exerciseId={exercise.id}
-            measurementType={exercise.measurementType}
-            goal={exercise.goal}
-            weightUnit={weightUnit}
-            readOnly={readOnly}
-            onSave={onUpdateExerciseGoal}
-          />
+          <>
+            <ExerciseGoalEditor
+              exerciseId={exercise.id}
+              measurementType={exercise.measurementType}
+              goal={exercise.goal}
+              weightUnit={weightUnit}
+              readOnly={readOnly}
+              onSave={onUpdateExerciseGoal}
+            />
+            <WorkoutGripEditor
+              workout={workout}
+              exercise={exercise}
+              readOnly={readOnly}
+              onUpdateGrip={onUpdateWorkoutGrip}
+              onUpdateGripStyle={onUpdateWorkoutGripStyle}
+            />
+          </>
         )}
-        <LastRecord
-          workout={workout}
-          selectedDate={selectedDate}
-          workouts={workouts}
-          weightUnit={weightUnit}
-        />
         <div className="detail-table">
           {workout.sets.map((set, index) => (
             <SwipeableSetRow

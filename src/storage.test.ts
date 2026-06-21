@@ -115,6 +115,135 @@ describe('normalizeState', () => {
     expect(result?.workouts[0].sets[0].intensity).toBeUndefined();
   });
 
+  it('種目の候補と種目記録の握り設定を正規化する', () => {
+    const saved = {
+      ...makeValidSaved(),
+      exercises: [
+        {
+          id: 'e1',
+          part: '背中',
+          name: 'ラットプルダウン',
+          measurementType: 'reps',
+          availableGrips: ['normal', 'parallel', 'alternate', 'normal', 'invalid'],
+          availableGripStyles: ['thumbAround', 'hook', 'thumbAround', 'invalid'],
+        },
+      ],
+      workouts: [
+        {
+          id: 'w1',
+          exerciseId: 'e1',
+          date: '2026-06-21',
+          name: 'ラットプルダウン',
+          part: '背中',
+          measurementType: 'reps',
+          grip: 'parallel',
+          gripStyle: 'hook',
+          sets: [
+            { id: 's1', weight: 50, recordValue: 10 },
+            { id: 's2', weight: 45, recordValue: 10 },
+          ],
+        },
+      ],
+    };
+    const result = normalizeState(saved as unknown as Partial<State>);
+    expect(result?.exercises[0].availableGrips).toEqual(['normal', 'parallel', 'alternate']);
+    expect(result?.exercises[0].availableGripStyles).toEqual(['thumbAround', 'hook']);
+    expect(result?.workouts[0].grip).toBe('parallel');
+    expect(result?.workouts[0].gripStyle).toBe('hook');
+    expect(result?.workouts[0].sets[0]).not.toHaveProperty('grip');
+    expect(result?.workouts[0].sets[0]).not.toHaveProperty('gripStyle');
+  });
+
+  it('旧セット単位の握り設定は種目記録へ移行しない', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      workouts: [
+        {
+          id: 'w1',
+          exerciseId: 'e1',
+          date: '2026-06-21',
+          name: 'ベンチプレス',
+          part: '胸',
+          measurementType: 'reps',
+          sets: [
+            {
+              id: 's1',
+              weight: 50,
+              recordValue: 10,
+              grip: 'reverse',
+              gripStyle: 'thumbLess',
+            },
+            {
+              id: 's2',
+              weight: 45,
+              recordValue: 10,
+              grip: 'parallel',
+              gripStyle: 'hook',
+            },
+          ],
+        },
+      ],
+    } as unknown as Partial<State>);
+    expect(result?.workouts[0].grip).toBeUndefined();
+    expect(result?.workouts[0].gripStyle).toBeUndefined();
+    expect(result?.workouts[0].sets[0]).not.toHaveProperty('grip');
+    expect(result?.workouts[0].sets[0]).not.toHaveProperty('gripStyle');
+  });
+
+  it('グリップ設定がない旧データは全候補を有効にして読み込む', () => {
+    const result = normalizeState(makeValidSaved() as unknown as Partial<State>);
+    expect(result?.exercises[0].availableGrips).toEqual([
+      'normal',
+      'reverse',
+      'parallel',
+      'alternate',
+    ]);
+  });
+
+  it('catalogVersion 4 未満のグリップ候補は全て有効に移行する', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      catalogVersion: 3,
+      exercises: [
+        {
+          id: 'e1',
+          part: '胸',
+          name: 'ベンチプレス',
+          measurementType: 'reps',
+          availableGrips: ['normal'],
+        },
+      ],
+    } as unknown as Partial<State>);
+    expect(result?.exercises[0].availableGrips).toEqual([
+      'normal',
+      'reverse',
+      'parallel',
+      'alternate',
+    ]);
+  });
+
+  it('catalogVersion 5 未満の握り方候補は全て有効に移行する', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      catalogVersion: 4,
+      exercises: [
+        {
+          id: 'e1',
+          part: '胸',
+          name: 'ベンチプレス',
+          measurementType: 'reps',
+          availableGripStyles: ['hook'],
+        },
+      ],
+    } as unknown as Partial<State>);
+    expect(result?.exercises[0].availableGripStyles).toEqual([
+      'thumbAround',
+      'thumbLess',
+      'thumbUp',
+      'hook',
+    ]);
+  });
+
   it('種目メモを保持し、旧セットメモは破棄する', () => {
     const saved = {
       exercises: [{ id: 'e1', part: '胸', name: 'ベンチ', measurementType: 'reps' }],

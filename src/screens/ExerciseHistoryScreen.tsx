@@ -4,6 +4,8 @@ import { ChevronLeft } from '../icons';
 import {
   calcRm,
   formatWeight,
+  gripLabel,
+  gripStyleLabel,
   isBlank,
   isRepsMeasurement,
   measurementLabel,
@@ -89,6 +91,20 @@ export function ExerciseHistoryScreen() {
                         : `TOTAL : ${total}秒 MAX 1RM : -`}
                     </div>
                   </header>
+                  {(item.grip || item.gripStyle) && (
+                    <div className="history-workout-grip">
+                      {item.grip && (
+                        <span>
+                          握りの向き <strong>{gripLabel(item.grip)}</strong>
+                        </span>
+                      )}
+                      {item.gripStyle && (
+                        <span>
+                          握り方 <strong>{gripStyleLabel(item.gripStyle)}</strong>
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <table className="history-set-table">
                     <thead>
                       <tr>

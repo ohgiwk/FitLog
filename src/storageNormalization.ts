@@ -4,6 +4,10 @@ import {
   ExerciseCategory,
   ExerciseGoal,
   ExerciseGoalAchievement,
+  GripStyleType,
+  gripStyleTypes,
+  GripType,
+  gripTypes,
   MeasurementType,
   PartSetting,
   Preset,
@@ -71,9 +75,25 @@ export function createDefaultState(): State {
 export function normalizeState(saved: Partial<State> | null | undefined): State | null {
   if (!saved?.exercises || !saved?.workouts) return null;
   const catalogVersion = typeof saved.catalogVersion === 'number' ? saved.catalogVersion : 1;
-  const exercises = normalizeExercises(saved.exercises);
+  const normalizedExercises = normalizeExercises(saved.exercises);
+  const exercises =
+    catalogVersion < 4
+      ? normalizedExercises.map((exercise) => ({
+          ...exercise,
+          availableGrips: [...gripTypes],
+        }))
+      : normalizedExercises;
+  const exercisesWithGripStyles =
+    catalogVersion < 5
+      ? exercises.map((exercise) => ({
+          ...exercise,
+          availableGripStyles: [...gripStyleTypes],
+        }))
+      : exercises;
   const mergedExercises =
-    catalogVersion < starterCatalogVersion ? mergeStarterExercises(exercises) : exercises;
+    catalogVersion < starterCatalogVersion
+      ? mergeStarterExercises(exercisesWithGripStyles)
+      : exercisesWithGripStyles;
   const workouts = normalizeWorkouts(saved.workouts);
   const trainingDays = normalizeTrainingDays(saved.trainingDays);
   const trainingPlans = normalizeTrainingPlans(saved.trainingPlans);
@@ -303,6 +323,8 @@ function normalizeExercises(value: unknown): State['exercises'] {
         name: item.name,
         measurementType: normalizeMeasurementType(item.measurementType),
         category: normalizeExerciseCategory(item.category, item.part, item.name),
+        availableGrips: normalizeGrips(item.availableGrips),
+        availableGripStyles: normalizeGripStyles(item.availableGripStyles),
         goal: normalizeExerciseGoal(item.goal),
       },
     ];
@@ -354,6 +376,8 @@ function normalizeWorkouts(value: unknown): State['workouts'] {
         name: item.name,
         part: item.part,
         measurementType: normalizeMeasurementType(item.measurementType),
+        grip: normalizeGrip(item.grip),
+        gripStyle: normalizeGripStyle(item.gripStyle),
         sets: normalizeSets(item.sets),
         note: typeof item.note === 'string' ? item.note : '',
       },
@@ -383,6 +407,30 @@ function normalizeSetValue(value: unknown) {
 
 function normalizeMeasurementType(value: unknown): MeasurementType {
   return value === 'seconds' ? 'seconds' : 'reps';
+}
+
+function normalizeGrips(value: unknown): GripType[] {
+  if (!Array.isArray(value)) return [...gripTypes];
+  return [...new Set(value.map(normalizeGrip).filter((grip): grip is GripType => Boolean(grip)))];
+}
+
+function normalizeGrip(value: unknown): GripType | undefined {
+  return gripTypes.includes(value as GripType) ? (value as GripType) : undefined;
+}
+
+function normalizeGripStyles(value: unknown): GripStyleType[] {
+  if (!Array.isArray(value)) return [...gripStyleTypes];
+  return [
+    ...new Set(
+      value
+        .map(normalizeGripStyle)
+        .filter((gripStyle): gripStyle is GripStyleType => Boolean(gripStyle)),
+    ),
+  ];
+}
+
+function normalizeGripStyle(value: unknown): GripStyleType | undefined {
+  return gripStyleTypes.includes(value as GripStyleType) ? (value as GripStyleType) : undefined;
 }
 
 function normalizeIntensity(value: unknown): SetIntensity | undefined {

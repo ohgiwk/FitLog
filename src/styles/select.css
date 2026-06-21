@@ -152,102 +152,6 @@
   color: var(--red);
 }
 
-.add-form {
-  display: grid;
-  gap: 12px;
-  margin: 10px 11px 16px;
-  border-radius: 12px;
-  padding: 14px;
-  background: var(--surface);
-}
-
-.add-exercise-dialog {
-  width: min(100%, 360px);
-}
-
-.add-exercise-dialog .add-form {
-  margin: 0;
-  padding: 0;
-  background: transparent;
-}
-
-.add-form label {
-  display: grid;
-  gap: 6px;
-  color: var(--text-form);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.add-form-detail-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-height: 36px;
-  margin-top: 6px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.add-form-detail-toggle svg {
-  width: 18px;
-  height: 18px;
-}
-
-.form-field {
-  display: grid;
-  gap: 6px;
-}
-
-.form-field-row {
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 12px;
-}
-
-.form-field-row .measurement-toggle {
-  justify-self: end;
-}
-
-.add-form .primary {
-  margin-top: 6px;
-}
-
-.form-label {
-  color: var(--text-form);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.add-form input {
-  min-height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 0 12px;
-  text-align: left;
-}
-
-.add-form select {
-  width: 100%;
-  min-height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 0 12px;
-  background: var(--surface-muted);
-  color: var(--ink);
-  font-weight: 800;
-}
-
-.add-form .form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
 .measurement-toggle {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -259,11 +163,6 @@
   padding: 3px;
 }
 
-.measurement-toggle.compact {
-  width: 96px;
-  min-height: 32px;
-}
-
 .measurement-toggle button {
   border-radius: 6px;
   color: var(--text-secondary-strong);
@@ -271,12 +170,129 @@
   font-weight: 900;
 }
 
-.measurement-toggle.compact button {
-  font-size: 12px;
-}
-
 .measurement-toggle button.active {
   background: var(--surface);
   color: var(--red);
   box-shadow: 0 1px 4px var(--shadow-soft);
+}
+
+.exercise-editor-content {
+  padding: 14px 14px 30px;
+}
+
+.exercise-editor-form {
+  display: grid;
+  gap: 14px;
+}
+
+.exercise-editor-section {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--border-faint);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--surface);
+  box-shadow: 0 5px 16px var(--shadow-soft);
+}
+
+.exercise-editor-section h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.exercise-editor-fields {
+  display: grid;
+  gap: 14px;
+}
+
+.exercise-editor-fields > label {
+  display: grid;
+  gap: 7px;
+  color: var(--text-form);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.exercise-editor-fields input,
+.exercise-editor-fields select {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.exercise-editor-field-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  color: var(--text-form);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.exercise-editor-field-row .measurement-toggle {
+  justify-self: end;
+}
+
+.exercise-option-fieldset {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.exercise-option-fieldset + .exercise-option-fieldset {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.exercise-option-fieldset legend {
+  padding: 0;
+  color: var(--text-form);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.exercise-checkbox-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.exercise-checkbox-list label {
+  display: flex;
+  min-width: 0;
+  min-height: 46px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 10px;
+  background: var(--surface-subtle);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.exercise-checkbox-list input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--red);
+}
+
+.exercise-editor-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }

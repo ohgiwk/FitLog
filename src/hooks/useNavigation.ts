@@ -79,7 +79,7 @@ export function useNavigation({
       }
     }
     if (next !== 'detail' && next !== 'exerciseHistory') cleanupBlankDetailSets();
-    if (next !== 'select') setEditMode(false);
+    if (next !== 'select' && next !== 'exerciseEdit') setEditMode(false);
     setScreen(next);
   }
 

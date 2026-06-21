@@ -1,7 +1,7 @@
-import { Exercise, ExerciseCategory } from '../types';
+import { Exercise, ExerciseCategory, gripStyleTypes, gripTypes } from '../types';
 import { uid } from '../utils';
 
-export const starterCatalogVersion = 3;
+export const starterCatalogVersion = 5;
 
 /**
  * 部位ごと・カテゴリごとの種目名定義。
@@ -156,6 +156,8 @@ export const starterExercises: Exercise[] = starterCatalog.flatMap(({ part, cate
       name,
       measurementType: 'reps' as const,
       category,
+      availableGrips: [...gripTypes],
+      availableGripStyles: [...gripStyleTypes],
     })),
   ),
 );

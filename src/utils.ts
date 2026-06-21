@@ -3,6 +3,10 @@ import {
   Exercise,
   ExerciseCategory,
   ExerciseGoal,
+  GripStyleType,
+  gripStyleTypes,
+  GripType,
+  gripTypes,
   MeasurementType,
   SetIntensity,
   WeightUnit,
@@ -26,6 +30,32 @@ export const exerciseCategories: { value: ExerciseCategory; label: string }[] = 
  * 種目のカテゴリ未設定時に使う既定カテゴリ
  */
 export const defaultExerciseCategory: ExerciseCategory = 'free';
+
+export const gripOptions: { value: GripType; label: string }[] = [
+  { value: 'normal', label: 'ノーマルグリップ' },
+  { value: 'reverse', label: 'リバースグリップ' },
+  { value: 'parallel', label: 'パラレルグリップ' },
+  { value: 'alternate', label: 'オルタネイトグリップ' },
+];
+
+export const allGripTypes: GripType[] = [...gripTypes];
+
+export function gripLabel(grip: GripType) {
+  return gripOptions.find((option) => option.value === grip)?.label ?? grip;
+}
+
+export const gripStyleOptions: { value: GripStyleType; label: string }[] = [
+  { value: 'thumbAround', label: 'サムアラウンドグリップ' },
+  { value: 'thumbLess', label: 'サムレスグリップ' },
+  { value: 'thumbUp', label: 'サムアップグリップ' },
+  { value: 'hook', label: 'フックグリップ' },
+];
+
+export const allGripStyleTypes: GripStyleType[] = [...gripStyleTypes];
+
+export function gripStyleLabel(gripStyle: GripStyleType) {
+  return gripStyleOptions.find((option) => option.value === gripStyle)?.label ?? gripStyle;
+}
 
 export function groupExercises(exercises: Exercise[]) {
   return exercises.reduce((groups, exercise) => {
@@ -194,6 +224,8 @@ export function formatWeightForStorageInput(value: string, unit: WeightUnit) {
 
 export function isUnstartedWorkout(workout: Workout) {
   return (
+    !workout.grip &&
+    !workout.gripStyle &&
     workout.sets.length === 5 &&
     workout.sets.every((set) => number(set.weight) === 0 && number(set.recordValue) === 0)
   );

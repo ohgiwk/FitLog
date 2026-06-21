@@ -77,12 +77,23 @@ export function useFitLog() {
     core.saveState((current) => ({ ...current, weightUnit }));
   }
 
+  function openExerciseEditor(part: string, exerciseId: string | null = null) {
+    ui.setExerciseEditor({ part, exerciseId });
+    nav.showScreen('exerciseEdit');
+  }
+
+  function closeExerciseEditor() {
+    ui.setExerciseEditor(null);
+    nav.showScreen('select');
+  }
+
   return {
     currentPreset: presets.currentPreset,
     currentWorkout: nav.currentWorkout,
     editMode: ui.editMode,
     editingPreset: presets.editingPreset,
     activePart: ui.activePart,
+    exerciseEditor: ui.exerciseEditor,
     groupedExercises: selectors.groupedExercises,
     historyPartFilter: ui.historyPartFilter,
     partRecentLabels: selectors.partRecentLabels,
@@ -116,6 +127,7 @@ export function useFitLog() {
       movePresetExercise: presets.movePresetExercise,
       moveWorkout: workout.moveWorkout,
       openWorkoutDetail: workout.openWorkoutDetail,
+      openExerciseEditor,
       removeExerciseFromPreset: presets.removeExerciseFromPreset,
       renamePreset: presets.renamePreset,
       resumeWorkoutDay: workout.resumeWorkoutDay,
@@ -139,9 +151,12 @@ export function useFitLog() {
       updateExercise: exercise.updateExercise,
       updateExerciseGoal: exercise.updateExerciseGoal,
       clearGoalAchievement: () => ui.setGoalAchievement(null),
+      closeExerciseEditor,
       updateSet: workout.updateSet,
       updateWorkoutNote: workout.updateWorkoutNote,
       updateSetIntensity: workout.updateSetIntensity,
+      updateWorkoutGrip: workout.updateWorkoutGrip,
+      updateWorkoutGripStyle: workout.updateWorkoutGripStyle,
     },
   };
 }
