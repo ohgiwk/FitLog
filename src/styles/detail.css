@@ -169,8 +169,46 @@
 }
 
 .detail-table {
+  overflow: hidden;
   margin: 0 14px 18px;
   background: var(--surface);
+}
+
+.detail-swipe-row {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--detail-line);
+  background: var(--red);
+}
+
+.detail-swipe-row.readonly {
+  background: var(--surface);
+}
+
+.detail-set-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 4px;
+  width: 72px;
+  background: var(--red);
+  color: var(--text-on-primary);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.detail-set-delete svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
 }
 
 .workout-note {
@@ -209,12 +247,20 @@
 
 .detail-row {
   display: grid;
-  grid-template-columns: 34px 1fr 1fr 62px 36px;
+  grid-template-columns: 34px 1fr 1fr 62px;
   gap: 8px;
   align-items: start;
   min-height: 134px;
-  border-bottom: 1px solid var(--detail-line);
   padding: 11px 8px 9px;
+  background: var(--surface);
+  touch-action: pan-y;
+  transition: transform 0.2s ease;
+  will-change: transform;
+}
+
+.detail-row.dragging {
+  transition: none;
+  user-select: none;
 }
 
 .detail-row .num {
@@ -330,12 +376,6 @@
   font-size: 14px;
   text-align: center;
   white-space: nowrap;
-}
-
-.check {
-  width: 34px;
-  height: 42px;
-  color: var(--ink);
 }
 
 .history-btn {

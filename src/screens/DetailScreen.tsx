@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { MouseEvent, PointerEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, HistoryIcon, PlusIcon, TrashIcon } from '../icons';
 import {
   calcRm,
@@ -151,6 +151,137 @@ function ExerciseGoalEditor({
   );
 }
 
+const setDeleteActionWidth = 72;
+
+function SwipeableSetRow({
+  children,
+  open,
+  readOnly,
+  deleteLabel,
+  onOpenChange,
+  onDelete,
+}: {
+  children: ReactNode;
+  open: boolean;
+  readOnly: boolean;
+  deleteLabel: string;
+  onOpenChange: (open: boolean) => void;
+  onDelete: () => void;
+}) {
+  const [dragOffset, setDragOffset] = useState(open ? -setDeleteActionWidth : 0);
+  const [dragging, setDragging] = useState(false);
+  const swipeStart = useRef<{
+    x: number;
+    y: number;
+    offset: number;
+    direction: 'pending' | 'horizontal' | 'vertical';
+  } | null>(null);
+  const suppressClick = useRef(false);
+
+  useEffect(() => {
+    if (!dragging) setDragOffset(open ? -setDeleteActionWidth : 0);
+  }, [dragging, open]);
+
+  function startSwipe(event: PointerEvent<HTMLDivElement>) {
+    if (readOnly || event.button !== 0) return;
+    swipeStart.current = {
+      x: event.clientX,
+      y: event.clientY,
+      offset: open ? -setDeleteActionWidth : 0,
+      direction: 'pending',
+    };
+    setDragging(false);
+  }
+
+  function moveSwipe(event: PointerEvent<HTMLDivElement>) {
+    const start = swipeStart.current;
+    if (!start) return;
+    const diffX = event.clientX - start.x;
+    const diffY = event.clientY - start.y;
+
+    if (start.direction === 'pending' && Math.max(Math.abs(diffX), Math.abs(diffY)) > 8) {
+      start.direction = Math.abs(diffX) > Math.abs(diffY) ? 'horizontal' : 'vertical';
+      if (start.direction === 'horizontal') {
+        event.currentTarget.setPointerCapture(event.pointerId);
+        setDragging(true);
+      }
+    }
+    if (start.direction !== 'horizontal') return;
+
+    event.preventDefault();
+    setDragOffset(Math.max(-setDeleteActionWidth, Math.min(0, start.offset + diffX)));
+  }
+
+  function finishSwipe(event: PointerEvent<HTMLDivElement>) {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start || start.direction !== 'horizontal') return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    const finishOffset = Math.max(
+      -setDeleteActionWidth,
+      Math.min(0, start.offset + event.clientX - start.x),
+    );
+    const shouldOpen = finishOffset <= -setDeleteActionWidth / 2;
+    suppressClick.current = true;
+    setDragging(false);
+    setDragOffset(shouldOpen ? -setDeleteActionWidth : 0);
+    onOpenChange(shouldOpen);
+    globalThis.setTimeout(() => {
+      suppressClick.current = false;
+    }, 0);
+  }
+
+  function cancelSwipe() {
+    swipeStart.current = null;
+    setDragging(false);
+    setDragOffset(open ? -setDeleteActionWidth : 0);
+  }
+
+  function closeOnClick(event: MouseEvent<HTMLDivElement>) {
+    if (suppressClick.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    if (!open) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setDragOffset(0);
+    onOpenChange(false);
+  }
+
+  return (
+    <div className={`detail-swipe-row${readOnly ? ' readonly' : ''}`}>
+      {!readOnly && (
+        <button
+          className="detail-set-delete"
+          type="button"
+          aria-label={deleteLabel}
+          aria-hidden={!open}
+          tabIndex={open ? 0 : -1}
+          onClick={onDelete}
+        >
+          <TrashIcon />
+          <span>削除</span>
+        </button>
+      )}
+      <div
+        className={`detail-row${dragging ? ' dragging' : ''}`}
+        style={{ transform: `translateX(${dragOffset}px)` }}
+        onPointerDown={startSwipe}
+        onPointerMove={moveSwipe}
+        onPointerUp={finishSwipe}
+        onPointerCancel={cancelSwipe}
+        onClickCapture={closeOnClick}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 /**
  * 種目詳細画面。各セットの重量・記録・強度の入力やレストタイマーを表示する
  */
@@ -171,6 +302,7 @@ export function DetailScreen() {
     onAddSet,
     onUpdateExerciseGoal,
   } = useDetailScreenModel();
+  const [openDeleteSetId, setOpenDeleteSetId] = useState<string | null>(null);
   if (!workout) return null;
   const isReps = isRepsMeasurement(workout.measurementType);
   const unit = measurementUnit(workout.measurementType);
@@ -206,7 +338,17 @@ export function DetailScreen() {
         />
         <div className="detail-table">
           {workout.sets.map((set, index) => (
-            <div className="detail-row" key={set.id}>
+            <SwipeableSetRow
+              key={set.id}
+              open={openDeleteSetId === set.id}
+              readOnly={readOnly}
+              deleteLabel={`${index + 1}セット目を削除`}
+              onOpenChange={(open) => setOpenDeleteSetId(open ? set.id : null)}
+              onDelete={() => {
+                setOpenDeleteSetId(null);
+                onDeleteSet(set.id);
+              }}
+            >
               <div className="num">{index + 1}</div>
               <label className="field">
                 <input
@@ -246,16 +388,6 @@ export function DetailScreen() {
                     )} ${weightUnitLabel(weightUnit)}`
                   : '-'}
               </div>
-              {!readOnly && (
-                <button
-                  className="check"
-                  type="button"
-                  aria-label="セット削除"
-                  onClick={() => onDeleteSet(set.id)}
-                >
-                  <TrashIcon />
-                </button>
-              )}
               <div className="intensity-picker" aria-label={`${index + 1}セット目の強度`}>
                 {intensityOptions.map((option) => (
                   <button
@@ -276,7 +408,7 @@ export function DetailScreen() {
                   </button>
                 ))}
               </div>
-            </div>
+            </SwipeableSetRow>
           ))}
         </div>
         <label className="workout-note">

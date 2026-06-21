@@ -6,7 +6,6 @@
 .delete-workout,
 .preset-delete,
 .preset-row-btn,
-.check,
 .history-btn,
 .home-menu-btn,
 .drawer-link {
@@ -95,7 +94,6 @@
 .delete-workout svg,
 .preset-delete svg,
 .preset-row-btn svg,
-.check svg,
 .history-btn svg,
 .home-menu-btn svg,
 .drawer-link svg {
@@ -106,8 +104,7 @@
 }
 
 .chev svg,
-.icon svg,
-.check svg {
+.icon svg {
   width: 25px;
   height: 25px;
 }
@@ -130,10 +127,6 @@
   width: 23px;
   height: 23px;
   stroke-width: 2.5;
-}
-
-.check svg {
-  stroke-width: 2.4;
 }
 
 .history-btn svg {
