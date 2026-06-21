@@ -223,7 +223,7 @@ export function HomeScreen() {
           <div className="empty">
             <div>
               <strong>この日の種目はまだありません</strong>
-              {!workoutStartTime && (
+              {!workoutEndTime && (
                 <button
                   className="primary start-training-button"
                   type="button"
