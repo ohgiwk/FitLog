@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarIcon, HomeIcon } from './icons';
+import { AnalysisIcon, CalendarIcon, HomeIcon } from './icons';
 import { FitLogProvider } from './hooks/FitLogContext';
 import { useFitLogContext } from './hooks/useFitLogContext';
 import { DetailScreen } from './screens/DetailScreen';
@@ -13,6 +13,7 @@ import { PresetEditScreen } from './screens/PresetEditScreen';
 import { PresetListScreen } from './screens/PresetListScreen';
 import { SelectScreen } from './screens/SelectScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { AnalysisScreen } from './screens/AnalysisScreen';
 import {
   formatStoredWeightInput,
   formatWeightForStorageInput,
@@ -68,6 +69,7 @@ function AppShell() {
         {screen === 'preset' && <PresetListScreen />}
         {screen === 'presetEdit' && <PresetEditScreen />}
         {screen === 'history' && <HistoryScreen />}
+        {screen === 'analysis' && <AnalysisScreen />}
         {screen === 'partEdit' && <PartEditScreen />}
         {screen === 'settings' && <SettingsScreen />}
       </main>
@@ -88,6 +90,14 @@ function AppShell() {
         >
           <CalendarIcon />
           <span>履歴/計画</span>
+        </button>
+        <button
+          className={`nav-item ${screen === 'analysis' ? 'active' : ''}`}
+          type="button"
+          onClick={() => actions.setScreen('analysis')}
+        >
+          <AnalysisIcon />
+          <span>分析</span>
         </button>
       </nav>
       <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">

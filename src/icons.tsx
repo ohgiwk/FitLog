@@ -1,6 +1,7 @@
 import {
   IconCalendarMonth,
   IconCategory,
+  IconChartBar,
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
@@ -64,6 +65,10 @@ export function MenuIcon() {
 
 export function CalendarIcon() {
   return <IconCalendarMonth />;
+}
+
+export function AnalysisIcon() {
+  return <IconChartBar />;
 }
 
 export function SettingsIcon() {

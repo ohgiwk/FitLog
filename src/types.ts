@@ -8,6 +8,7 @@ export type Screen =
   | 'preset'
   | 'presetEdit'
   | 'history'
+  | 'analysis'
   | 'partEdit'
   | 'settings';
 

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { buildUpcomingPlans, buildVisibleHistory, plannedPartsForDate } from './fitLogSelectors';
+import {
+  buildExerciseCounts,
+  buildPartCounts,
+  buildUpcomingPlans,
+  buildVisibleHistory,
+  plannedPartsForDate,
+} from './fitLogSelectors';
 import { TrainingPlan, Workout } from '../types';
 
 const workout: Workout = {
@@ -53,5 +59,74 @@ describe('history selectors', () => {
     const result = buildUpcomingPlans('2026-06-20', plans, 2);
     expect(result.map((item) => item.date)).toEqual(['2026-06-20', '2026-06-21']);
     expect(result[0].parts).toEqual(['胸', '脚']);
+  });
+});
+
+describe('analysis selectors', () => {
+  it('記録済みワークアウトだけを種目別に集計し、回数の多い順に並べる', () => {
+    const result = buildExerciseCounts([
+      { ...workout, sets: [{ id: 's1', weight: 60, recordValue: 10 }] },
+      {
+        ...workout,
+        id: 'w2',
+        date: '2026-06-19',
+        sets: [{ id: 's2', weight: '', recordValue: 8 }],
+      },
+      {
+        ...workout,
+        id: 'w3',
+        exerciseId: 'e2',
+        name: 'スクワット',
+        part: '脚',
+        sets: [{ id: 's3', weight: 80, recordValue: 8 }],
+      },
+      {
+        ...workout,
+        id: 'w4',
+        exerciseId: 'e3',
+        name: '懸垂',
+        part: '背中',
+        sets: [{ id: 's4', weight: '', recordValue: '' }],
+      },
+    ]);
+
+    expect(result).toEqual([
+      { exerciseId: 'e1', part: '胸', name: 'ベンチプレス', count: 2 },
+      { exerciseId: 'e2', part: '脚', name: 'スクワット', count: 1 },
+    ]);
+  });
+
+  it('記録済みワークアウトだけを部位別に集計する', () => {
+    const result = buildPartCounts([
+      { ...workout, sets: [{ id: 's1', weight: 60, recordValue: 10 }] },
+      {
+        ...workout,
+        id: 'w2',
+        exerciseId: 'e2',
+        name: 'ダンベルフライ',
+        sets: [{ id: 's2', weight: 20, recordValue: 10 }],
+      },
+      {
+        ...workout,
+        id: 'w3',
+        exerciseId: 'e3',
+        name: 'スクワット',
+        part: '脚',
+        sets: [{ id: 's3', weight: 80, recordValue: 8 }],
+      },
+      {
+        ...workout,
+        id: 'w4',
+        exerciseId: 'e4',
+        name: '懸垂',
+        part: '背中',
+        sets: [{ id: 's4', weight: '', recordValue: '' }],
+      },
+    ]);
+
+    expect(result).toEqual([
+      { part: '胸', count: 2 },
+      { part: '脚', count: 1 },
+    ]);
   });
 });

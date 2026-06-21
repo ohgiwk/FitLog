@@ -1,11 +1,70 @@
 import { Exercise, PartSetting, Preset, State, Workout } from '../types';
 import { defaultPartColor } from '../data/partColors';
-import { isBlank, newSet, parseDate, uid } from '../utils';
+import { isBlank, isRecordedSet, newSet, parseDate, uid } from '../utils';
 
 /**
  * トレーニング日などで使う特別な部位。並びや色管理の対象外にする
  */
 export const REST_PART = 'レスト';
+
+export type ExerciseCount = {
+  exerciseId: string;
+  part: string;
+  name: string;
+  count: number;
+};
+
+export type PartCount = {
+  part: string;
+  count: number;
+};
+
+/**
+ * 記録済みセットを持つワークアウトを種目別に集計する
+ */
+export function buildExerciseCounts(workouts: Workout[]): ExerciseCount[] {
+  const counts = new Map<string, ExerciseCount>();
+
+  workouts.forEach((workout) => {
+    if (!workout.sets.some(isRecordedSet)) return;
+    const key = workout.exerciseId || workout.name;
+    const current = counts.get(key);
+    if (current) {
+      current.count += 1;
+      current.part = workout.part;
+      current.name = workout.name;
+      return;
+    }
+    counts.set(key, {
+      exerciseId: key,
+      part: workout.part,
+      name: workout.name,
+      count: 1,
+    });
+  });
+
+  return [...counts.values()].sort(
+    (a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ja'),
+  );
+}
+
+/**
+ * 記録済みセットを持つワークアウトを部位別に集計する
+ */
+export function buildPartCounts(workouts: Workout[]): PartCount[] {
+  const counts = new Map<string, number>();
+
+  workouts.forEach((workout) => {
+    if (!workout.sets.some(isRecordedSet)) return;
+    const part = workout.part.trim();
+    if (!part || part === REST_PART) return;
+    counts.set(part, (counts.get(part) ?? 0) + 1);
+  });
+
+  return [...counts.entries()]
+    .map(([part, count]) => ({ part, count }))
+    .sort((a, b) => b.count - a.count || a.part.localeCompare(b.part, 'ja'));
+}
 
 /**
  * 明示的な部位設定(順序・色)に、データ上だけ存在する部位を補って

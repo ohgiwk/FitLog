@@ -131,7 +131,7 @@
   left: 0;
   z-index: 15;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   max-width: 480px;
   height: var(--bottom-nav-total-height);
   margin: 0 auto;
