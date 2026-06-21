@@ -101,7 +101,7 @@ export function HomeCalendar({
       >
         <div
           className={`home-calendar-track ${calendar.animating ? 'animating' : ''}`}
-          style={{ transform: `translateX(calc(-100% + ${calendar.dragOffset}px))` }}
+          style={{ transform: `translateX(${calendar.dragOffset}px)` }}
           onTransitionEnd={calendar.finishTransition}
         >
           {calendar.pages.map((page) => (

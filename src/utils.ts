@@ -45,6 +45,13 @@ export function calendarCells(year: number, month: number): CalendarCell[] {
   });
 }
 
+export function compactCalendarCells(year: number, month: number): CalendarCell[] {
+  const cells = calendarCells(year, month);
+  const lastInMonthIndex = cells.map((cell) => cell.inMonth).lastIndexOf(true);
+  const visibleCellCount = Math.ceil((lastInMonthIndex + 1) / 7) * 7;
+  return cells.slice(0, visibleCellCount);
+}
+
 export const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
 
 export function hexToRgba(hex: string, alpha: number) {

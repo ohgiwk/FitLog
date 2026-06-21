@@ -1,5 +1,5 @@
 import { PointerEvent, useMemo, useRef, useState } from 'react';
-import { calendarCells, localDate, parseDate } from '../utils';
+import { compactCalendarCells, localDate, parseDate } from '../utils';
 
 export type HomeCalendarMode = 'week' | 'month';
 
@@ -51,7 +51,7 @@ export function useHomeCalendar(selectedDate: string, onSelectDate: (date: strin
           days:
             mode === 'week'
               ? weekCells(pageAnchor)
-              : calendarCells(pageAnchor.getFullYear(), pageAnchor.getMonth()),
+              : compactCalendarCells(pageAnchor.getFullYear(), pageAnchor.getMonth()),
         };
       }),
     [anchorDate, mode],

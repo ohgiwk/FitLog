@@ -367,7 +367,7 @@
 }
 
 .home-calendar-track {
-  display: flex;
+  position: relative;
   width: 100%;
   will-change: transform;
 }
@@ -377,7 +377,21 @@
 }
 
 .home-calendar-page {
-  flex: 0 0 100%;
+  width: 100%;
+}
+
+.home-calendar-page:first-child,
+.home-calendar-page:last-child {
+  position: absolute;
+  top: 0;
+}
+
+.home-calendar-page:first-child {
+  right: 100%;
+}
+
+.home-calendar-page:last-child {
+  left: 100%;
 }
 
 .home-calendar-grid {

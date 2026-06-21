@@ -3,6 +3,7 @@ import {
   calculateWorkoutDurationMinutes,
   calcRm,
   calendarCells,
+  compactCalendarCells,
   formatStoredWeightInput,
   formatWorkoutDuration,
   formatWorkoutTime,
@@ -253,6 +254,14 @@ describe('calendarCells', () => {
     const firstOfMonth = cells.find((cell) => cell.date === '2026-01-01');
     expect(firstOfMonth?.inMonth).toBe(true);
     expect(firstOfMonth?.day).toBe(1);
+  });
+});
+
+describe('compactCalendarCells', () => {
+  it('月に必要な週だけを返す', () => {
+    expect(compactCalendarCells(2026, 1)).toHaveLength(28);
+    expect(compactCalendarCells(2026, 0)).toHaveLength(35);
+    expect(compactCalendarCells(2026, 4)).toHaveLength(42);
   });
 });
 
