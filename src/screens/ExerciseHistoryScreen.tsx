@@ -62,34 +62,11 @@ export function ExerciseHistoryScreen() {
           <>
             {bestRecord && <BestRecordSummary bestRecord={bestRecord} />}
             {histories.map((item) => {
-              const isReps = isRepsMeasurement(item.measurementType);
               const recordedSets = item.sets.filter(hasRecordedValue);
-              const total = recordedSets.reduce(
-                (sum, set) =>
-                  sum +
-                  (isReps ? number(set.weight) * number(set.recordValue) : number(set.recordValue)),
-                0,
-              );
-              const maxRm = isReps
-                ? recordedSets.reduce(
-                    (max, set) =>
-                      Math.max(max, Number(calcRm(number(set.weight), number(set.recordValue)))),
-                    0,
-                  )
-                : 0;
               return (
                 <article className="history-card" key={item.id}>
                   <header className="history-card-head">
                     <div className="history-card-date">{item.date.replaceAll('-', '/')}</div>
-                    <div className="history-card-total">
-                      {isReps
-                        ? `TOTAL : ${formatWeight(total, weightUnit)}${weightUnitLabel(
-                            weightUnit,
-                          )} MAX 1RM : ${formatWeight(maxRm, weightUnit)}${weightUnitLabel(
-                            weightUnit,
-                          )}`
-                        : `TOTAL : ${total}秒 MAX 1RM : -`}
-                    </div>
                   </header>
                   {(item.grip || item.gripStyle) && (
                     <div className="history-workout-grip">
@@ -293,7 +270,7 @@ function ExerciseHistorySetRow({
           ? `${formatWeight(calcRm(weight, recordValue), weightUnit)}${weightUnitLabel(weightUnit)}`
           : '-'}
       </td>
-      <td className="history-assist">
+      <td className={`history-assist${set.intensity ? ` intensity-${set.intensity}` : ''}`}>
         <IntensityIcon intensity={set.intensity} />
       </td>
     </tr>

@@ -249,6 +249,31 @@
   background: var(--surface);
 }
 
+.detail-add-set {
+  display: grid;
+  width: 100%;
+  min-height: 52px;
+  place-items: center;
+  border-top: 1px solid var(--detail-line);
+  background: var(--disabled-surface);
+  color: var(--text-secondary);
+}
+
+.detail-add-set svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.7;
+}
+
+.detail-add-set:active {
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
 .detail-set-delete {
   position: absolute;
   top: 0;

@@ -149,10 +149,6 @@
 }
 
 .history-card-head {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 8px;
   min-height: 48px;
   border-left: 4px solid var(--red);
   border-bottom: 1px solid var(--line);
@@ -165,13 +161,6 @@
   font-size: 25px;
   font-weight: 900;
   line-height: 1;
-}
-
-.history-card-total {
-  font-size: 14px;
-  font-weight: 900;
-  line-height: 1.2;
-  white-space: nowrap;
 }
 
 .history-set-table td {
@@ -207,6 +196,26 @@
 
 .history-set-table .history-assist .intensity-face {
   margin: 0 auto;
+}
+
+.history-set-table .history-assist.intensity-1 {
+  color: var(--intensity-easy);
+}
+
+.history-set-table .history-assist.intensity-2 {
+  color: var(--intensity-normal);
+}
+
+.history-set-table .history-assist.intensity-3 {
+  color: var(--intensity-hard);
+}
+
+.history-set-table .history-assist.intensity-4 {
+  color: var(--intensity-very-hard);
+}
+
+.history-set-table .history-assist.intensity-5 {
+  color: var(--intensity-limit);
 }
 
 .history-workout-grip {

@@ -516,6 +516,16 @@ export function DetailScreen() {
               </div>
             </SwipeableSetRow>
           ))}
+          {!readOnly && (
+            <button
+              className="detail-add-set"
+              type="button"
+              aria-label="セットを追加"
+              onClick={() => onAddSet(workout.id)}
+            >
+              <PlusIcon />
+            </button>
+          )}
         </div>
         <label className="workout-note">
           <span>メモ</span>
@@ -529,19 +539,7 @@ export function DetailScreen() {
           />
         </label>
       </div>
-      {!readOnly && (
-        <>
-          <RestTimer />
-          <button
-            className="fab"
-            type="button"
-            aria-label="セットを追加"
-            onClick={() => onAddSet(workout.id)}
-          >
-            <PlusIcon />
-          </button>
-        </>
-      )}
+      {!readOnly && <RestTimer />}
     </section>
   );
 }
