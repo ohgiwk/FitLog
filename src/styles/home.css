@@ -264,10 +264,8 @@
 .home-calendar-title {
   grid-column: 2;
   display: inline-grid;
-  grid-template-columns: minmax(0, auto) 26px;
   align-items: center;
   justify-content: center;
-  gap: 4px;
   min-width: 0;
   color: var(--ink);
   font-size: 23px;
@@ -280,13 +278,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.home-calendar-title svg {
-  width: 26px;
-  height: 26px;
-  stroke: currentColor;
-  stroke-width: 3;
 }
 
 .home-today-btn {

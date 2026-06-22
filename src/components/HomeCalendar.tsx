@@ -1,12 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  AnalysisIcon,
-  ChevronDown,
-  ChevronUp,
-  MenuIcon,
-  SettingsIcon,
-  TrophyIcon,
-} from '../icons';
+import { AnalysisIcon, MenuIcon, SettingsIcon, TrophyIcon } from '../icons';
 import { useHomeCalendar } from '../hooks/useHomeCalendar';
 import { localDate, weekdayLabels } from '../utils';
 import { appVersion } from '../version';
@@ -53,7 +46,6 @@ export function HomeCalendar({
         </button>
         <button className="home-calendar-title" type="button" onClick={calendar.toggleMode}>
           <span>{calendar.monthLabel}</span>
-          {calendar.mode === 'week' ? <ChevronDown /> : <ChevronUp />}
         </button>
         <button
           className="home-today-btn"
