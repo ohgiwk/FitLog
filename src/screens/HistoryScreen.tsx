@@ -1,4 +1,4 @@
-import { ChangeEvent, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Preset } from '../types';
 import {
   calendarCells,
@@ -8,7 +8,7 @@ import {
   prevMonthLabel,
   weekdayLabels,
 } from '../utils';
-import { EditIcon, ExportIcon, ImportIcon, PlusIcon, SettingsIcon, TrashIcon } from '../icons';
+import { EditIcon, PlusIcon, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import { buildVisibleHistory, scheduledPresetsForDate } from '../selectors/fitLogSelectors';
 
@@ -38,8 +38,6 @@ function useHistoryScreenModel() {
       actions.setCurrentWorkoutId(null);
       actions.setScreen('home');
     },
-    onExport: actions.exportState,
-    onImport: actions.importState,
     onMoveMonth: actions.moveMonth,
     onCreatePreset: actions.createPresetDraft,
     onEditPreset: actions.editPreset,
@@ -48,7 +46,7 @@ function useHistoryScreenModel() {
 }
 
 /**
- * 履歴/計画画面。カレンダー・部位別履歴・分割計画の管理とデータ入出力を行う
+ * 履歴/計画画面。カレンダー・部位別履歴・分割計画を管理する
  */
 export function HistoryScreen() {
   const {
@@ -63,14 +61,11 @@ export function HistoryScreen() {
     onPartFilter,
     onChangeView,
     onSelectDate,
-    onExport,
-    onImport,
     onMoveMonth,
     onCreatePreset,
     onEditPreset,
     onDeletePreset,
   } = useHistoryScreenModel();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Preset | null>(null);
   const monthDate = parseDate(selectedDate);
   const year = monthDate.getFullYear();
@@ -91,27 +86,6 @@ export function HistoryScreen() {
   const cells = useMemo(() => calendarCells(year, month), [month, year]);
   const currentPartLabel = partFilter === 'ALL' ? 'すべて' : partFilter;
   const today = localDate(new Date());
-  const importInputRef = useRef<HTMLInputElement | null>(null);
-
-  /**
-   * 隠しファイル入力をクリックしてインポート用のファイル選択を開く
-   */
-  function openImport() {
-    setMenuOpen(false);
-    importInputRef.current?.click();
-  }
-
-  /**
-   * 選択されたファイルを読み込み、インポート処理へ渡す
-   */
-  async function handleImport(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    setMenuOpen(false);
-    await onImport(file);
-  }
-
   /**
    * 確認ダイアログで選んだプリセットを削除する
    */
@@ -127,46 +101,10 @@ export function HistoryScreen() {
         <div className="bar-row">
           <span />
           <div className="bar-title">履歴 / 計画</div>
-          <div className="history-menu-wrap">
-            <button
-              className="bar-btn right"
-              type="button"
-              aria-label="設定"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              <SettingsIcon />
-            </button>
-            {menuOpen && (
-              <div className="history-menu" role="menu" aria-label="データ設定">
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onExport();
-                  }}
-                >
-                  <ExportIcon />
-                  <span>記録を書き出す</span>
-                </button>
-                <button type="button" role="menuitem" onClick={openImport}>
-                  <ImportIcon />
-                  <span>記録を読み込む</span>
-                </button>
-              </div>
-            )}
-          </div>
+          <span />
         </div>
       </header>
       <div className="history-wrap">
-        <input
-          ref={importInputRef}
-          hidden
-          accept="application/json,.json"
-          type="file"
-          onChange={(event) => void handleImport(event)}
-        />
         <div className="history-mode" aria-label="履歴と計画を切り替え">
           <button
             className={activeView === 'history' ? 'active' : ''}

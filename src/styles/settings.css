@@ -12,6 +12,15 @@
   margin-top: 12px;
 }
 
+.settings-section-title {
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .settings-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -86,4 +95,8 @@
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.settings-link-row + .settings-link-row {
+  border-top: 1px solid var(--line);
 }
