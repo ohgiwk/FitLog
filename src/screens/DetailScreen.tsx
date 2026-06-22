@@ -176,7 +176,10 @@ function WorkoutGripEditor({
   const [open, setOpen] = useState(false);
 
   return (
-    <section className="workout-grip-editor" aria-label="グリップ">
+    <section
+      className={`workout-grip-editor${open ? ' open' : ''}`}
+      aria-label="グリップ"
+    >
       <button
         className="workout-grip-toggle"
         type="button"
