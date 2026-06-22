@@ -130,6 +130,20 @@ export function findCurrentPreset(presets: Preset[], currentPresetId: string | n
   return presets.find((preset) => preset.id === currentPresetId) || presets[0] || null;
 }
 
+export function scheduledPresetsForDate(date: string, presets: Preset[]) {
+  const target = parseDate(date);
+  const weekday = target.getDay();
+  return presets.filter((preset) => {
+    const schedule = preset.schedule;
+    if (!schedule) return false;
+    if (schedule.mode === 'weekly') return schedule.weekdays.includes(weekday);
+    if (!schedule.startDate) return false;
+    const start = parseDate(schedule.startDate);
+    const days = Math.floor((target.getTime() - start.getTime()) / 86400000);
+    return days >= 0 && days % schedule.intervalDays === 0;
+  });
+}
+
 export function buildSplitPartOptions(
   exercises: Exercise[],
   workouts: Workout[],
@@ -189,22 +203,6 @@ export function buildVisibleHistory(
     .filter((day) => partFilter === 'ALL' || day.parts.has(partFilter))
     .sort((a, b) => b.date.localeCompare(a.date))
     .map((day) => ({ ...day, parts: [...day.parts] }));
-}
-
-export function buildUpcomingPlans(
-  selectedDate: string,
-  trainingPlans: State['trainingPlans'],
-  days = 7,
-) {
-  const start = parseDate(selectedDate);
-  return Array.from({ length: days }, (_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
-      date.getDate(),
-    ).padStart(2, '0')}`;
-    return { date: value, parts: plannedPartsForDate(value, trainingPlans) };
-  });
 }
 
 export function buildPartRecentLabels(

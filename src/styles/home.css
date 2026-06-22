@@ -196,7 +196,7 @@
 
 .preset-start {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
   gap: 8px;
   padding: 12px 11px 0;
 }

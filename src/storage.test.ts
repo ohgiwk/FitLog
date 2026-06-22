@@ -323,6 +323,31 @@ describe('normalizeState', () => {
     expect(result?.weightUnit).toBe('lbs');
   });
 
+  it('プリセットのスケジュールを正規化して保持する', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      presets: [
+        {
+          id: 'preset-1',
+          name: '上半身',
+          exerciseIds: ['e1'],
+          schedule: {
+            mode: 'weekly',
+            weekdays: [6, 1, 6, 9],
+            intervalDays: 8,
+            startDate: '2026-06-20',
+          },
+        },
+      ],
+    } as unknown as Partial<State>);
+    expect(result?.presets[0].schedule).toEqual({
+      mode: 'weekly',
+      weekdays: [1, 6],
+      intervalDays: 1,
+      startDate: '2026-06-20',
+    });
+  });
+
   it('種目目標を正規化して保持する', () => {
     const result = normalizeState({
       ...makeValidSaved(),

@@ -1,38 +1,35 @@
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { TrainingPlan, TrainingPlanMode } from '../types';
+import { ChangeEvent, useMemo, useRef, useState } from 'react';
+import { Preset } from '../types';
 import {
   calendarCells,
-  hexToRgba,
   localDate,
   nextMonthLabel,
   parseDate,
   prevMonthLabel,
   weekdayLabels,
 } from '../utils';
-import { ExportIcon, ImportIcon, SettingsIcon } from '../icons';
+import { EditIcon, ExportIcon, ImportIcon, PlusIcon, SettingsIcon, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
-import {
-  buildUpcomingPlans,
-  buildVisibleHistory,
-  plannedPartsForDate,
-} from '../selectors/fitLogSelectors';
+import { buildVisibleHistory, scheduledPresetsForDate } from '../selectors/fitLogSelectors';
 
 /**
  * 履歴/計画画面が必要とする state・操作を Context から組み立てる view-model フック
  */
 function useHistoryScreenModel() {
-  const { selectedDate, state, orderedParts, partColors, historyPartFilter, actions } =
+  const { selectedDate, state, orderedParts, partColors, historyPartFilter, historyView, actions } =
     useFitLogContext();
 
   return {
     selectedDate,
     workouts: state.workouts,
     trainingDays: state.trainingDays,
-    trainingPlans: state.trainingPlans,
+    presets: state.presets,
     orderedParts,
     partColors,
     partFilter: historyPartFilter,
+    activeView: historyView,
     onPartFilter: actions.setHistoryPartFilter,
+    onChangeView: actions.setHistoryView,
     /**
      * 日付を選択し、ワークアウト選択を解除してホーム画面へ戻る
      */
@@ -44,7 +41,9 @@ function useHistoryScreenModel() {
     onExport: actions.exportState,
     onImport: actions.importState,
     onMoveMonth: actions.moveMonth,
-    onUpsertTrainingPlan: actions.upsertTrainingPlan,
+    onCreatePreset: actions.createPresetDraft,
+    onEditPreset: actions.editPreset,
+    onDeletePreset: actions.deletePreset,
   };
 }
 
@@ -56,27 +55,27 @@ export function HistoryScreen() {
     selectedDate,
     workouts,
     trainingDays,
-    trainingPlans,
+    presets,
     orderedParts,
     partColors,
     partFilter,
+    activeView,
     onPartFilter,
+    onChangeView,
     onSelectDate,
     onExport,
     onImport,
     onMoveMonth,
-    onUpsertTrainingPlan,
+    onCreatePreset,
+    onEditPreset,
+    onDeletePreset,
   } = useHistoryScreenModel();
-  const [activeView, setActiveView] = useState<'history' | 'plan'>('history');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Preset | null>(null);
   const monthDate = parseDate(selectedDate);
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
   const partTabs = useMemo(() => ['ALL', ...orderedParts.map((part) => part.name)], [orderedParts]);
-  const planParts = useMemo(
-    () => orderedParts.map((part) => part.name).filter((part) => part !== 'レスト'),
-    [orderedParts],
-  );
   const trainingDayByDate = useMemo(
     () => new Map(trainingDays.map((day) => [day.date, day.parts])),
     [trainingDays],
@@ -90,10 +89,6 @@ export function HistoryScreen() {
     [visibleHistory],
   );
   const cells = useMemo(() => calendarCells(year, month), [month, year]);
-  const upcomingPlans = useMemo(
-    () => buildUpcomingPlans(selectedDate, trainingPlans),
-    [selectedDate, trainingPlans],
-  );
   const currentPartLabel = partFilter === 'ALL' ? 'すべて' : partFilter;
   const today = localDate(new Date());
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -115,6 +110,15 @@ export function HistoryScreen() {
     if (!file) return;
     setMenuOpen(false);
     await onImport(file);
+  }
+
+  /**
+   * 確認ダイアログで選んだプリセットを削除する
+   */
+  function confirmDeletePreset() {
+    if (!deleteTarget) return;
+    onDeletePreset(deleteTarget.id);
+    setDeleteTarget(null);
   }
 
   return (
@@ -167,14 +171,14 @@ export function HistoryScreen() {
           <button
             className={activeView === 'history' ? 'active' : ''}
             type="button"
-            onClick={() => setActiveView('history')}
+            onClick={() => onChangeView('history')}
           >
             履歴
           </button>
           <button
             className={activeView === 'plan' ? 'active' : ''}
             type="button"
-            onClick={() => setActiveView('plan')}
+            onClick={() => onChangeView('plan')}
           >
             計画
           </button>
@@ -223,26 +227,18 @@ export function HistoryScreen() {
                 const trained = trainedDates.has(cell.date);
                 const isToday = cell.date === today;
                 const trainingParts = trainingDayByDate.get(cell.date);
-                const plannedParts = plannedPartsForDate(cell.date, trainingPlans);
-                const plannedColor = plannedParts
-                  .map((part) => partColors.get(part))
-                  .find((color): color is string => Boolean(color));
-                /**
-                 * 計画で予定された日は、未実施・本日でなければ部位色の薄い円で示す
-                 */
-                const plannedStyle =
-                  !trained && !isToday && plannedColor
-                    ? { background: hexToRgba(plannedColor, 0.2) }
-                    : undefined;
+                const plannedPresets = scheduledPresetsForDate(cell.date, presets);
+                const isPlanned = !trained && !isToday && plannedPresets.length > 0;
                 return (
                   <div className={`day-cell ${cell.inMonth ? '' : 'other'}`} key={cell.date}>
                     <button
-                      className={`day-btn ${trained ? 'trained' : ''} ${isToday ? 'today' : ''} ${
-                        plannedStyle ? 'planned' : ''
-                      }`}
+                      className={`day-btn ${trained ? 'trained' : ''} ${isToday ? 'today' : ''} ${isPlanned ? 'planned' : ''}`}
                       type="button"
-                      style={plannedStyle}
-                      title={trainingParts?.join(' / ') || plannedParts.join(' / ') || undefined}
+                      title={
+                        trainingParts?.join(' / ') ||
+                        plannedPresets.map((preset) => preset.name).join(' / ') ||
+                        undefined
+                      }
                       onClick={() => onSelectDate(cell.date)}
                     >
                       {cell.day}
@@ -279,157 +275,96 @@ export function HistoryScreen() {
           </>
         ) : (
           <section className="schedule-panel">
-            <h2>分割計画</h2>
-            <p className="schedule-desc">
-              部位ごとにトレーニングする曜日や間隔を決めると、予定としてカレンダーやホームに表示されます。
-            </p>
-            {!planParts.length ? (
-              <div className="schedule-empty">部位がありません</div>
+            <div className="schedule-panel-head">
+              <h2>トレーニングメニュー</h2>
+              <button
+                className="small-primary schedule-add-button"
+                type="button"
+                onClick={onCreatePreset}
+              >
+                <PlusIcon />
+                <span>追加</span>
+              </button>
+            </div>
+            <p className="schedule-desc">曜日や間隔は各プリセットの編集画面で設定できます。</p>
+            {!presets.length ? (
+              <div className="schedule-empty">プリセットがありません</div>
             ) : (
               <div className="schedule-list">
-                {planParts.map((part) => (
-                  <PlanRow
-                    key={part}
-                    part={part}
-                    color={partColors.get(part)}
-                    plan={trainingPlans.find((plan) => plan.part === part)}
-                    fallbackStartDate={selectedDate}
-                    onChange={onUpsertTrainingPlan}
-                  />
+                {presets.map((preset) => (
+                  <div className="preset-plan-row" key={preset.id}>
+                    <button
+                      className="preset-plan-main"
+                      type="button"
+                      onClick={() => onEditPreset(preset.id)}
+                    >
+                      <span>{preset.name}</span>
+                      <span className="preset-plan-meta">
+                        <small>{preset.exerciseIds.length}種目</small>
+                        <small>{formatPresetSchedule(preset)}</small>
+                      </span>
+                    </button>
+                    <button
+                      className="preset-plan-edit"
+                      type="button"
+                      aria-label={`${preset.name}を編集`}
+                      onClick={() => onEditPreset(preset.id)}
+                    >
+                      <EditIcon />
+                    </button>
+                    <button
+                      className="preset-plan-delete"
+                      type="button"
+                      aria-label={`${preset.name}を削除`}
+                      onClick={() => setDeleteTarget(preset)}
+                    >
+                      <TrashIcon />
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
-            <div className="schedule-preview">
-              <strong className="schedule-preview-title">今後7日の予定</strong>
-              <div className="schedule-preview-list">
-                {upcomingPlans.map((item) => (
-                  <span className="schedule-preview-item" key={item.date}>
-                    <span className="schedule-preview-date">
-                      {item.date.slice(5).replace('-', '/')}（
-                      {weekdayLabels[parseDate(item.date).getDay()]}）
-                    </span>
-                    <span className="schedule-preview-parts">
-                      {item.parts.length ? item.parts.join(' / ') : '-'}
-                    </span>
-                  </span>
-                ))}
-              </div>
-            </div>
           </section>
         )}
       </div>
+      {deleteTarget && (
+        <div className="dialog-backdrop" role="presentation">
+          <div
+            className="confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="history-preset-delete-title"
+          >
+            <div id="history-preset-delete-title" className="confirm-title">
+              プリセットを削除しますか？
+            </div>
+            <p>「{deleteTarget.name}」を削除します。この操作は元に戻せません。</p>
+            <div className="confirm-actions">
+              <button className="small-outline" type="button" onClick={() => setDeleteTarget(null)}>
+                キャンセル
+              </button>
+              <button className="danger-button" type="button" onClick={confirmDeletePreset}>
+                削除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
 
-type PlanRowProps = {
-  part: string;
-  color: string | undefined;
-  plan: TrainingPlan | undefined;
-  fallbackStartDate: string;
-  onChange: (
-    part: string,
-    mode: TrainingPlanMode,
-    weekdays: number[],
-    intervalDays: number,
-    startDate: string,
-  ) => void;
-};
-
 /**
- * 部位ごとの分割計画をその場で編集する行。
- * モード切替・曜日トグル・間隔/開始日の変更があるたびに onChange で保存する
+ * プリセットのスケジュールを一覧向けの短い文言にする
  */
-function PlanRow({ part, color, plan, fallbackStartDate, onChange }: PlanRowProps) {
-  const mode: TrainingPlanMode = plan?.mode ?? 'weekly';
-  const planWeekdays = plan?.weekdays ?? [];
-  const intervalDays = plan?.intervalDays ?? 3;
-  const startDate = plan?.startDate || fallbackStartDate;
-  const [intervalText, setIntervalText] = useState(String(intervalDays));
-
-  useEffect(() => {
-    setIntervalText(String(intervalDays));
-  }, [intervalDays]);
-
-  /**
-   * 曜日ボタンの選択状態をトグルして保存する
-   */
-  function toggleWeekday(index: number) {
-    const next = planWeekdays.includes(index)
-      ? planWeekdays.filter((value) => value !== index)
-      : [...planWeekdays, index].sort((a, b) => a - b);
-    onChange(part, 'weekly', next, intervalDays, startDate);
+function formatPresetSchedule(preset: Preset) {
+  const schedule = preset.schedule;
+  if (!schedule) return '設定なし';
+  if (schedule.mode === 'weekly') {
+    return schedule.weekdays.length
+      ? schedule.weekdays.map((weekday) => weekdayLabels[weekday]).join('・')
+      : '曜日未選択';
   }
-
-  /**
-   * 間隔の入力を反映する。数値として有効なときだけ保存する
-   */
-  function commitInterval(text: string) {
-    setIntervalText(text);
-    const value = Number(text);
-    if (Number.isFinite(value) && value >= 1) {
-      onChange(part, 'interval', planWeekdays, Math.round(value), startDate);
-    }
-  }
-
-  return (
-    <div className="plan-row" style={color ? { borderLeftColor: color } : undefined}>
-      <div className="plan-row-head">
-        <strong>{part}</strong>
-        <div className="plan-mode-toggle" role="group" aria-label={`${part}の計画タイプ`}>
-          <button
-            className={mode === 'weekly' ? 'active' : ''}
-            type="button"
-            onClick={() => onChange(part, 'weekly', planWeekdays, intervalDays, startDate)}
-          >
-            曜日
-          </button>
-          <button
-            className={mode === 'interval' ? 'active' : ''}
-            type="button"
-            onClick={() => onChange(part, 'interval', planWeekdays, intervalDays, startDate)}
-          >
-            何日ごと
-          </button>
-        </div>
-      </div>
-      {mode === 'weekly' ? (
-        <div className="weekday-picker" aria-label={`${part}の曜日`}>
-          {weekdayLabels.map((day, index) => (
-            <button
-              className={planWeekdays.includes(index) ? 'active' : ''}
-              key={day}
-              type="button"
-              onClick={() => toggleWeekday(index)}
-            >
-              {day}
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="interval-fields">
-          <label>
-            <span>間隔</span>
-            <input
-              inputMode="numeric"
-              min="1"
-              type="number"
-              value={intervalText}
-              onChange={(event) => commitInterval(event.target.value)}
-            />
-          </label>
-          <label>
-            <span>開始日</span>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(event) =>
-                onChange(part, 'interval', planWeekdays, intervalDays, event.target.value)
-              }
-            />
-          </label>
-        </div>
-      )}
-    </div>
-  );
+  if (!schedule.startDate) return '開始日未設定';
+  return `${schedule.startDate.replaceAll('-', '/')}から${schedule.intervalDays}日ごと`;
 }

@@ -5,8 +5,8 @@ export type Screen =
   | 'detail'
   | 'exerciseHistory'
   | 'goalAchievements'
-  | 'preset'
   | 'presetEdit'
+  | 'presetExerciseSelect'
   | 'history'
   | 'analysis'
   | 'partEdit'
@@ -83,6 +83,7 @@ export type Preset = {
   id: string;
   name: string;
   exerciseIds: string[];
+  schedule?: PresetSchedule;
 };
 
 export type TrainingDay = {
@@ -91,6 +92,13 @@ export type TrainingDay = {
 };
 
 export type TrainingPlanMode = 'weekly' | 'interval';
+
+export type PresetSchedule = {
+  mode: TrainingPlanMode;
+  weekdays: number[];
+  intervalDays: number;
+  startDate: string;
+};
 
 export type TrainingPlan = {
   id: string;

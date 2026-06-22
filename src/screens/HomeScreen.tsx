@@ -28,7 +28,7 @@ function useHomeScreenModel() {
     selectedDate,
     state,
     selectedWorkouts,
-    selectedPlannedParts,
+    selectedScheduledPresets,
     currentPreset,
     partColors,
     actions,
@@ -38,7 +38,7 @@ function useHomeScreenModel() {
     selectedDate,
     workouts: state.workouts,
     selectedWorkouts,
-    selectedPlannedParts,
+    selectedScheduledPresets,
     presets: state.presets,
     currentPreset,
     partColors,
@@ -58,7 +58,6 @@ function useHomeScreenModel() {
     onEndWorkoutDay: actions.endWorkoutDay,
     onResumeWorkoutDay: actions.resumeWorkoutDay,
     onStartPreset: actions.startPreset,
-    onOpenPresets: () => actions.setScreen('preset'),
     onOpenSelect: () => actions.setScreen('select'),
     onOpenSettings: () => actions.setScreen('settings'),
     onOpenGoalAchievements: () => actions.setScreen('goalAchievements'),
@@ -75,7 +74,7 @@ export function HomeScreen() {
     selectedDate,
     workouts,
     selectedWorkouts,
-    selectedPlannedParts,
+    selectedScheduledPresets,
     presets,
     currentPreset,
     partColors,
@@ -88,7 +87,6 @@ export function HomeScreen() {
     onEndWorkoutDay,
     onResumeWorkoutDay,
     onStartPreset,
-    onOpenPresets,
     onOpenSelect,
     onOpenSettings,
     onOpenGoalAchievements,
@@ -209,13 +207,10 @@ export function HomeScreen() {
         >
           開始
         </button>
-        <button className="small-outline" type="button" onClick={onOpenPresets}>
-          管理
-        </button>
       </div>
-      {!!selectedPlannedParts.length && (
+      {!!selectedScheduledPresets.length && (
         <div className="planned-day">
-          <span>予定: {selectedPlannedParts.join(' / ')}</span>
+          <span>予定: {selectedScheduledPresets.map((preset) => preset.name).join(' / ')}</span>
         </div>
       )}
       <div className="content">

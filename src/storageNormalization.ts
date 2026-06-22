@@ -11,6 +11,7 @@ import {
   MeasurementType,
   PartSetting,
   Preset,
+  PresetSchedule,
   SetIntensity,
   State,
   TrainingPlanMode,
@@ -223,10 +224,40 @@ function normalizePresets(value: unknown): Preset[] {
       exerciseIds: Array.isArray(item.exerciseIds)
         ? item.exerciseIds.filter((id): id is string => typeof id === 'string')
         : [],
+      schedule: normalizePresetSchedule(item.schedule),
     };
   });
   const existingNames = new Set(presets.map((preset) => preset.name));
   return [...presets, ...defaultPresets.filter((preset) => !existingNames.has(preset.name))];
+}
+
+function normalizePresetSchedule(value: unknown): PresetSchedule | undefined {
+  const item = recordOf(value);
+  if (!item || (item.mode !== 'weekly' && item.mode !== 'interval')) return undefined;
+  const weekdays = Array.isArray(item.weekdays)
+    ? [
+        ...new Set(
+          item.weekdays.filter(
+            (weekday): weekday is number =>
+              typeof weekday === 'number' &&
+              Number.isInteger(weekday) &&
+              weekday >= 0 &&
+              weekday <= 6,
+          ),
+        ),
+      ].sort((a, b) => a - b)
+    : [];
+  const intervalDays =
+    typeof item.intervalDays === 'number' && Number.isFinite(item.intervalDays)
+      ? Math.max(1, Math.round(item.intervalDays))
+      : 1;
+  const startDate = typeof item.startDate === 'string' ? item.startDate : '';
+  return {
+    mode: item.mode,
+    weekdays: item.mode === 'weekly' ? weekdays : [],
+    intervalDays: item.mode === 'interval' ? intervalDays : 1,
+    startDate,
+  };
 }
 
 function normalizeTrainingDays(value: unknown): State['trainingDays'] {

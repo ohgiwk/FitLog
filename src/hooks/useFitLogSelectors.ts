@@ -6,7 +6,7 @@ import {
   buildPartColorMap,
   buildPartRecentLabels,
   buildSplitPartOptions,
-  plannedPartsForDate,
+  scheduledPresetsForDate,
 } from '../selectors/fitLogSelectors';
 
 /**
@@ -60,11 +60,11 @@ export function useFitLogSelectors(state: State, selectedDate: string) {
     [state.exercises, state.trainingDays, state.trainingPlans, state.workouts],
   );
   /**
-   * 選択日にトレーニング計画で予定されている部位
+   * 選択日にスケジュールされているプリセット
    */
-  const selectedPlannedParts = useMemo(
-    () => plannedPartsForDate(selectedDate, state.trainingPlans),
-    [selectedDate, state.trainingPlans],
+  const selectedScheduledPresets = useMemo(
+    () => scheduledPresetsForDate(selectedDate, state.presets),
+    [selectedDate, state.presets],
   );
   /**
    * 部位ごとの「最後に実施したのが何日前か」を表すラベル
@@ -77,7 +77,7 @@ export function useFitLogSelectors(state: State, selectedDate: string) {
   return {
     groupedExercises,
     splitPartOptions,
-    selectedPlannedParts,
+    selectedScheduledPresets,
     partRecentLabels,
     orderedParts,
     partColors,

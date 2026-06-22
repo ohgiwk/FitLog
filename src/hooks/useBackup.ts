@@ -10,7 +10,6 @@ type BackupDeps = {
   setSelectedDate: (date: string) => void;
   setCurrentWorkoutId: (workoutId: string | null) => void;
   setCurrentPresetId: (presetId: string | null) => void;
-  setCurrentEditingPresetId: (presetId: string | null) => void;
 };
 
 /**
@@ -24,7 +23,6 @@ export function useBackup({
   setSelectedDate,
   setCurrentWorkoutId,
   setCurrentPresetId,
-  setCurrentEditingPresetId,
 }: BackupDeps) {
   /**
    * 現在の state を JSON ファイルとしてダウンロードする
@@ -53,7 +51,6 @@ export function useBackup({
       setState(normalized);
       setCurrentWorkoutId(null);
       setCurrentPresetId(normalized.presets[0]?.id || null);
-      setCurrentEditingPresetId(null);
       setSelectedDate(localDate(new Date()));
       showToast('データをインポートしました');
     } catch {

@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Preset, Screen, State } from '../types';
-import { uid } from '../utils';
-import { createWorkout, findCurrentPreset } from '../selectors/fitLogSelectors';
+import {
+  createWorkout,
+  findCurrentPreset,
+  scheduledPresetsForDate,
+} from '../selectors/fitLogSelectors';
 
 type PresetActionsDeps = {
   state: State;
@@ -22,7 +25,6 @@ export function usePresetActions({
   selectedDate,
 }: PresetActionsDeps) {
   const [currentPresetId, setCurrentPresetId] = useState<string | null>(null);
-  const [currentEditingPresetId, setCurrentEditingPresetId] = useState<string | null>(null);
 
   /**
    * 現在選択中のプリセット
@@ -31,14 +33,10 @@ export function usePresetActions({
     () => findCurrentPreset(state.presets, currentPresetId),
     [currentPresetId, state.presets],
   );
-  /**
-   * 編集画面で対象になっているプリセット
-   */
-  const editingPreset = useMemo(
-    () => state.presets.find((preset) => preset.id === currentEditingPresetId) || null,
-    [currentEditingPresetId, state.presets],
+  const scheduledPresetId = useMemo(
+    () => scheduledPresetsForDate(selectedDate, state.presets)[0]?.id ?? null,
+    [selectedDate, state.presets],
   );
-
   /**
    * プリセットの増減に合わせて選択中 ID を補正する
    */
@@ -48,26 +46,44 @@ export function usePresetActions({
   }, [currentPreset, state.presets]);
 
   /**
-   * 新規プリセットを作成して編集画面へ進む
+   * 選択日に予定されたプリセットがあればホームの既定選択へ反映する
    */
-  function createPreset() {
-    const preset: Preset = { id: uid(), name: '新規プリセット', exerciseIds: [] };
-    saveState((prev) => ({ ...prev, presets: [preset, ...prev.presets] }));
-    setCurrentPresetId(preset.id);
-    setCurrentEditingPresetId(preset.id);
-    showScreen('presetEdit');
-  }
+  useEffect(() => {
+    if (scheduledPresetId) setCurrentPresetId(scheduledPresetId);
+  }, [scheduledPresetId, selectedDate]);
 
   /**
-   * プリセット名を変更する(空なら既定名にする)
+   * 編集画面の下書きを新規作成または既存プリセットへ反映する
    */
-  function renamePreset(presetId: string, name: string) {
+  function savePreset(preset: Preset) {
+    const normalizedPreset: Preset = {
+      ...preset,
+      name: preset.name.trim() || '名称未設定',
+      exerciseIds: [...new Set(preset.exerciseIds)],
+      schedule: preset.schedule
+        ? {
+            mode: preset.schedule.mode,
+            weekdays:
+              preset.schedule.mode === 'weekly'
+                ? [...new Set(preset.schedule.weekdays)]
+                    .filter((weekday) => weekday >= 0 && weekday <= 6)
+                    .sort((a, b) => a - b)
+                : [],
+            intervalDays:
+              preset.schedule.mode === 'interval'
+                ? Math.max(1, Math.round(preset.schedule.intervalDays || 1))
+                : 1,
+            startDate: preset.schedule.startDate || selectedDate,
+          }
+        : undefined,
+    };
     saveState((prev) => ({
       ...prev,
-      presets: prev.presets.map((preset) =>
-        preset.id === presetId ? { ...preset, name: name.trim() || '名称未設定' } : preset,
-      ),
+      presets: prev.presets.some((item) => item.id === normalizedPreset.id)
+        ? prev.presets.map((item) => (item.id === normalizedPreset.id ? normalizedPreset : item))
+        : [normalizedPreset, ...prev.presets],
     }));
+    setCurrentPresetId(normalizedPreset.id);
   }
 
   /**
@@ -79,54 +95,6 @@ export function usePresetActions({
       presets: prev.presets.filter((preset) => preset.id !== presetId),
     }));
     if (currentPresetId === presetId) setCurrentPresetId(null);
-    if (currentEditingPresetId === presetId) setCurrentEditingPresetId(null);
-    showScreen('preset');
-  }
-
-  /**
-   * プリセットに種目を追加する(重複は追加しない)
-   */
-  function addExerciseToPreset(presetId: string, exerciseId: string) {
-    saveState((prev) => ({
-      ...prev,
-      presets: prev.presets.map((preset) =>
-        preset.id === presetId && !preset.exerciseIds.includes(exerciseId)
-          ? { ...preset, exerciseIds: [...preset.exerciseIds, exerciseId] }
-          : preset,
-      ),
-    }));
-  }
-
-  /**
-   * プリセットから種目を取り除く
-   */
-  function removeExerciseFromPreset(presetId: string, exerciseId: string) {
-    saveState((prev) => ({
-      ...prev,
-      presets: prev.presets.map((preset) =>
-        preset.id === presetId
-          ? { ...preset, exerciseIds: preset.exerciseIds.filter((id) => id !== exerciseId) }
-          : preset,
-      ),
-    }));
-  }
-
-  /**
-   * プリセット内の種目の並び順を1つ前後に入れ替える
-   */
-  function movePresetExercise(presetId: string, exerciseId: string, direction: number) {
-    saveState((prev) => ({
-      ...prev,
-      presets: prev.presets.map((preset) => {
-        if (preset.id !== presetId) return preset;
-        const index = preset.exerciseIds.indexOf(exerciseId);
-        const nextIndex = index + direction;
-        if (index < 0 || nextIndex < 0 || nextIndex >= preset.exerciseIds.length) return preset;
-        const exerciseIds = [...preset.exerciseIds];
-        [exerciseIds[index], exerciseIds[nextIndex]] = [exerciseIds[nextIndex], exerciseIds[index]];
-        return { ...preset, exerciseIds };
-      }),
-    }));
   }
 
   /**
@@ -164,16 +132,9 @@ export function usePresetActions({
   return {
     currentPresetId,
     setCurrentPresetId,
-    currentEditingPresetId,
-    setCurrentEditingPresetId,
     currentPreset,
-    editingPreset,
-    createPreset,
-    renamePreset,
+    savePreset,
     deletePreset,
-    addExerciseToPreset,
-    removeExerciseFromPreset,
-    movePresetExercise,
     startPreset,
   };
 }

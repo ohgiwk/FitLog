@@ -6,9 +6,9 @@ import { useFitLogUi } from './useFitLogUi';
 import { useNavigation } from './useNavigation';
 import { usePartActions } from './usePartActions';
 import { usePresetActions } from './usePresetActions';
-import { useTrainingPlanActions } from './useTrainingPlanActions';
 import { useWorkoutActions } from './useWorkoutActions';
-import { WeightUnit } from '../types';
+import { Preset, WeightUnit } from '../types';
+import { uid } from '../utils';
 
 /**
  * 各フックを束ね、画面に渡す state・派生値・操作(actions)をまとめる統合フック
@@ -50,12 +50,6 @@ export function useFitLog() {
     showToast: core.showToast,
   });
 
-  const trainingPlan = useTrainingPlanActions({
-    saveState: core.saveState,
-    showToast: core.showToast,
-    selectedDate: nav.selectedDate,
-  });
-
   const part = usePartActions({
     state: core.state,
     saveState: core.saveState,
@@ -70,7 +64,6 @@ export function useFitLog() {
     setSelectedDate: nav.setSelectedDate,
     setCurrentWorkoutId: nav.setCurrentWorkoutId,
     setCurrentPresetId: presets.setCurrentPresetId,
-    setCurrentEditingPresetId: presets.setCurrentEditingPresetId,
   });
 
   function setWeightUnit(weightUnit: WeightUnit) {
@@ -87,21 +80,86 @@ export function useFitLog() {
     nav.showScreen('select');
   }
 
+  /**
+   * 新規プリセットの下書きを作成して編集画面を開く
+   */
+  function createPresetDraft() {
+    ui.setPresetDraft({ id: uid(), name: '新規プリセット', exerciseIds: [] });
+    nav.showScreen('presetEdit');
+  }
+
+  /**
+   * 既存プリセットを複製した下書きで編集画面を開く
+   */
+  function editPreset(presetId: string) {
+    const preset = core.state.presets.find((item) => item.id === presetId);
+    if (!preset) return;
+    ui.setPresetDraft({
+      ...preset,
+      exerciseIds: [...preset.exerciseIds],
+      schedule: preset.schedule
+        ? { ...preset.schedule, weekdays: [...preset.schedule.weekdays] }
+        : undefined,
+    });
+    nav.showScreen('presetEdit');
+  }
+
+  /**
+   * プリセット下書きの一部を更新する
+   */
+  function updatePresetDraft(update: Partial<Preset>) {
+    ui.setPresetDraft((current) => (current ? { ...current, ...update } : current));
+  }
+
+  /**
+   * プリセット下書きの種目を追加・解除する
+   */
+  function togglePresetDraftExercise(exerciseId: string) {
+    ui.setPresetDraft((current) => {
+      if (!current) return current;
+      const exerciseIds = current.exerciseIds.includes(exerciseId)
+        ? current.exerciseIds.filter((id) => id !== exerciseId)
+        : [...current.exerciseIds, exerciseId];
+      return { ...current, exerciseIds };
+    });
+  }
+
+  /**
+   * プリセット下書きを保存して計画画面へ戻る
+   */
+  function savePresetDraft() {
+    if (!ui.presetDraft) return;
+    presets.savePreset(ui.presetDraft);
+    ui.setPresetDraft(null);
+    ui.setHistoryView('plan');
+    nav.showScreen('history');
+  }
+
+  /**
+   * プリセット下書きを破棄して計画画面へ戻る
+   */
+  function cancelPresetDraft() {
+    ui.setPresetDraft(null);
+    ui.setHistoryView('plan');
+    nav.showScreen('history');
+  }
+
   return {
     currentPreset: presets.currentPreset,
     currentWorkout: nav.currentWorkout,
     editMode: ui.editMode,
-    editingPreset: presets.editingPreset,
+    presetDraft: ui.presetDraft,
     activePart: ui.activePart,
     exerciseEditor: ui.exerciseEditor,
     groupedExercises: selectors.groupedExercises,
     historyPartFilter: ui.historyPartFilter,
+    historyView: ui.historyView,
     partRecentLabels: selectors.partRecentLabels,
     orderedParts: selectors.orderedParts,
     partColors: selectors.partColors,
     screen: nav.screen,
     selectedDate: nav.selectedDate,
-    selectedPlannedParts: selectors.selectedPlannedParts,
+    selectedScheduledPresets: selectors.selectedScheduledPresets,
     selectedWorkouts: nav.selectedWorkouts,
     splitPartOptions: selectors.splitPartOptions,
     state: core.state,
@@ -109,40 +167,38 @@ export function useFitLog() {
     goalAchievement: ui.goalAchievement,
     actions: {
       addExerciseToPart: exercise.addExerciseToPart,
-      addExerciseToPreset: presets.addExerciseToPreset,
       addExerciseToToday: workout.addExerciseToToday,
       addSet: workout.addSet,
       reorderPartExercises: exercise.reorderPartExercises,
-      createPreset: presets.createPreset,
+      createPresetDraft,
       deleteExercise: exercise.deleteExercise,
       deletePreset: presets.deletePreset,
       deleteSet: workout.deleteSet,
-      deleteTrainingPlan: trainingPlan.deleteTrainingPlan,
       deleteWorkout: workout.deleteWorkout,
       endWorkoutDay: workout.endWorkoutDay,
       exportState: backup.exportState,
       importState: backup.importState,
       moveDate: nav.moveDate,
       moveMonth: nav.moveMonth,
-      movePresetExercise: presets.movePresetExercise,
       moveWorkout: workout.moveWorkout,
       openWorkoutDetail: workout.openWorkoutDetail,
       openExerciseEditor,
-      removeExerciseFromPreset: presets.removeExerciseFromPreset,
-      renamePreset: presets.renamePreset,
+      editPreset,
+      updatePresetDraft,
+      togglePresetDraftExercise,
+      savePresetDraft,
+      cancelPresetDraft,
       resumeWorkoutDay: workout.resumeWorkoutDay,
       selectDate: nav.setSelectedDate,
       selectPreset: presets.setCurrentPresetId,
-      setCurrentEditingPresetId: presets.setCurrentEditingPresetId,
       setCurrentWorkoutId: nav.setCurrentWorkoutId,
       setHistoryPartFilter: ui.setHistoryPartFilter,
+      setHistoryView: ui.setHistoryView,
       setScreen: nav.showScreen,
       setEditMode: ui.setEditMode,
       setWeightUnit,
       startWorkoutDay: workout.startWorkoutDay,
       startPreset: presets.startPreset,
-      addTrainingPlan: trainingPlan.addTrainingPlan,
-      upsertTrainingPlan: trainingPlan.upsertTrainingPlan,
       addPart: part.addPart,
       deletePart: part.deletePart,
       movePart: part.movePart,

@@ -4,7 +4,6 @@
 .drag-handle,
 .delete-exercise,
 .delete-workout,
-.preset-delete,
 .preset-row-btn,
 .history-btn,
 .home-menu-btn,
@@ -92,7 +91,6 @@
 .drag-handle svg,
 .delete-exercise svg,
 .delete-workout svg,
-.preset-delete svg,
 .preset-row-btn svg,
 .history-btn svg,
 .home-menu-btn svg,
@@ -122,7 +120,6 @@
   stroke-width: 2.6;
 }
 
-.preset-delete svg,
 .preset-row-btn svg {
   width: 23px;
   height: 23px;

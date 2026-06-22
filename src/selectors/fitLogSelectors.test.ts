@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   buildExerciseCounts,
   buildPartCounts,
-  buildUpcomingPlans,
   buildVisibleHistory,
   plannedPartsForDate,
+  scheduledPresetsForDate,
 } from './fitLogSelectors';
-import { TrainingPlan, Workout } from '../types';
+import { Preset, TrainingPlan, Workout } from '../types';
 
 const workout: Workout = {
   id: 'w1',
@@ -38,6 +38,31 @@ const plans: TrainingPlan[] = [
   },
 ];
 
+const presets: Preset[] = [
+  {
+    id: 'preset-1',
+    name: '上半身',
+    exerciseIds: [],
+    schedule: {
+      mode: 'weekly',
+      weekdays: [6],
+      intervalDays: 1,
+      startDate: '',
+    },
+  },
+  {
+    id: 'preset-2',
+    name: '下半身',
+    exerciseIds: [],
+    schedule: {
+      mode: 'interval',
+      weekdays: [],
+      intervalDays: 3,
+      startDate: '2026-06-20',
+    },
+  },
+];
+
 describe('history selectors', () => {
   it('履歴を日付ごとにまとめて部位で絞り込む', () => {
     const result = buildVisibleHistory([workout], [{ date: '2026-06-19', parts: ['背中'] }], '胸');
@@ -55,10 +80,14 @@ describe('history selectors', () => {
     expect(plannedPartsForDate('2026-06-23', plans)).toEqual(['脚']);
   });
 
-  it('選択日から指定日数の予定を作る', () => {
-    const result = buildUpcomingPlans('2026-06-20', plans, 2);
-    expect(result.map((item) => item.date)).toEqual(['2026-06-20', '2026-06-21']);
-    expect(result[0].parts).toEqual(['胸', '脚']);
+  it('曜日指定と間隔指定に一致するプリセットを一覧順で返す', () => {
+    expect(scheduledPresetsForDate('2026-06-20', presets).map((preset) => preset.id)).toEqual([
+      'preset-1',
+      'preset-2',
+    ]);
+    expect(scheduledPresetsForDate('2026-06-23', presets).map((preset) => preset.id)).toEqual([
+      'preset-2',
+    ]);
   });
 });
 

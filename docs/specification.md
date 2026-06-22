@@ -142,7 +142,7 @@ useFitLogCore (state + 永続化 + トースト)
         ├─ usePresetActions
         ├─ useWorkoutActions
         ├─ useExerciseActions
-        ├─ useTrainingPlanActions
+        ├─ usePartActions
         └─ useBackup
         │
    useFitLog (上記を統合し state・派生値・actions を組み立てる)
@@ -162,12 +162,11 @@ useFitLogCore (state + 永続化 + トースト)
 | `useNavigation` | `hooks/useNavigation.ts` | `screen` / `selectedDate` / `currentWorkoutId` の管理、画面遷移、日付・月移動、離脱時の空セット掃除 |
 | `useHomeCalendar` | `hooks/useHomeCalendar.ts` | ホームの週/月カレンダー表示、スワイプ遷移、選択日の同期 |
 | `useExerciseReorder` | `hooks/useExerciseReorder.ts` | 種目のドラッグ中レイアウトとカテゴリを管理し、終了時に確定 |
-| `useFitLogUi` | `hooks/useFitLogUi.ts` | 保存しない一時 UI 状態（編集モード、種目選択画面で表示中の部位タブ `activePart`、ドラッグ対象、履歴フィルタ） |
+| `useFitLogUi` | `hooks/useFitLogUi.ts` | 保存しない一時 UI 状態（編集モード、部位タブ、履歴フィルタ、プリセット下書き） |
 | `useFitLogSelectors` | `hooks/useFitLogSelectors.ts` | `state` と `selectedDate` から派生値を `useMemo` で計算 |
-| `usePresetActions` | `hooks/usePresetActions.ts` | プリセットの選択・作成・改名・削除・種目増減・並び替え・一括投入 |
+| `usePresetActions` | `hooks/usePresetActions.ts` | プリセットの選択・下書き保存・削除・一括投入 |
 | `useWorkoutActions` | `hooks/useWorkoutActions.ts` | ワークアウト/セットの追加・更新・削除・並び替え・詳細を開く |
 | `useExerciseActions` | `hooks/useExerciseActions.ts` | 種目マスタの追加・計測方法変更・削除・ドラッグ並び替え |
-| `useTrainingPlanActions` | `hooks/useTrainingPlanActions.ts` | 分割計画の追加（上書き）・インライン更新・削除 |
 | `usePartActions` | `hooks/usePartActions.ts` | 部位の追加・削除・並び替え・表示色変更 |
 | `useBackup` | `hooks/useBackup.ts` | JSON エクスポート / インポート |
 | `useFitLog` | `hooks/useFitLog.ts` | 上記を束ね、画面へ渡す値と `actions` をまとめる統合フック |
@@ -194,9 +193,9 @@ useFitLogCore (state + 永続化 + トースト)
 | `workouts` | `Workout[]` | 日付ごとの記録（セットを含む） |
 | `workoutStartTimes` | `Record<string, string>` | 日付ごとのトレーニング開始時刻（`HH:mm`） |
 | `workoutEndTimes` | `Record<string, string>` | 日付ごとのトレーニング終了時刻（`HH:mm`） |
-| `presets` | `Preset[]` | よく使う種目のまとまり |
+| `presets` | `Preset[]` | よく使う種目のまとまりと任意のスケジュール |
 | `trainingDays` | `TrainingDay[]` | 日付ごとの実施部位（履歴の補助情報） |
-| `trainingPlans` | `TrainingPlan[]` | 部位ごとの分割計画 |
+| `trainingPlans` | `TrainingPlan[]` | 旧バージョンの部位別計画（読み込み互換用。画面では使用しない） |
 | `parts` | `PartSetting[]` | 部位の表示設定（表示順は配列順、`color` に表示色 HEX）。「レスト」は対象外 |
 | `weightUnit` | `WeightUnit` | アプリ内の重量入力・表示に使う単位（`kg` / `lbs`）。保存値は kg のまま保持する |
 | `catalogVersion` | `number` | 種目マスタのカタログ版（追補判定に使用） |
@@ -266,6 +265,14 @@ type Preset = {
   id: string;
   name: string;
   exerciseIds: string[]; // 投入する種目 ID の順序付きリスト
+  schedule?: PresetSchedule;
+};
+
+type PresetSchedule = {
+  mode: TrainingPlanMode;
+  weekdays: number[];    // 0=日 〜 6=土（weekly のとき有効）
+  intervalDays: number;  // 何日ごと（interval のとき有効、>=1）
+  startDate: string;     // 'YYYY-MM-DD'（interval の起点）
 };
 
 type TrainingDay = {
@@ -349,6 +356,7 @@ type PartSetting = {
 - **グリップ候補の初期化**: `catalogVersion` が 4 未満のデータは、全種目の「握りの向き」を4候補すべて有効にして移行する。移行後は種目編集で個別に変更できる。
 - **握り方候補の初期化**: `catalogVersion` が 5 未満のデータは、全種目の「握り方」を4候補すべて有効にして移行する。移行後は種目編集で個別に変更できる。
 - **既定プリセット補完**: 名前が一致しない既定プリセットを末尾に追加（`mergeDefaultPresets`）。
+- **プリセットスケジュール**: `weekly` / `interval` の形式、曜日（0〜6）、1 日以上の間隔を正規化。不正なスケジュールは未設定として扱う。
 - 各フィールドの正規化方針:
   - `Exercise`: `id` / `part` / `name` がすべて文字列でなければ除外。`measurementType` は `'seconds'` 以外を `'reps'` に丸める。`category` は 5 種のいずれかに丸め、未設定・不正値のときは初期種目マスタに同名があればそのカテゴリを、なければ `'free'` を使う。`availableGrips` はノーマル・リバース・パラレル・オルタネイト、`availableGripStyles` はサムアラウンド・サムレス・サムアップ・フックのみを重複排除して保持し、未設定の旧データは各候補を全て有効にする。`goal` は重量が 0 以上、回数・秒数が 1 以上の有限数である場合だけ保持し、不正値・未設定は目標なしとして扱う。
   - `ExerciseGoalAchievement`: ID・種目 ID・種目名・日付が文字列で、達成重量と目標重量が 0 以上、達成回数・秒数と目標回数・秒数が 1 以上の有限数である場合だけ保持する。未設定の旧データは空配列として扱う。
@@ -374,7 +382,7 @@ type PartSetting = {
 
 ## 6. 画面仕様
 
-`Screen` 型: `'home' | 'select' | 'detail' | 'exerciseHistory' | 'goalAchievements' | 'preset' | 'presetEdit' | 'history' | 'partEdit' | 'settings'`。
+`Screen` 型: `'home' | 'select' | 'detail' | 'exerciseHistory' | 'goalAchievements' | 'presetEdit' | 'presetExerciseSelect' | 'history' | 'partEdit' | 'settings'`。
 
 ### 6.1 アプリ外枠とナビゲーション（`App.tsx`）
 
@@ -402,8 +410,8 @@ type PartSetting = {
   - 右上の「今日」ボタンで本日へ移動し、下部リストも本日の内容に切り替える。
   - 日付タップでその日を選択し、下部リストを選択日の内容に切り替える。
   - 記録のある日は `trained`、本日は `today`、選択日は `selected` を付与して丸円やドットでハイライトする。
-- **プリセット開始バー**: プリセット選択 select + 「開始」+「管理」（プリセット一覧へ）。
-- **予定表示**: 選択日に分割計画で予定された部位があれば「予定: A / B」を表示。
+- **プリセット開始バー**: プリセット選択 select +「開始」。選択日にスケジュールされたプリセットがあれば、一覧で最初に該当するプリセットを既定選択にする。
+- **予定表示**: 選択日にスケジュールされたプリセットがあれば「予定: A / B」を表示。
 - **空状態**: 種目が無く、トレーニングが未終了の日は「トレーニングを開始」ボタンを表示。開始時刻だけが残っている場合も表示し、押した時刻（時・分）で開始時刻を更新して種目選択画面へ進む。終了済みの日は結果確認・再開ボタンを表示する。
 - **FAB からの開始**: 「トレーニングを開始」を押さずに FAB から種目選択画面へ進んだ場合は、最初に種目を選択した時刻を開始時刻として保存する。開始時刻が既にある場合は上書きしない。
 - **開始時刻**: 選択日の開始時刻は内部データ（`workoutStartTimes`）として保存するが、ホーム画面には表示しない。
@@ -411,7 +419,7 @@ type PartSetting = {
 - **終了後の閲覧専用状態**: 終了済みの日は種目追加 FAB と種目削除を非表示にし、プリセット開始を無効化する。種目詳細ではセット値・強度・メモ・目標を読み取り専用にし、セット一覧下部の追加ボタン・セット削除・レストタイマーを表示しない。更新アクション側でも終了済み日の追加・更新・削除を受け付けない。
 - **種目一覧**: `selectedWorkouts` をカード表示。各カードは `role="button"` でタップ / Enter / Space で詳細へ。
   - カードヘッダに「部位 - 種目名」と削除ボタン。ヘッダ左のライン色は部位の表示色（`partColors`）を反映する。
-  - セットは表形式（`HomeSetRow`）でセット番号・重さ・記録・RM を表示。重さと RM は設定中の重量単位を主表示にし、補助列には反対側の単位を表示する。
+  - セットは表形式（`HomeSetRow`）でセット番号・重さ・記録・RM を表示。重さと RM は設定中の重量単位で表示する。
   - 未開始ワークアウト（後述）は「＋」オーバーレイを表示。
   - 一覧が空のときは空状態メッセージ。
 - **FAB（＋）**: 種目選択画面へ。
@@ -484,11 +492,16 @@ type PartSetting = {
 - 重量は保存値 kg を現在の重量単位へ換算して表示する。
 - 記録がない場合は空状態メッセージを表示する。
 
-### 6.8 プリセット一覧（`PresetListScreen`）/ 編集（`PresetEditScreen`）
+### 6.8 プリセット編集（`PresetEditScreen`）
 
-- 一覧: プリセットの作成・選択・編集画面への遷移。
-- 編集: 名称変更（空なら「名称未設定」）、種目の追加（重複は無視）・削除・並び替え、プリセット削除。
-- ホームの「開始」やプリセット一覧から `startPreset` を実行すると、プリセットの種目を選択日へ一括投入する（後述 8.3）。
+- 履歴/計画の計画タブから追加・編集で遷移する。編集内容は保存対象外の下書きとして保持する。
+- ヘッダ右の「保存」で名称・スケジュール・選択種目をまとめて確定し、計画タブへ戻る。戻る操作では下書きを破棄する。
+- 編集画面に削除ボタンは置かず、削除は計画タブの一覧から行う。
+- 編集: 名称変更（保存時に空なら「名称未設定」）、種目の削除・並び替え。
+- スケジュールと「種目の選択」を独立したカードとして余白を空けて表示する。
+- スケジュールは「設定なし / 曜日 / 何日ごと」から選ぶ。曜日では複数曜日、何日ごとでは間隔と開始日を保存する。
+- 「種目の選択」ヘッダ右の＋ボタンで専用画面へ遷移する。通常の種目選択画面と同じ部位タブと器具カテゴリ区分を使い、複数種目を選択・解除できる。「完了」で下書きを保持したまま編集画面へ戻る。
+- ホームの「開始」から `startPreset` を実行すると、プリセットの種目を選択日へ一括投入する（後述 8.3）。
 
 ### 6.9 履歴/計画（`HistoryScreen`）
 
@@ -496,14 +509,12 @@ type PartSetting = {
 - 「履歴」「計画」をタブ切り替え。
 - **履歴タブ**:
   - 部位フィルタタブ（`ALL` + 部位、ただし「レスト」は除外）。
-  - 月カレンダー（前月 / 次月、記録のある日は `trained`、本日は `today`、計画日はツールチップで部位表示）。日付タップでその日のホームへ。
+  - 月カレンダー（前月 / 次月、記録のある日は `trained`、本日は `today`、計画日はツールチップでプリセット名を表示）。日付タップでその日のホームへ。
   - 「<部位>の履歴」リスト: 日付・部位・種目名（`buildVisibleHistory` で `workouts` と `trainingDays` を日付ごとに統合し、部位フィルタを適用、新しい順）。
 - **計画タブ**:
-  - 部位ごとに 1 行（`PlanRow`、`orderedParts` から「レスト」を除外）を表示し、その場で編集する（フォームや追加・削除ボタンは持たない）。並び順と行の左色は部位の表示設定（`orderedParts` / `partColors`）を反映する。
-  - 各行: 部位名と「曜日 / 何日ごと」のモードトグル、`weekly` のとき曜日ピッカー、`interval` のとき間隔＋開始日。操作のたびに `upsertTrainingPlan` で即保存。
-  - `weekly` で曜日を 1 つも選ばない状態にすると、その部位の計画は持たない（保存されない）。
-  - 部位が 1 つも無ければ「部位がありません」。
-  - 「今後7日の予定」プレビュー: 選択日から 7 日間の予定部位（日付に曜日付き、日付と部位で改行）。
+  - 見出しは「トレーニングメニュー」。
+  - 「追加」で新規プリセットを作成して編集画面へ遷移する。
+  - プリセットごとに選択中の種目数と現在の設定（設定なし / 曜日 / 開始日から N 日ごと）を縦並びで表示する。行のタップまたはゴミ箱の左にある編集ボタンでプリセット編集画面へ遷移し、削除ボタンから確認後に削除できる。
 
 ### 6.10 分析（`AnalysisScreen`）
 
@@ -566,9 +577,9 @@ weight === 0 または reps === 0 → '0.0'
 - `measurementUnit` / `measurementLabel`: `'seconds'` → `秒`/`秒数`、`'reps'` → `回`/`回数`。
 - `exerciseCategories` / `defaultExerciseCategory`: 器具カテゴリの表示順・ラベル（フリーウエイト種目 / マシン種目 / ダンベル種目 / ケーブル種目 / 自重種目）と、未設定時の既定値（`'free'`）。
 
-### 7.4 予定部位（`plannedPartsForDate`）
+### 7.4 予定プリセット（`scheduledPresetsForDate`）
 
-対象日の曜日・経過日数から、各計画が対象日に該当するかを判定し、部位を重複排除して返す。
+対象日の曜日・経過日数から、各プリセットのスケジュールが対象日に該当するかを判定し、プリセット一覧の順序で返す。
 
 - `weekly`: `weekdays` に対象日の曜日が含まれれば該当。
 - `interval`: `startDate`（無ければ対象日）からの経過日数が 0 以上かつ `intervalDays` の倍数なら該当。
@@ -630,27 +641,17 @@ weight === 0 または reps === 0 → '0.0'
 
 ### 8.3 プリセット操作（`usePresetActions`）
 
-- `currentPreset`: 選択中プリセット（無ければ先頭）。プリセット増減に応じて選択 ID を補正。
-- `createPreset` / `renamePreset`（空なら「名称未設定」）/ `deletePreset` / `addExerciseToPreset`（重複無視）/ `removeExerciseFromPreset` / `movePresetExercise`。
+- `currentPreset`: 選択中プリセット（無ければ先頭）。プリセット増減に応じて選択 ID を補正し、選択日に予定されたプリセットがあれば一覧で最初のものへ切り替える。
+- `savePreset`: 編集下書きを正規化し、同じ ID があれば置換、無ければ新規プリセットとして先頭へ追加する。名称が空なら「名称未設定」、種目 ID は重複排除する。
+- 下書きの作成・更新・破棄、複数種目の選択は `useFitLog` と `useFitLogUi` が担当し、「保存」までは永続 state を変更しない。
+- `deletePreset`: 計画タブから指定プリセットを削除する。
 - `startPreset`: 選択日にプリセットの種目を一括投入。
   - プリセットが空 →「プリセットに種目を追加してください」。
   - 既に当日に存在する種目・重複はスキップ。
   - 投入対象が 0 件のとき、既存があれば「すでに追加されています」、無ければ「プリセットの種目が見つかりません」。
   - 投入後はホームへ戻り「N種目を追加しました」。
 
-### 8.4 分割計画（`useTrainingPlanActions`）
-
-- `addTrainingPlan(part, mode, weekdays, intervalDays, startDate)`:
-  - 部位必須。`weekly` は曜日 1 つ以上、`interval` は `intervalDays >= 1` が必須（不足時はトースト）。
-  - 同じ部位の既存計画があれば **上書き**（ID を引き継ぐ）、無ければ先頭へ追加。
-  - `startDate` 未指定なら選択日を使用。保存後「計画を保存しました」。
-- `upsertTrainingPlan(part, mode, weekdays, intervalDays, startDate)`:
-  - `HistoryScreen` の部位行インライン編集から呼ばれる。トーストは出さない。
-  - 同じ部位の既存計画があれば **上書き**（ID を引き継ぐ）、無ければ先頭へ追加。`weekdays` は重複排除・ソート、`intervalDays` は `>=1` に丸め、`startDate` 未指定なら選択日を使用。
-  - `weekly` かつ曜日が空のときは、その部位の計画を削除する（行から計画を持たない状態にする）。
-- `deleteTrainingPlan`: 指定計画を削除。
-
-### 8.4.1 部位の編集（`usePartActions`）
+### 8.4 部位の編集（`usePartActions`）
 
 - いずれの操作も、`buildOrderedParts` で作る表示順つきの完全な部位一覧を `state.parts` へ書き戻す（明示設定＋データ由来を統合し、以降は明示管理になる）。
 - `addPart(name)`: 末尾に追加。空・重複はトースト。色はパレットを順番に割り当てる。

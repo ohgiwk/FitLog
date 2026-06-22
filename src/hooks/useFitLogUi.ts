@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ExerciseGoal, MeasurementType } from '../types';
+import { ExerciseGoal, MeasurementType, Preset } from '../types';
 
 export type GoalAchievement = {
   exerciseId: string;
@@ -13,6 +13,8 @@ export type GoalAchievement = {
  */
 export function useFitLogUi() {
   const [historyPartFilter, setHistoryPartFilter] = useState('ALL');
+  const [historyView, setHistoryView] = useState<'history' | 'plan'>('history');
+  const [presetDraft, setPresetDraft] = useState<Preset | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [activePart, setActivePart] = useState<string | null>(null);
   const [exerciseEditor, setExerciseEditor] = useState<{
@@ -31,6 +33,10 @@ export function useFitLogUi() {
   return {
     historyPartFilter,
     setHistoryPartFilter,
+    historyView,
+    setHistoryView,
+    presetDraft,
+    setPresetDraft,
     editMode,
     setEditMode,
     activePart,

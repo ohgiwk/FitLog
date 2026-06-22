@@ -84,6 +84,35 @@
   text-align: left;
 }
 
+.preset-exercise-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 10px;
+}
+
+.preset-exercise-option.selected {
+  background: var(--surface-muted);
+  color: var(--red);
+}
+
+.preset-exercise-check {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--text-on-primary);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.preset-exercise-option.selected .preset-exercise-check {
+  border-color: var(--red);
+  background: var(--red);
+}
+
 .exercise-option.edit-row {
   display: grid;
   grid-template-columns: 40px 1fr 42px 42px;
