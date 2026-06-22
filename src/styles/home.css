@@ -308,7 +308,7 @@
 
 .home-drawer {
   display: grid;
-  grid-template-rows: auto auto auto 1fr auto;
+  grid-template-rows: auto repeat(3, auto) 1fr;
   width: min(78vw, 320px);
   min-height: 100dvh;
   padding: max(18px, env(safe-area-inset-top)) 14px 18px;

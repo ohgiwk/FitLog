@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AnalysisIcon } from '../icons';
+import { AnalysisIcon, ChevronLeft } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import { buildExerciseCounts, buildPartCounts } from '../selectors/fitLogSelectors';
 
@@ -7,7 +7,7 @@ import { buildExerciseCounts, buildPartCounts } from '../selectors/fitLogSelecto
  * 保存済みの記録を種目別に集計して表示する分析画面
  */
 export function AnalysisScreen() {
-  const { state, partColors } = useFitLogContext();
+  const { state, partColors, actions } = useFitLogContext();
   const [activeView, setActiveView] = useState<'exercise' | 'part'>('exercise');
   const exerciseCounts = useMemo(() => buildExerciseCounts(state.workouts), [state.workouts]);
   const partCounts = useMemo(() => buildPartCounts(state.workouts), [state.workouts]);
@@ -29,7 +29,14 @@ export function AnalysisScreen() {
     <section className="screen active analysis-screen">
       <header className="topbar">
         <div className="bar-row">
-          <span />
+          <button
+            className="bar-btn"
+            type="button"
+            aria-label="戻る"
+            onClick={() => actions.setScreen('home')}
+          >
+            <ChevronLeft />
+          </button>
           <div className="bar-title">分析</div>
           <span />
         </div>

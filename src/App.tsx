@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AnalysisIcon, CalendarIcon, HomeIcon } from './icons';
+import { CalendarIcon, HomeIcon } from './icons';
 import { FitLogProvider } from './hooks/FitLogContext';
 import { useFitLogContext } from './hooks/useFitLogContext';
 import { DetailScreen } from './screens/DetailScreen';
@@ -95,14 +95,6 @@ function AppShell() {
         >
           <CalendarIcon />
           <span>履歴/計画</span>
-        </button>
-        <button
-          className={`nav-item ${screen === 'analysis' ? 'active' : ''}`}
-          type="button"
-          onClick={() => actions.setScreen('analysis')}
-        >
-          <AnalysisIcon />
-          <span>分析</span>
         </button>
       </nav>
       <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">
