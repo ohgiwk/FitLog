@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnalysisIcon, CalendarIcon, HomeIcon } from './icons';
 import { FitLogProvider } from './hooks/FitLogContext';
 import { useFitLogContext } from './hooks/useFitLogContext';
@@ -38,8 +38,13 @@ export function App() {
  */
 function AppShell() {
   const { screen, currentWorkout, toast, goalAchievement, state, actions } = useFitLogContext();
+  const appRef = useRef<HTMLElement>(null);
   const [updateServiceWorker, setUpdateServiceWorker] = useState<UpdateServiceWorker | null>(null);
   const [updating, setUpdating] = useState(false);
+
+  useLayoutEffect(() => {
+    appRef.current?.scrollTo({ top: 0 });
+  }, [screen]);
 
   useEffect(() => {
     const onPwaUpdate = (event: Event) => {
@@ -59,7 +64,7 @@ function AppShell() {
 
   return (
     <>
-      <main className="app">
+      <main className="app" ref={appRef}>
         {screen === 'home' && <HomeScreen />}
         {screen === 'select' && <SelectScreen />}
         {screen === 'exerciseEdit' && <ExerciseEditScreen />}
