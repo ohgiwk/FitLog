@@ -5,7 +5,6 @@ import {
   isRepsMeasurement,
   measurementUnit,
   number,
-  oppositeWeightUnit,
   weightUnitLabel,
 } from '../utils';
 
@@ -25,7 +24,6 @@ export function HomeSetRow({
   const isReps = isRepsMeasurement(measurementType);
   const hasWeight = weight > 0;
   const hasRecordValue = recordValue > 0;
-  const subUnit = oppositeWeightUnit(weightUnit);
   return (
     <tr>
       <td className="set-number">{index + 1}</td>
@@ -37,9 +35,6 @@ export function HomeSetRow({
         ) : (
           '-'
         )}
-      </td>
-      <td className="lbs">
-        {hasWeight ? `${formatWeight(weight, subUnit)}${weightUnitLabel(subUnit)}` : '-'}
       </td>
       <td className="reps">
         {hasRecordValue ? (

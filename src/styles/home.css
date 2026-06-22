@@ -187,7 +187,6 @@
   white-space: nowrap;
 }
 
-.set-table .lbs,
 .set-table .rm {
   color: var(--text-tertiary);
   font-size: 13px;

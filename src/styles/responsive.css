@@ -20,10 +20,6 @@
     font-size: 18px;
   }
 
-  .set-table .lbs {
-    display: none;
-  }
-
   .detail-row {
     grid-template-columns: 30px 1fr 1fr 50px 32px;
     gap: 5px;

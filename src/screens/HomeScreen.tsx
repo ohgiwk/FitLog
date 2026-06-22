@@ -263,7 +263,6 @@ export function HomeScreen() {
                     <tr>
                       <th>セット</th>
                       <th>重さ</th>
-                      <th></th>
                       <th>記録</th>
                       <th>RM</th>
                     </tr>
