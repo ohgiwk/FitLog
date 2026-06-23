@@ -93,6 +93,7 @@ export function useHomeCalendar(selectedDate: string, onSelectDate: (date: strin
     }
     onSelectDate(date);
     setAnchorDate(parseDate(date));
+    setMode('week');
   }
 
   function toggleMode() {

@@ -101,69 +101,86 @@ export function HomeCalendar({
           </aside>
         </div>
       )}
-      <div
-        className="home-calendar-viewport"
-        onPointerDown={calendar.startSwipe}
-        onPointerMove={calendar.moveSwipe}
-        onPointerUp={calendar.finishSwipe}
-        onPointerCancel={calendar.cancelSwipe}
-      >
-        <div
-          className={`home-calendar-track ${calendar.animating ? 'animating' : ''}`}
-          style={{ transform: `translateX(${calendar.dragOffset}px)` }}
-          onTransitionEnd={calendar.finishTransition}
-        >
-          {calendar.pages.map((page) => (
-            <div className="home-calendar-page" key={page.key}>
-              <div className="home-calendar-grid">
-                {weekdayLabels.map((day) => (
-                  <div className="weekday" key={day}>
-                    {day}
-                  </div>
-                ))}
-                {page.days.map((cell) => {
-                  const trained = trainedDates.has(cell.date);
-                  const selected = cell.date === selectedDate;
-                  const isToday = cell.date === today;
-                  return (
-                    <div className={`day-cell ${cell.inMonth ? '' : 'other'}`} key={cell.date}>
-                      {cell.inMonth ? (
-                        <button
-                          className={`day-btn ${trained ? 'trained' : ''} ${
-                            isToday ? 'today' : ''
-                          } ${selected ? 'selected' : ''}`}
-                          type="button"
-                          onPointerDown={(event) => event.stopPropagation()}
-                          onPointerUp={(event) => event.stopPropagation()}
-                          onTouchEnd={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            calendar.selectDate(cell.date);
-                          }}
-                          onClick={() => calendar.selectDate(cell.date)}
-                        >
-                          {cell.day}
-                        </button>
-                      ) : (
-                        <span aria-hidden="true" />
-                      )}
-                    </div>
-                  );
-                })}
+      <div className="home-calendar-body">
+        <div className="home-calendar-reserved" aria-hidden="true">
+          <div className="home-calendar-grid">
+            {weekdayLabels.map((day) => (
+              <div className="weekday" key={day}>
+                {day}
               </div>
+            ))}
+            {weekdayLabels.map((day) => (
+              <div className="day-cell" key={day} />
+            ))}
+          </div>
+          <span className="calendar-drag-handle" />
+        </div>
+        <div className="home-calendar-panel">
+          <div
+            className="home-calendar-viewport"
+            onPointerDown={calendar.startSwipe}
+            onPointerMove={calendar.moveSwipe}
+            onPointerUp={calendar.finishSwipe}
+            onPointerCancel={calendar.cancelSwipe}
+          >
+            <div
+              className={`home-calendar-track ${calendar.animating ? 'animating' : ''}`}
+              style={{ transform: `translateX(${calendar.dragOffset}px)` }}
+              onTransitionEnd={calendar.finishTransition}
+            >
+              {calendar.pages.map((page) => (
+                <div className="home-calendar-page" key={page.key}>
+                  <div className="home-calendar-grid">
+                    {weekdayLabels.map((day) => (
+                      <div className="weekday" key={day}>
+                        {day}
+                      </div>
+                    ))}
+                    {page.days.map((cell) => {
+                      const trained = trainedDates.has(cell.date);
+                      const selected = cell.date === selectedDate;
+                      const isToday = cell.date === today;
+                      return (
+                        <div className={`day-cell ${cell.inMonth ? '' : 'other'}`} key={cell.date}>
+                          {cell.inMonth ? (
+                            <button
+                              className={`day-btn ${trained ? 'trained' : ''} ${
+                                isToday ? 'today' : ''
+                              } ${selected ? 'selected' : ''}`}
+                              type="button"
+                              onPointerDown={(event) => event.stopPropagation()}
+                              onPointerUp={(event) => event.stopPropagation()}
+                              onTouchEnd={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                calendar.selectDate(cell.date);
+                              }}
+                              onClick={() => calendar.selectDate(cell.date)}
+                            >
+                              {cell.day}
+                            </button>
+                          ) : (
+                            <span aria-hidden="true" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+          <button
+            className="calendar-drag-handle"
+            type="button"
+            aria-label="カレンダーの週表示と月表示を切り替え"
+            onClick={calendar.toggleMode}
+            onPointerDown={calendar.startHandleSwipe}
+            onPointerUp={calendar.finishHandleSwipe}
+            onPointerCancel={calendar.cancelHandleSwipe}
+          />
         </div>
       </div>
-      <button
-        className="calendar-drag-handle"
-        type="button"
-        aria-label="カレンダーの週表示と月表示を切り替え"
-        onClick={calendar.toggleMode}
-        onPointerDown={calendar.startHandleSwipe}
-        onPointerUp={calendar.finishHandleSwipe}
-        onPointerCancel={calendar.cancelHandleSwipe}
-      />
     </header>
   );
 }

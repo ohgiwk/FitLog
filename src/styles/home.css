@@ -297,10 +297,8 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  border-bottom: 1px solid var(--border-medium);
   padding: max(18px, env(safe-area-inset-top)) 0 0;
   background: var(--panel);
-  box-shadow: 0 4px 16px var(--shadow-soft);
 }
 
 .home-calendar-head {
@@ -410,6 +408,23 @@
   color: var(--red);
 }
 
+.home-calendar-body {
+  position: relative;
+}
+
+.home-calendar-reserved {
+  visibility: hidden;
+}
+
+.home-calendar-panel {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  border-bottom: 1px solid var(--border-medium);
+  background: var(--panel);
+  box-shadow: 0 4px 16px var(--shadow-soft);
+}
+
 .home-calendar-viewport {
   overflow: hidden;
   touch-action: pan-y;
@@ -450,7 +465,7 @@
   padding: 0 12px 12px;
 }
 
-.home-calendar-shell.month .home-calendar-grid {
+.home-calendar-shell.month .home-calendar-panel .home-calendar-grid {
   row-gap: 12px;
 }
 
@@ -468,7 +483,7 @@
   color: var(--ink);
 }
 
-.home-calendar-shell.month .home-calendar-grid .day-cell {
+.home-calendar-shell.month .home-calendar-panel .home-calendar-grid .day-cell {
   min-height: 42px;
 }
 
