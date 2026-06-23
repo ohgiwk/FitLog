@@ -5,16 +5,23 @@ const defaultSeconds = 60;
 export function RestTimer() {
   const [secondsInput, setSecondsInput] = useState(String(defaultSeconds));
   const [remaining, setRemaining] = useState(defaultSeconds);
+  const [remainingMilliseconds, setRemainingMilliseconds] = useState(defaultSeconds * 1000);
+  const [durationMilliseconds, setDurationMilliseconds] = useState(defaultSeconds * 1000);
   const [endTime, setEndTime] = useState<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const running = endTime !== null;
+  const progressOffset = running
+    ? Math.min(100, Math.max(0, 100 - (remainingMilliseconds / durationMilliseconds) * 100))
+    : 0;
 
   useEffect(() => {
     if (!endTime) return;
 
     const timer = window.setInterval(() => {
-      const nextRemaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+      const nextRemainingMilliseconds = Math.max(0, endTime - Date.now());
+      const nextRemaining = Math.ceil(nextRemainingMilliseconds / 1000);
+      setRemainingMilliseconds(nextRemainingMilliseconds);
       setRemaining(nextRemaining);
       if (nextRemaining === 0) {
         window.clearInterval(timer);
@@ -42,32 +49,59 @@ export function RestTimer() {
     const context = getAudioContext(audioContextRef.current);
     audioContextRef.current = context;
     void context?.resume();
+    const duration = seconds * 1000;
     setSecondsInput(String(seconds));
     setRemaining(seconds);
-    setEndTime(Date.now() + seconds * 1000);
+    setRemainingMilliseconds(duration);
+    setDurationMilliseconds(duration);
+    setEndTime(Date.now() + duration);
   }
 
   return (
-    <div className={`rest-timer ${running ? 'running' : ''}`} aria-label="レストタイマー">
-      <TimerIcon />
-      {running ? (
-        <strong>{remaining}</strong>
-      ) : (
-        <input
-          aria-label="タイマー秒数"
-          type="number"
-          min="1"
-          max="999"
-          inputMode="numeric"
-          value={secondsInput}
-          onChange={(event) => updateSeconds(event.target.value)}
-        />
-      )}
-      <span>秒</span>
-      <button type="button" onClick={toggleTimer}>
-        {running ? 'STOP' : 'START'}
-      </button>
-    </div>
+    <>
+      {running && <div className="rest-timer-overlay" aria-hidden="true" />}
+      <div className={`rest-timer ${running ? 'running' : ''}`} aria-label="レストタイマー">
+        {running ? (
+          <>
+            <svg className="rest-timer-progress" viewBox="0 0 100 100" aria-hidden="true">
+              <circle className="rest-timer-progress-track" cx="50" cy="50" r="46" />
+              <circle
+                className="rest-timer-progress-value"
+                cx="50"
+                cy="50"
+                r="46"
+                pathLength="100"
+                strokeDasharray="100"
+                strokeDashoffset={progressOffset}
+              />
+            </svg>
+            <div className="rest-timer-countdown">
+              <strong aria-live="polite">{remaining}</strong>
+              <button type="button" onClick={toggleTimer}>
+                STOP
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <TimerIcon />
+            <input
+              aria-label="タイマー秒数"
+              type="number"
+              min="1"
+              max="999"
+              inputMode="numeric"
+              value={secondsInput}
+              onChange={(event) => updateSeconds(event.target.value)}
+            />
+            <span>秒</span>
+            <button type="button" onClick={toggleTimer}>
+              START
+            </button>
+          </>
+        )}
+      </div>
+    </>
   );
 }
 

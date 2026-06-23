@@ -509,7 +509,33 @@
 }
 
 .rest-timer.running {
-  border-color: var(--red-border-soft);
+  left: 50%;
+  display: block;
+  width: 196px;
+  height: 196px;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  overflow: hidden;
+  background: var(--surface-float);
+  box-shadow: 0 10px 30px var(--shadow-strong);
+  transform: translateX(-50%);
+}
+
+.rest-timer-overlay {
+  position: fixed;
+  top: 0;
+  right: max(0px, (100vw - 480px) / 2);
+  bottom: var(--bottom-nav-total-height);
+  left: max(0px, (100vw - 480px) / 2);
+  z-index: 18;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.38) 0%,
+    rgba(0, 0, 0, 0.2) 48%,
+    rgba(0, 0, 0, 0) 100%
+  );
 }
 
 .rest-timer {
@@ -559,4 +585,52 @@
   font-size: 12px;
   font-weight: 900;
   white-space: nowrap;
+}
+
+.rest-timer-progress {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1) rotate(-90deg);
+}
+
+.rest-timer-progress circle {
+  fill: none;
+  stroke-width: 2.5;
+}
+
+.rest-timer-progress-track {
+  stroke: var(--red-soft);
+}
+
+.rest-timer-progress-value {
+  stroke: var(--red);
+  stroke-linecap: butt;
+  transition: stroke-dashoffset 250ms linear;
+}
+
+.rest-timer-countdown {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 50%;
+  text-align: center;
+}
+
+.rest-timer-countdown strong {
+  font-size: 68px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -4px;
+}
+
+.rest-timer-countdown button {
+  min-width: 78px;
+  min-height: 34px;
+  background: var(--surface-soft);
+  color: var(--text-secondary-strong);
 }
