@@ -103,6 +103,8 @@
 }
 
 .history-card-head {
+  display: flex;
+  align-items: center;
   min-height: 48px;
   border-left: 4px solid var(--red);
   border-bottom: 1px solid var(--line);
