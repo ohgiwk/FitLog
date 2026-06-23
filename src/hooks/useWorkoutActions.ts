@@ -36,27 +36,6 @@ export function useWorkoutActions({
   }
 
   /**
-   * トレーニング開始時刻を保存し、種目選択画面へ進む
-   */
-  function startWorkoutDay() {
-    const now = new Date();
-    const startTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    saveState((prev) => {
-      const workoutEndTimes = { ...prev.workoutEndTimes };
-      delete workoutEndTimes[selectedDate];
-      return {
-        ...prev,
-        workoutStartTimes: {
-          ...prev.workoutStartTimes,
-          [selectedDate]: startTime,
-        },
-        workoutEndTimes,
-      };
-    });
-    showScreen('select');
-  }
-
-  /**
    * トレーニング終了時刻を保存し、保存した時刻を返す
    */
   function endWorkoutDay(removeUnstartedWorkouts = false) {
@@ -131,12 +110,14 @@ export function useWorkoutActions({
     );
     const workout = existing || createWorkout(exercise, selectedDate);
     saveState((prev) => {
-      const workoutStartTimes = prev.workoutStartTimes[selectedDate]
-        ? prev.workoutStartTimes
-        : {
-            ...prev.workoutStartTimes,
-            [selectedDate]: startTime,
-          };
+      const hasWorkoutsForDate = prev.workouts.some((item) => item.date === selectedDate);
+      const workoutStartTimes =
+        hasWorkoutsForDate && prev.workoutStartTimes[selectedDate]
+          ? prev.workoutStartTimes
+          : {
+              ...prev.workoutStartTimes,
+              [selectedDate]: startTime,
+            };
       return {
         ...prev,
         workouts: existing ? prev.workouts : [...prev.workouts, workout],
@@ -314,7 +295,6 @@ export function useWorkoutActions({
 
   return {
     openWorkoutDetail,
-    startWorkoutDay,
     endWorkoutDay,
     resumeWorkoutDay,
     addExerciseToToday,

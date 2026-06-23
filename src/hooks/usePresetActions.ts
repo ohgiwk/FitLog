@@ -124,7 +124,21 @@ export function usePresetActions({
       return showToast(hasExisting ? 'すでに追加されています' : 'プリセットの種目が見つかりません');
     }
     const newWorkouts = exercisesToAdd.map((exercise) => createWorkout(exercise, selectedDate));
-    saveState((prev) => ({ ...prev, workouts: [...prev.workouts, ...newWorkouts] }));
+    const now = new Date();
+    const startTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    saveState((prev) => {
+      const hasWorkoutsForDate = prev.workouts.some((workout) => workout.date === selectedDate);
+      return {
+        ...prev,
+        workouts: [...prev.workouts, ...newWorkouts],
+        workoutStartTimes: {
+          ...prev.workoutStartTimes,
+          [selectedDate]: hasWorkoutsForDate
+            ? prev.workoutStartTimes[selectedDate] || startTime
+            : startTime,
+        },
+      };
+    });
     showScreen('home');
     showToast(`${exercisesToAdd.length}種目を追加しました`);
   }

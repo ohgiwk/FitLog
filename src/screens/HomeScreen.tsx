@@ -54,7 +54,6 @@ function useHomeScreenModel() {
       actions.setScreen('home');
     },
     onSelectPreset: actions.selectPreset,
-    onStartWorkoutDay: actions.startWorkoutDay,
     onEndWorkoutDay: actions.endWorkoutDay,
     onResumeWorkoutDay: actions.resumeWorkoutDay,
     onStartPreset: actions.startPreset,
@@ -84,7 +83,6 @@ export function HomeScreen() {
     workoutEndTime,
     onSelectDate,
     onSelectPreset,
-    onStartWorkoutDay,
     onEndWorkoutDay,
     onResumeWorkoutDay,
     onStartPreset,
@@ -176,7 +174,11 @@ export function HomeScreen() {
   }
 
   return (
-    <section className="screen active detail-screen">
+    <section
+      className={`screen active detail-screen ${
+        !selectedWorkouts.length && !workoutEndTime ? 'workout-start-ready' : ''
+      }`}
+    >
       <HomeCalendar
         selectedDate={selectedDate}
         workouts={workouts}
@@ -185,114 +187,112 @@ export function HomeScreen() {
         onOpenSettings={onOpenSettings}
         onOpenGoalAchievements={onOpenGoalAchievements}
       />
-      <div className="preset-start">
-        <select
-          aria-label="プリセットを選択"
-          disabled={!presets.length}
-          value={currentPreset?.id || ''}
-          onChange={(event) => onSelectPreset(event.target.value)}
-        >
-          {presets.length ? (
-            presets.map((preset) => (
-              <option key={preset.id} value={preset.id}>
-                {preset.name}
-              </option>
-            ))
-          ) : (
-            <option value="">プリセットなし</option>
-          )}
-        </select>
-        <button
-          className="small-primary"
-          disabled={!currentPreset || Boolean(workoutEndTime)}
-          type="button"
-          onClick={() => onStartPreset(currentPreset?.id || '')}
-        >
-          開始
-        </button>
-      </div>
-      {!!selectedScheduledPresets.length && (
-        <div className="planned-day">
-          <span>予定: {selectedScheduledPresets.map((preset) => preset.name).join(' / ')}</span>
+      {!selectedWorkouts.length && !workoutEndTime && (
+        <div className="workout-start-area">
+          <section className="workout-start-panel" aria-labelledby="workout-menu-start-title">
+            <div className="workout-start-section">
+              <h2 id="workout-menu-start-title">トレーニングを開始</h2>
+              {!!selectedScheduledPresets.length && (
+                <span className="scheduled-menu-label">
+                  今日の予定: {selectedScheduledPresets.map((preset) => preset.name).join(' / ')}
+                </span>
+              )}
+              <select
+                aria-label="トレーニングメニューを選択"
+                disabled={!presets.length}
+                value={currentPreset?.id || ''}
+                onChange={(event) => onSelectPreset(event.target.value)}
+              >
+                {presets.length ? (
+                  presets.map((preset) => (
+                    <option key={preset.id} value={preset.id}>
+                      {preset.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">メニューなし</option>
+                )}
+              </select>
+              <button
+                className="primary workout-start-primary"
+                disabled={!currentPreset}
+                type="button"
+                onClick={() => onStartPreset(currentPreset?.id || '')}
+              >
+                トレーニングメニューから開始
+              </button>
+            </div>
+            <div className="workout-start-divider">
+              <span>または</span>
+            </div>
+            <div className="workout-start-section">
+              <button className="workout-select-start-button" type="button" onClick={onOpenSelect}>
+                種目を選んで開始
+              </button>
+            </div>
+          </section>
         </div>
       )}
       <div className="content">
-        {!selectedWorkouts.length ? (
-          <div className="empty">
-            <div>
-              <strong>この日の種目はまだありません</strong>
+        {selectedWorkouts.map((workout) => (
+          <article
+            className="exercise-card"
+            key={workout.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => onOpenDetail(workout.id)}
+            onKeyDown={(event) => openDetailFromKey(event, workout.id)}
+          >
+            <header
+              className="exercise-head"
+              style={{ borderLeftColor: partColors.get(workout.part) }}
+            >
+              <h2>
+                {workout.part} - {workout.name}
+              </h2>
               {!workoutEndTime && (
                 <button
-                  className="primary start-training-button"
+                  className="delete-workout"
                   type="button"
-                  onClick={onStartWorkoutDay}
+                  aria-label={`${workout.name}を削除`}
+                  onClick={(event) => requestDelete(event, workout)}
                 >
-                  トレーニングを開始
+                  <TrashIcon />
                 </button>
               )}
-            </div>
-          </div>
-        ) : (
-          selectedWorkouts.map((workout) => (
-            <article
-              className="exercise-card"
-              key={workout.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => onOpenDetail(workout.id)}
-              onKeyDown={(event) => openDetailFromKey(event, workout.id)}
-            >
-              <header
-                className="exercise-head"
-                style={{ borderLeftColor: partColors.get(workout.part) }}
-              >
-                <h2>
-                  {workout.part} - {workout.name}
-                </h2>
-                {!workoutEndTime && (
-                  <button
-                    className="delete-workout"
-                    type="button"
-                    aria-label={`${workout.name}を削除`}
-                    onClick={(event) => requestDelete(event, workout)}
-                  >
-                    <TrashIcon />
-                  </button>
-                )}
-              </header>
-              <div className="exercise-body">
-                <table className="set-table">
-                  <thead>
-                    <tr>
-                      <th>セット</th>
-                      <th>重さ</th>
-                      <th>記録</th>
-                      <th>RM</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {workout.sets.map((set, setIndex) => (
-                      <HomeSetRow
-                        key={set.id}
-                        set={set}
-                        index={setIndex}
-                        measurementType={workout.measurementType}
-                        weightUnit={weightUnit}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-                {!workoutEndTime && isUnstartedWorkout(workout) && (
-                  <div className="new-workout-overlay" aria-hidden="true">
-                    <div className="new-workout-overlay-icon">
-                      <PlusIcon />
-                    </div>
+            </header>
+            <div className="exercise-body">
+              <table className="set-table">
+                <thead>
+                  <tr>
+                    <th>セット</th>
+                    <th>重さ</th>
+                    <th>記録</th>
+                    <th>RM</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workout.sets.map((set, setIndex) => (
+                    <HomeSetRow
+                      key={set.id}
+                      set={set}
+                      index={setIndex}
+                      measurementType={workout.measurementType}
+                      weightUnit={weightUnit}
+                    />
+                  ))}
+                </tbody>
+              </table>
+              {!workoutEndTime && isUnstartedWorkout(workout) && (
+                <div className="new-workout-overlay" aria-hidden="true">
+                  <div className="new-workout-overlay-icon">
+                    <PlusIcon />
                   </div>
-                )}
-              </div>
-            </article>
-          ))
-        )}
+                </div>
+              )}
+            </div>
+          </article>
+        ))}
         {workoutStartTime && !workoutEndTime && !!selectedWorkouts.length && (
           <button
             className="primary workout-action-button"
@@ -317,7 +317,7 @@ export function HomeScreen() {
           </div>
         )}
       </div>
-      {!workoutEndTime && (
+      {!workoutEndTime && !!selectedWorkouts.length && (
         <button className="fab" type="button" aria-label="種目を追加" onClick={onOpenSelect}>
           <PlusIcon />
         </button>

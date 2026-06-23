@@ -197,7 +197,6 @@ export function useFitLog() {
       setScreen: nav.showScreen,
       setEditMode: ui.setEditMode,
       setWeightUnit,
-      startWorkoutDay: workout.startWorkoutDay,
       startPreset: presets.startPreset,
       addPart: part.addPart,
       deletePart: part.deletePart,
