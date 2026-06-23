@@ -46,7 +46,8 @@ npm run lint         # eslint
 npm run format       # prettier --write
 ```
 
-- `npm run build` は型チェック（`tsc`）の後に `vite build` を実行し、PWA の Service Worker と manifest を生成します。
+- `npm run build` は `tsc -b` でアプリ本体と `vite.config.ts` の両方を型チェックした後に
+  `vite build` を実行し、PWA の Service Worker と manifest を生成します。
 
 ### 2.2 ビルド設定（`vite.config.ts`）
 
@@ -72,7 +73,9 @@ npm run format       # prettier --write
 | `package.json` | 依存とスクリプト |
 | `vite.config.ts` | Vite + PWA 設定（base: `/FitLog/`） |
 | `vitest.config.ts` | Vitest 設定（jsdom） |
-| `tsconfig.json` | TypeScript 設定 |
+| `tsconfig.json` | TypeScript プロジェクト参照の統括設定 |
+| `tsconfig.app.json` | アプリ本体の TypeScript 設定 |
+| `tsconfig.node.json` | Vite 設定の TypeScript 設定 |
 | `eslint.config.mjs` | ESLint 設定 |
 | `.github/workflows/deploy-pages.yml` | GitHub Pages デプロイ workflow |
 | `docs/` | 仕様・設計ドキュメント |

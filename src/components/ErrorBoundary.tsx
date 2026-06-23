@@ -14,7 +14,7 @@ type ErrorBoundaryState = {
  * 復旧手段として、データのバックアップ書き出しと再読み込みを提供する
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { hasError: false };
+  override state: ErrorBoundaryState = { hasError: false };
 
   /**
    * 子の描画で例外が発生したらエラー表示へ切り替える
@@ -26,7 +26,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   /**
    * 解析用にエラー内容をコンソールへ出力する
    */
-  componentDidCatch(error: Error, info: ErrorInfo) {
+  override componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('描画中にエラーが発生しました', error, info);
   }
 
@@ -59,7 +59,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     window.location.reload();
   };
 
-  render() {
+  override render() {
     if (!this.state.hasError) return this.props.children;
     return (
       <div className="error-boundary" role="alert">
