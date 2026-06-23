@@ -84,13 +84,6 @@ export function compactCalendarCells(year: number, month: number): CalendarCell[
 
 export const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
 
-export function hexToRgba(hex: string, alpha: number) {
-  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  if (!match) return hex;
-  const value = parseInt(match[1], 16);
-  return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
-}
-
 export function newSet(): WorkoutSet {
   return { id: uid(), weight: '', recordValue: '' };
 }
@@ -110,10 +103,6 @@ export function calcRm(weight: number, reps: number) {
 
 export function weightUnitLabel(unit: WeightUnit) {
   return unit === 'lbs' ? 'Lbs' : 'kg';
-}
-
-export function oppositeWeightUnit(unit: WeightUnit): WeightUnit {
-  return unit === 'lbs' ? 'kg' : 'lbs';
 }
 
 export function convertWeightFromKg(value: string | number, unit: WeightUnit) {

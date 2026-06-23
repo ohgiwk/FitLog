@@ -117,5 +117,3 @@ export function useNavigation({
     moveMonth,
   };
 }
-
-export type FitLogNavigation = ReturnType<typeof useNavigation>;

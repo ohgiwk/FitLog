@@ -114,5 +114,3 @@ export function useFitLogCore() {
 
   return { state, setState, saveState, toast, showToast };
 }
-
-export type FitLogCore = ReturnType<typeof useFitLogCore>;

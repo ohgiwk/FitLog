@@ -4,7 +4,6 @@ import {
   IconChartBar,
   IconChevronDown,
   IconChevronLeft,
-  IconChevronRight,
   IconChevronUp,
   IconDownload,
   IconGripVertical,
@@ -29,10 +28,6 @@ export function ChevronDown() {
 
 export function ChevronLeft() {
   return <IconChevronLeft />;
-}
-
-export function ChevronRight() {
-  return <IconChevronRight />;
 }
 
 export function PlusIcon() {

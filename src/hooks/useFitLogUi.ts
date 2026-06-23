@@ -48,5 +48,3 @@ export function useFitLogUi() {
     setGoalAchievement,
   };
 }
-
-export type FitLogUi = ReturnType<typeof useFitLogUi>;
