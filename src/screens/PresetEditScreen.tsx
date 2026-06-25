@@ -56,7 +56,7 @@ export function PresetEditScreen() {
           <button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}>
             <ChevronLeft />
           </button>
-          <div className="bar-title">プリセット編集</div>
+          <div className="bar-title">メニュー編集</div>
           <button className="bar-btn right" type="button" onClick={onSave}>
             保存
           </button>
@@ -66,8 +66,8 @@ export function PresetEditScreen() {
         {!preset ? (
           <div className="empty">
             <div>
-              <strong>編集するプリセットを選択してください</strong>
-              <span>履歴/計画の計画画面から編集できます。</span>
+              <strong>編集するメニューを選択してください</strong>
+              <span>トレーニングメニュー画面から編集できます。</span>
             </div>
           </div>
         ) : (
@@ -78,7 +78,7 @@ export function PresetEditScreen() {
                   className="preset-name-input"
                   maxLength={24}
                   value={preset.name}
-                  aria-label="プリセット名"
+                  aria-label="メニュー名"
                   onChange={(event) => onUpdate({ name: event.target.value })}
                 />
               </header>
@@ -228,7 +228,7 @@ function PresetScheduleEditor({
   return (
     <section className="preset-schedule">
       <div className="preset-section-title">スケジュール</div>
-      <p>設定した日は、ホームでこのプリセットが最初から選択されます。</p>
+      <p>設定した日は、ホームでこのメニューが最初から選択されます。</p>
       <div className="preset-schedule-mode" role="group" aria-label="スケジュール方式">
         <button
           className={!schedule ? 'active' : ''}
@@ -253,7 +253,7 @@ function PresetScheduleEditor({
         </button>
       </div>
       {schedule?.mode === 'weekly' && (
-        <div className="weekday-picker" aria-label="プリセットの曜日">
+        <div className="weekday-picker" aria-label="メニューの曜日">
           {weekdayLabels.map((day, index) => (
             <button
               className={weekdays.includes(index) ? 'active' : ''}

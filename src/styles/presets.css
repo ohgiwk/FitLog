@@ -2,6 +2,38 @@
   padding: 12px 11px 28px;
 }
 
+.training-menu-wrap {
+  min-height: calc(100dvh - 73px);
+  background: var(--surface);
+  padding-bottom: calc(var(--safe-area-bottom) + 24px);
+}
+
+.training-menu-screen .topbar {
+  box-shadow: none;
+}
+
+.training-menu-screen .bar-row {
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+}
+
+.training-menu-screen .bar-title {
+  font-size: 18px;
+}
+
+.schedule-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.schedule-title svg {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  color: var(--red);
+}
+
 .preset-card {
   overflow: hidden;
   margin-bottom: 16px;

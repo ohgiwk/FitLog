@@ -58,6 +58,7 @@ function useHomeScreenModel() {
     onResumeWorkoutDay: actions.resumeWorkoutDay,
     onStartPreset: actions.startPreset,
     onOpenSelect: () => actions.setScreen('select'),
+    onOpenTrainingMenu: () => actions.setScreen('trainingMenu'),
     onOpenAnalysis: () => actions.setScreen('analysis'),
     onOpenSettings: () => actions.setScreen('settings'),
     onOpenGoalAchievements: () => actions.setScreen('goalAchievements'),
@@ -87,6 +88,7 @@ export function HomeScreen() {
     onResumeWorkoutDay,
     onStartPreset,
     onOpenSelect,
+    onOpenTrainingMenu,
     onOpenAnalysis,
     onOpenSettings,
     onOpenGoalAchievements,
@@ -183,6 +185,7 @@ export function HomeScreen() {
         selectedDate={selectedDate}
         workouts={workouts}
         onSelectDate={onSelectDate}
+        onOpenTrainingMenu={onOpenTrainingMenu}
         onOpenAnalysis={onOpenAnalysis}
         onOpenSettings={onOpenSettings}
         onOpenGoalAchievements={onOpenGoalAchievements}

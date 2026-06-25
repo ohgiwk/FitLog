@@ -7,7 +7,7 @@ export type Screen =
   | 'goalAchievements'
   | 'presetEdit'
   | 'presetExerciseSelect'
-  | 'history'
+  | 'trainingMenu'
   | 'analysis'
   | 'partEdit'
   | 'settings';

@@ -84,7 +84,7 @@ export function useFitLog() {
    * 新規プリセットの下書きを作成して編集画面を開く
    */
   function createPresetDraft() {
-    ui.setPresetDraft({ id: uid(), name: '新規プリセット', exerciseIds: [] });
+    ui.setPresetDraft({ id: uid(), name: '新規メニュー', exerciseIds: [] });
     nav.showScreen('presetEdit');
   }
 
@@ -125,23 +125,21 @@ export function useFitLog() {
   }
 
   /**
-   * プリセット下書きを保存して計画画面へ戻る
+   * プリセット下書きを保存してトレーニングメニュー画面へ戻る
    */
   function savePresetDraft() {
     if (!ui.presetDraft) return;
     presets.savePreset(ui.presetDraft);
     ui.setPresetDraft(null);
-    ui.setHistoryView('plan');
-    nav.showScreen('history');
+    nav.showScreen('trainingMenu');
   }
 
   /**
-   * プリセット下書きを破棄して計画画面へ戻る
+   * プリセット下書きを破棄してトレーニングメニュー画面へ戻る
    */
   function cancelPresetDraft() {
     ui.setPresetDraft(null);
-    ui.setHistoryView('plan');
-    nav.showScreen('history');
+    nav.showScreen('trainingMenu');
   }
 
   return {
@@ -152,8 +150,6 @@ export function useFitLog() {
     activePart: ui.activePart,
     exerciseEditor: ui.exerciseEditor,
     groupedExercises: selectors.groupedExercises,
-    historyPartFilter: ui.historyPartFilter,
-    historyView: ui.historyView,
     partRecentLabels: selectors.partRecentLabels,
     orderedParts: selectors.orderedParts,
     partColors: selectors.partColors,
@@ -192,8 +188,6 @@ export function useFitLog() {
       selectDate: nav.setSelectedDate,
       selectPreset: presets.setCurrentPresetId,
       setCurrentWorkoutId: nav.setCurrentWorkoutId,
-      setHistoryPartFilter: ui.setHistoryPartFilter,
-      setHistoryView: ui.setHistoryView,
       setScreen: nav.showScreen,
       setEditMode: ui.setEditMode,
       setWeightUnit,

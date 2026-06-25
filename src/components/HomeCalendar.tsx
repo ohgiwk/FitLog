@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AnalysisIcon, MenuIcon, SettingsIcon, TrophyIcon } from '../icons';
+import { AnalysisIcon, CalendarIcon, MenuIcon, SettingsIcon, TrophyIcon } from '../icons';
 import { useHomeCalendar } from '../hooks/useHomeCalendar';
 import { localDate, weekdayLabels } from '../utils';
 import { appVersion } from '../version';
@@ -9,6 +9,7 @@ type HomeCalendarProps = {
   selectedDate: string;
   workouts: Workout[];
   onSelectDate: (date: string) => void;
+  onOpenTrainingMenu: () => void;
   onOpenAnalysis: () => void;
   onOpenSettings: () => void;
   onOpenGoalAchievements: () => void;
@@ -18,6 +19,7 @@ export function HomeCalendar({
   selectedDate,
   workouts,
   onSelectDate,
+  onOpenTrainingMenu,
   onOpenAnalysis,
   onOpenSettings,
   onOpenGoalAchievements,
@@ -71,6 +73,14 @@ export function HomeCalendar({
                 閉じる
               </button>
             </div>
+            <button
+              className="drawer-link"
+              type="button"
+              onClick={() => openFromDrawer(onOpenTrainingMenu)}
+            >
+              <CalendarIcon />
+              <span>トレーニングメニュー</span>
+            </button>
             <button
               className="drawer-link"
               type="button"

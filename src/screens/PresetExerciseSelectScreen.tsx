@@ -25,7 +25,7 @@ export function PresetExerciseSelectScreen() {
           >
             <ChevronLeft />
           </button>
-          <div className="bar-title">プリセット種目</div>
+          <div className="bar-title">メニュー種目</div>
           <button
             className="bar-btn right"
             type="button"

@@ -1,11 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { CalendarIcon, HomeIcon } from './icons';
 import { FitLogProvider } from './hooks/FitLogContext';
 import { useFitLogContext } from './hooks/useFitLogContext';
 import { DetailScreen } from './screens/DetailScreen';
 import { ExerciseHistoryScreen } from './screens/ExerciseHistoryScreen';
 import { ExerciseEditScreen } from './screens/ExerciseEditScreen';
-import { HistoryScreen } from './screens/HistoryScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { GoalAchievementScreen } from './screens/GoalAchievementScreen';
 import { PartEditScreen } from './screens/PartEditScreen';
@@ -14,6 +12,7 @@ import { PresetExerciseSelectScreen } from './screens/PresetExerciseSelectScreen
 import { SelectScreen } from './screens/SelectScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { AnalysisScreen } from './screens/AnalysisScreen';
+import { TrainingMenuScreen } from './screens/TrainingMenuScreen';
 import {
   formatStoredWeightInput,
   formatWeightForStorageInput,
@@ -33,7 +32,7 @@ export function App() {
 }
 
 /**
- * 画面の切り替えとボトムナビ・トーストを担当する外枠。
+ * 画面の切り替えとトーストを担当する外枠。
  * 各画面に渡す値は Context から各画面が自分で取得するため props は持たせない
  */
 function AppShell() {
@@ -73,30 +72,12 @@ function AppShell() {
         {screen === 'goalAchievements' && <GoalAchievementScreen />}
         {screen === 'presetEdit' && <PresetEditScreen />}
         {screen === 'presetExerciseSelect' && <PresetExerciseSelectScreen />}
-        {screen === 'history' && <HistoryScreen />}
+        {screen === 'trainingMenu' && <TrainingMenuScreen />}
         {screen === 'analysis' && <AnalysisScreen />}
         {screen === 'partEdit' && <PartEditScreen />}
         {screen === 'settings' && <SettingsScreen />}
       </main>
 
-      <nav className="bottom-nav">
-        <button
-          className={`nav-item ${screen === 'home' ? 'active' : ''}`}
-          type="button"
-          onClick={() => actions.setScreen('home')}
-        >
-          <HomeIcon />
-          <span>ホーム</span>
-        </button>
-        <button
-          className={`nav-item ${screen === 'history' ? 'active' : ''}`}
-          type="button"
-          onClick={() => actions.setScreen('history')}
-        >
-          <CalendarIcon />
-          <span>履歴/計画</span>
-        </button>
-      </nav>
       <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">
         {toast}
       </div>

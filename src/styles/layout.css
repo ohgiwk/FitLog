@@ -124,46 +124,6 @@
   line-height: 1;
 }
 
-.bottom-nav {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 15;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  max-width: 480px;
-  height: var(--bottom-nav-total-height);
-  margin: 0 auto;
-  border-top: 1px solid var(--border-medium);
-  padding-bottom: var(--safe-area-bottom);
-  background: var(--tab);
-}
-
-.nav-item {
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 3px;
-  color: var(--text-nav);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.nav-item.active {
-  color: var(--red);
-}
-
-.nav-item svg {
-  width: 25px;
-  height: 25px;
-  stroke: currentColor;
-  stroke-width: 2.4;
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 .toast {
   position: fixed;
   right: 16px;

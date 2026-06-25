@@ -12,8 +12,6 @@ export type GoalAchievement = {
  * 保存対象ではない、画面操作のための一時的な UI 状態をまとめるフック
  */
 export function useFitLogUi() {
-  const [historyPartFilter, setHistoryPartFilter] = useState('ALL');
-  const [historyView, setHistoryView] = useState<'history' | 'plan'>('history');
   const [presetDraft, setPresetDraft] = useState<Preset | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [activePart, setActivePart] = useState<string | null>(null);
@@ -31,10 +29,6 @@ export function useFitLogUi() {
   }
 
   return {
-    historyPartFilter,
-    setHistoryPartFilter,
-    historyView,
-    setHistoryView,
     presetDraft,
     setPresetDraft,
     editMode,
