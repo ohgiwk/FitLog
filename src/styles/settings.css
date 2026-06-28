@@ -207,6 +207,10 @@
   gap: 10px;
 }
 
+.settings-cloud-action-form {
+  display: grid;
+}
+
 .settings-cloud-list-head {
   display: flex;
   align-items: center;

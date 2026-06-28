@@ -43,8 +43,6 @@ export function useBackup({
   setCurrentPresetId,
 }: BackupDeps) {
   const [cloudEnabled] = useState(cloudBackupAvailable);
-  const [cloudEmail, setCloudEmail] = useState('');
-  const [cloudPassword, setCloudPassword] = useState('');
   const [cloudUserEmail, setCloudUserEmail] = useState<string | null>(null);
   const [cloudBackups, setCloudBackups] = useState<CloudBackup[]>([]);
   const [cloudLoading, setCloudLoading] = useState(false);
@@ -95,57 +93,63 @@ export function useBackup({
    */
   const refreshCloudBackups = useCallback(async () => {
     if (!cloudEnabled || !cloudUserEmail) return;
-    setCloudLoading(true);
     try {
       setCloudBackups(await listCloudBackups());
     } catch {
       showToast('クラウドバックアップの取得に失敗しました');
-    } finally {
-      setCloudLoading(false);
     }
   }, [cloudEnabled, cloudUserEmail, showToast]);
 
   /**
+   * 認証フォームの入力値を取り出して検証する
+   */
+  function readAuthFields(formData: FormData) {
+    const email = String(formData.get('email') ?? '').trim();
+    const password = String(formData.get('password') ?? '');
+    if (!email) {
+      showToast('メールアドレスを入力してください');
+      return null;
+    }
+    return { email, password };
+  }
+
+  /**
    * メールアドレスとパスワードで新規登録する
    */
-  async function signUp() {
-    const email = cloudEmail.trim();
-    if (!email) return showToast('メールアドレスを入力してください');
-    if (cloudPassword.length < 6) return showToast('パスワードは6文字以上で入力してください');
-    setCloudLoading(true);
+  async function signUp(formData: FormData) {
+    const fields = readAuthFields(formData);
+    if (!fields) return false;
+    if (fields.password.length < 6) {
+      showToast('パスワードは6文字以上で入力してください');
+      return false;
+    }
     try {
-      await signUpWithPassword(email, cloudPassword);
+      await signUpWithPassword(fields.email, fields.password);
       showToast('登録しました。確認メールが届いた場合は承認してください');
+      return true;
     } catch {
       showToast('新規登録に失敗しました');
-    } finally {
-      setCloudLoading(false);
+      return false;
     }
   }
 
   /**
    * メールアドレスとパスワードでログインする
    */
-  async function signIn() {
-    const email = cloudEmail.trim();
-    if (!email) {
-      showToast('メールアドレスを入力してください');
-      return false;
-    }
-    if (!cloudPassword) {
+  async function signIn(formData: FormData) {
+    const fields = readAuthFields(formData);
+    if (!fields) return false;
+    if (!fields.password) {
       showToast('パスワードを入力してください');
       return false;
     }
-    setCloudLoading(true);
     try {
-      await signInWithPassword(email, cloudPassword);
+      await signInWithPassword(fields.email, fields.password);
       showToast('ログインしました');
       return true;
     } catch {
       showToast('ログインに失敗しました');
       return false;
-    } finally {
-      setCloudLoading(false);
     }
   }
 
@@ -172,15 +176,12 @@ export function useBackup({
   async function backupToCloud() {
     if (!cloudUserEmail) return showToast('ログインしてください');
     flushState();
-    setCloudLoading(true);
     try {
       await createCloudBackup(state);
       setCloudBackups(await listCloudBackups());
       showToast('クラウドへバックアップしました');
     } catch {
       showToast('クラウドバックアップに失敗しました');
-    } finally {
-      setCloudLoading(false);
     }
   }
 
@@ -188,7 +189,6 @@ export function useBackup({
    * クラウドバックアップからローカル state を復元する
    */
   async function restoreFromCloud(backupId: string) {
-    setCloudLoading(true);
     try {
       const cloudState = await fetchCloudBackupState(backupId);
       const normalized = normalizeState(cloudState);
@@ -204,8 +204,6 @@ export function useBackup({
       showToast('クラウドバックアップを復元しました');
     } catch {
       showToast('クラウド復元に失敗しました');
-    } finally {
-      setCloudLoading(false);
     }
   }
 
@@ -213,15 +211,12 @@ export function useBackup({
    * 指定したクラウドバックアップを削除する
    */
   async function deleteBackupFromCloud(backupId: string) {
-    setCloudLoading(true);
     try {
       await deleteCloudBackup(backupId);
       setCloudBackups((current) => current.filter((backup) => backup.id !== backupId));
       showToast('クラウドバックアップを削除しました');
     } catch {
       showToast('クラウドバックアップの削除に失敗しました');
-    } finally {
-      setCloudLoading(false);
     }
   }
 
@@ -269,13 +264,9 @@ export function useBackup({
     importState,
     cloud: {
       enabled: cloudEnabled,
-      email: cloudEmail,
-      password: cloudPassword,
       userEmail: cloudUserEmail,
       backups: cloudBackups,
       loading: cloudLoading,
-      setEmail: setCloudEmail,
-      setPassword: setCloudPassword,
       signUp,
       signIn,
       signOut,

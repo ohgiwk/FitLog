@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useActionState, useState } from 'react';
 import { ChevronLeft, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 
@@ -26,24 +26,32 @@ export function CloudBackupsScreen() {
   const [deleteTarget, setDeleteTarget] = useState<CloudBackupItem | null>(null);
 
   /**
-   * 確認後にクラウドバックアップを復元する
+   * クラウド操作中は対象操作だけ React の Action pending に任せる
    */
-  async function confirmRestore() {
-    if (!restoreTarget) return;
-    const targetId = restoreTarget.id;
+  const [, backupAction, backupPending] = useActionState(async () => {
+    await cloud.backupToCloud();
+    return null;
+  }, null);
+  const [, refreshAction, refreshPending] = useActionState(async () => {
+    await cloud.refreshBackups();
+    return null;
+  }, null);
+  const [, restoreAction, restorePending] = useActionState(async (_: null, formData: FormData) => {
+    const targetId = String(formData.get('backupId') ?? '');
+    if (!targetId) return null;
     setRestoreTarget(null);
     await cloud.restoreFromCloud(targetId);
-  }
-
-  /**
-   * 確認後にクラウドバックアップを削除する
-   */
-  async function confirmDelete() {
-    if (!deleteTarget) return;
-    const targetId = deleteTarget.id;
+    return null;
+  }, null);
+  const [, deleteAction, deletePending] = useActionState(async (_: null, formData: FormData) => {
+    const targetId = String(formData.get('backupId') ?? '');
+    if (!targetId) return null;
     setDeleteTarget(null);
     await cloud.deleteBackupFromCloud(targetId);
-  }
+    return null;
+  }, null);
+  const cloudPending =
+    backupPending || refreshPending || restorePending || deletePending || cloud.loading;
 
   return (
     <section className="screen active settings-screen">
@@ -85,25 +93,19 @@ export function CloudBackupsScreen() {
             </div>
           ) : (
             <div className="settings-cloud-panel">
-              <button
-                className="settings-primary-button"
-                type="button"
-                disabled={cloud.loading}
-                onClick={() => void cloud.backupToCloud()}
-              >
-                今すぐクラウドへバックアップ
-              </button>
+              <form className="settings-cloud-action-form" action={backupAction}>
+                <button className="settings-primary-button" type="submit" disabled={cloudPending}>
+                  今すぐクラウドへバックアップ
+                </button>
+              </form>
               <div className="settings-cloud-list" aria-label="クラウドバックアップ一覧">
                 <div className="settings-cloud-list-head">
                   <span>最新バックアップ</span>
-                  <button
-                    className="settings-text-button"
-                    type="button"
-                    disabled={cloud.loading}
-                    onClick={() => void cloud.refreshBackups()}
-                  >
-                    更新
-                  </button>
+                  <form action={refreshAction}>
+                    <button className="settings-text-button" type="submit" disabled={cloudPending}>
+                      更新
+                    </button>
+                  </form>
                 </div>
                 {cloud.backups.length === 0 ? (
                   <p className="settings-help">まだクラウドバックアップはありません。</p>
@@ -121,7 +123,7 @@ export function CloudBackupsScreen() {
                         <button
                           className="settings-small-button"
                           type="button"
-                          disabled={cloud.loading}
+                          disabled={cloudPending}
                           onClick={() => setRestoreTarget(backup)}
                         >
                           復元
@@ -130,7 +132,7 @@ export function CloudBackupsScreen() {
                           className="settings-icon-button danger"
                           type="button"
                           aria-label={`${formatBackupDate(backup.createdAt)} のバックアップを削除`}
-                          disabled={cloud.loading}
+                          disabled={cloudPending}
                           onClick={() => setDeleteTarget(backup)}
                         >
                           <TrashIcon />
@@ -159,22 +161,20 @@ export function CloudBackupsScreen() {
               {formatBackupDate(restoreTarget.createdAt)}
               のバックアップで現在の端末データを置き換えます。復元前に現在のデータはJSONとして退避されます。
             </p>
-            <div className="confirm-actions">
+            <form className="confirm-actions" action={restoreAction}>
+              <input name="backupId" type="hidden" value={restoreTarget.id} />
               <button
                 className="small-outline"
                 type="button"
+                disabled={cloudPending}
                 onClick={() => setRestoreTarget(null)}
               >
                 キャンセル
               </button>
-              <button
-                className="danger-button"
-                type="button"
-                onClick={() => void confirmRestore()}
-              >
+              <button className="danger-button" type="submit" disabled={cloudPending}>
                 復元
               </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -193,18 +193,20 @@ export function CloudBackupsScreen() {
               {formatBackupDate(deleteTarget.createdAt)}
               のクラウドバックアップを削除します。この操作は元に戻せません。
             </p>
-            <div className="confirm-actions">
+            <form className="confirm-actions" action={deleteAction}>
+              <input name="backupId" type="hidden" value={deleteTarget.id} />
               <button
                 className="small-outline"
                 type="button"
+                disabled={cloudPending}
                 onClick={() => setDeleteTarget(null)}
               >
                 キャンセル
               </button>
-              <button className="danger-button" type="button" onClick={() => void confirmDelete()}>
+              <button className="danger-button" type="submit" disabled={cloudPending}>
                 削除
               </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
