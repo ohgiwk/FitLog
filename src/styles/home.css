@@ -636,7 +636,8 @@
 }
 
 .home-calendar-grid .day-btn.trained:not(.selected):not(.today) {
-  box-shadow: inset 0 0 0 2px var(--red-border-soft);
+  background: var(--red);
+  color: var(--text-on-primary);
 }
 
 .calendar-drag-handle {
