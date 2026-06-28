@@ -164,7 +164,7 @@ useFitLogCore (state + 永続化 + トースト)
 | フック | ファイル | 責務 |
 | --- | --- | --- |
 | `useFitLogCore` | `hooks/useFitLogCore.ts` | `State` の保持、`localStorage` 保存（デバウンス・flush・失敗通知）、トースト管理、`saveState` / `setState` 提供 |
-| `useNavigation` | `hooks/useNavigation.ts` | `screen` / `selectedDate` / `currentWorkoutId` の管理、画面遷移、日付・月移動、離脱時の空セット掃除 |
+| `useNavigation` | `hooks/useNavigation.ts` | `screen` / `transitionFrom` / `transitionDirection` / `selectedDate` / `currentWorkoutId` の管理、画面遷移、日付・月移動、離脱時の空セット掃除 |
 | `useHomeCalendar` | `hooks/useHomeCalendar.ts` | ホームの週/月カレンダー表示、スワイプ遷移、選択日の同期 |
 | `useExerciseReorder` | `hooks/useExerciseReorder.ts` | 種目のドラッグ中レイアウトとカテゴリを管理し、終了時に確定 |
 | `useFitLogUi` | `hooks/useFitLogUi.ts` | 保存しない一時 UI 状態（編集モード、部位タブ、履歴フィルタ、プリセット下書き） |
@@ -428,6 +428,7 @@ Supabase環境変数が設定されている場合だけ、クラウドバック
 ### 6.1 アプリ外枠とナビゲーション（`App.tsx`）
 
 - `<main class="app">` 内に現在の画面を 1 つだけ描画。
+- 画面切り替え時は `transitionDirection` に応じてプッシュ風アニメーションを付ける。進む遷移では遷移先画面が上に被さり、戻る遷移では上に被さっていた遷移元画面が右へ抜けて下の戻り先画面を見せる。端末の `prefers-reduced-motion` が有効な場合はアニメーションしない。
 - ボトムナビは設けず、ホームを画面遷移の起点にする。
 - トースト領域は `role="status"` `aria-live="polite"`。
 - 新しい Service Worker を検出したときは、画面下部に更新通知を表示する。「更新」ボタンを押すと新しい Service Worker を有効化し、ページを再読み込みする。

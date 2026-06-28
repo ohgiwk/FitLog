@@ -5,12 +5,40 @@ import { findCurrentWorkout } from '../selectors/fitLogSelectors';
 import { GoalAchievement } from './useFitLogUi';
 import { appendGoalAchievement, findGoalAchievement } from './goalAchievement';
 
+export type ScreenTransitionDirection = 'forward' | 'back' | 'none';
+
 type NavigationDeps = {
   state: State;
   saveState: (updater: (draft: State) => State) => void;
   setEditMode: (value: boolean) => void;
   setGoalAchievement: (value: GoalAchievement | null) => void;
 };
+
+const screenDepth: Record<Screen, number> = {
+  home: 0,
+  select: 1,
+  trainingMenu: 1,
+  goalAchievements: 1,
+  analysis: 1,
+  settings: 1,
+  detail: 1,
+  exerciseEdit: 2,
+  presetEdit: 2,
+  partEdit: 2,
+  localBackup: 2,
+  cloudAuth: 2,
+  cloudBackups: 2,
+  exerciseHistory: 2,
+  presetExerciseSelect: 3,
+};
+
+function getTransitionDirection(
+  current: Screen,
+  next: Screen,
+): ScreenTransitionDirection {
+  if (current === next) return 'none';
+  return screenDepth[next] > screenDepth[current] ? 'forward' : 'back';
+}
 
 /**
  * 画面遷移・選択中の日付・対象ワークアウトなど、ナビゲーション状態を管理するフック
@@ -23,6 +51,9 @@ export function useNavigation({
 }: NavigationDeps) {
   const [selectedDate, setSelectedDate] = useState(() => localDate(new Date()));
   const [screen, setScreen] = useState<Screen>('home');
+  const [transitionFrom, setTransitionFrom] = useState<Screen | null>(null);
+  const [transitionDirection, setTransitionDirection] =
+    useState<ScreenTransitionDirection>('none');
   const [currentWorkoutId, setCurrentWorkoutId] = useState<string | null>(null);
 
   /**
@@ -65,10 +96,17 @@ export function useNavigation({
    * 画面を切り替える。離脱時の後片付けや編集モード解除も行う
    */
   function showScreen(next: Screen) {
+    function commitScreen() {
+      const direction = getTransitionDirection(screen, next);
+      setTransitionFrom(direction === 'none' ? null : screen);
+      setTransitionDirection(direction);
+      setScreen(next);
+    }
+
     const isReadOnlyWorkout = Boolean(currentWorkout && state.workoutEndTimes[currentWorkout.date]);
     if (screen === 'detail' && next !== 'detail' && currentWorkout) {
       if (isReadOnlyWorkout) {
-        setScreen(next);
+        commitScreen();
         if (next !== 'select') setEditMode(false);
         return;
       }
@@ -80,7 +118,7 @@ export function useNavigation({
     }
     if (next !== 'detail' && next !== 'exerciseHistory') cleanupBlankDetailSets();
     if (next !== 'select' && next !== 'exerciseEdit') setEditMode(false);
-    setScreen(next);
+    commitScreen();
   }
 
   /**
@@ -108,6 +146,9 @@ export function useNavigation({
     selectedDate,
     setSelectedDate,
     screen,
+    transitionFrom,
+    transitionDirection,
+    clearScreenTransition: () => setTransitionFrom(null),
     showScreen,
     currentWorkoutId,
     setCurrentWorkoutId,

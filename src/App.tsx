@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type AnimationEvent } from 'react';
 import { FitLogProvider } from './hooks/FitLogContext';
 import { useFitLogContext } from './hooks/useFitLogContext';
 import { DetailScreen } from './screens/DetailScreen';
@@ -16,6 +16,7 @@ import { CloudAuthScreen } from './screens/CloudAuthScreen';
 import { CloudBackupsScreen } from './screens/CloudBackupsScreen';
 import { AnalysisScreen } from './screens/AnalysisScreen';
 import { TrainingMenuScreen } from './screens/TrainingMenuScreen';
+import type { Screen } from './types';
 import {
   formatStoredWeightInput,
   formatWeightForStorageInput,
@@ -39,7 +40,16 @@ export function App() {
  * 各画面に渡す値は Context から各画面が自分で取得するため props は持たせない
  */
 function AppShell() {
-  const { screen, currentWorkout, toast, goalAchievement, state, actions } = useFitLogContext();
+  const {
+    screen,
+    transitionFrom,
+    transitionDirection,
+    currentWorkout,
+    toast,
+    goalAchievement,
+    state,
+    actions,
+  } = useFitLogContext();
   const appRef = useRef<HTMLElement>(null);
   const [updateServiceWorker, setUpdateServiceWorker] = useState<UpdateServiceWorker | null>(null);
   const [updating, setUpdating] = useState(false);
@@ -47,6 +57,12 @@ function AppShell() {
   useLayoutEffect(() => {
     appRef.current?.scrollTo({ top: 0 });
   }, [screen]);
+
+  useEffect(() => {
+    if (!transitionFrom) return undefined;
+    const timeoutId = window.setTimeout(actions.clearScreenTransition, 320);
+    return () => window.clearTimeout(timeoutId);
+  }, [actions.clearScreenTransition, transitionFrom]);
 
   useEffect(() => {
     const onPwaUpdate = (event: Event) => {
@@ -64,24 +80,55 @@ function AppShell() {
     await updateServiceWorker(true);
   }
 
+  function clearScreenTransition(event: AnimationEvent<HTMLDivElement>) {
+    if (event.currentTarget !== event.target) return;
+    actions.clearScreenTransition();
+  }
+
+  function renderScreen(targetScreen: Screen) {
+    if (targetScreen === 'home') return <HomeScreen />;
+    if (targetScreen === 'select') return <SelectScreen />;
+    if (targetScreen === 'exerciseEdit') return <ExerciseEditScreen />;
+    if (targetScreen === 'detail' && currentWorkout) return <DetailScreen />;
+    if (targetScreen === 'exerciseHistory' && currentWorkout) return <ExerciseHistoryScreen />;
+    if (targetScreen === 'goalAchievements') return <GoalAchievementScreen />;
+    if (targetScreen === 'presetEdit') return <PresetEditScreen />;
+    if (targetScreen === 'presetExerciseSelect') return <PresetExerciseSelectScreen />;
+    if (targetScreen === 'trainingMenu') return <TrainingMenuScreen />;
+    if (targetScreen === 'analysis') return <AnalysisScreen />;
+    if (targetScreen === 'partEdit') return <PartEditScreen />;
+    if (targetScreen === 'settings') return <SettingsScreen />;
+    if (targetScreen === 'localBackup') return <LocalBackupScreen />;
+    if (targetScreen === 'cloudAuth') return <CloudAuthScreen />;
+    if (targetScreen === 'cloudBackups') return <CloudBackupsScreen />;
+    return null;
+  }
+
   return (
     <>
       <main className="app" ref={appRef}>
-        {screen === 'home' && <HomeScreen />}
-        {screen === 'select' && <SelectScreen />}
-        {screen === 'exerciseEdit' && <ExerciseEditScreen />}
-        {screen === 'detail' && currentWorkout && <DetailScreen />}
-        {screen === 'exerciseHistory' && currentWorkout && <ExerciseHistoryScreen />}
-        {screen === 'goalAchievements' && <GoalAchievementScreen />}
-        {screen === 'presetEdit' && <PresetEditScreen />}
-        {screen === 'presetExerciseSelect' && <PresetExerciseSelectScreen />}
-        {screen === 'trainingMenu' && <TrainingMenuScreen />}
-        {screen === 'analysis' && <AnalysisScreen />}
-        {screen === 'partEdit' && <PartEditScreen />}
-        {screen === 'settings' && <SettingsScreen />}
-        {screen === 'localBackup' && <LocalBackupScreen />}
-        {screen === 'cloudAuth' && <CloudAuthScreen />}
-        {screen === 'cloudBackups' && <CloudBackupsScreen />}
+        <div className={`screen-transition-stage ${transitionFrom ? 'covering' : ''}`}>
+          {transitionFrom && (
+            <div
+              className={`screen-layer previous ${
+                transitionDirection === 'back' ? 'back-exit' : ''
+              }`}
+              aria-hidden="true"
+              onAnimationEnd={transitionDirection === 'back' ? clearScreenTransition : undefined}
+            >
+              {renderScreen(transitionFrom)}
+            </div>
+          )}
+          <div
+            className={`screen-layer current ${
+              transitionDirection === 'forward' ? 'forward' : ''
+            }`}
+            key={screen}
+            onAnimationEnd={transitionDirection === 'forward' ? clearScreenTransition : undefined}
+          >
+            {renderScreen(screen)}
+          </div>
+        </div>
       </main>
 
       <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">

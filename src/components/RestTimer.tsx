@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 const defaultSeconds = 60;
 
@@ -57,7 +58,7 @@ export function RestTimer() {
     setEndTime(Date.now() + duration);
   }
 
-  return (
+  const timer = (
     <>
       {running && <div className="rest-timer-overlay" aria-hidden="true" />}
       <div className={`rest-timer ${running ? 'running' : ''}`} aria-label="レストタイマー">
@@ -103,6 +104,8 @@ export function RestTimer() {
       </div>
     </>
   );
+
+  return createPortal(timer, document.body);
 }
 
 function TimerIcon() {
