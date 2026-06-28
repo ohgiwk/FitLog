@@ -59,6 +59,7 @@ export function useFitLog() {
   const backup = useBackup({
     state: core.state,
     setState: core.setState,
+    flushState: core.flushState,
     showToast: core.showToast,
     selectedDate: nav.selectedDate,
     setSelectedDate: nav.setSelectedDate,
@@ -174,6 +175,7 @@ export function useFitLog() {
       endWorkoutDay: workout.endWorkoutDay,
       exportState: backup.exportState,
       importState: backup.importState,
+      cloud: backup.cloud,
       moveDate: nav.moveDate,
       moveMonth: nav.moveMonth,
       moveWorkout: workout.moveWorkout,

@@ -11,6 +11,9 @@ import { PresetEditScreen } from './screens/PresetEditScreen';
 import { PresetExerciseSelectScreen } from './screens/PresetExerciseSelectScreen';
 import { SelectScreen } from './screens/SelectScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { LocalBackupScreen } from './screens/LocalBackupScreen';
+import { CloudAuthScreen } from './screens/CloudAuthScreen';
+import { CloudBackupsScreen } from './screens/CloudBackupsScreen';
 import { AnalysisScreen } from './screens/AnalysisScreen';
 import { TrainingMenuScreen } from './screens/TrainingMenuScreen';
 import {
@@ -76,6 +79,9 @@ function AppShell() {
         {screen === 'analysis' && <AnalysisScreen />}
         {screen === 'partEdit' && <PartEditScreen />}
         {screen === 'settings' && <SettingsScreen />}
+        {screen === 'localBackup' && <LocalBackupScreen />}
+        {screen === 'cloudAuth' && <CloudAuthScreen />}
+        {screen === 'cloudBackups' && <CloudBackupsScreen />}
       </main>
 
       <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">

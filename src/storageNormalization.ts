@@ -21,6 +21,7 @@ import {
 import { defaultExerciseCategory, uid } from './utils';
 
 const REST_PART = 'レスト';
+export const stateSchemaVersion = 1;
 const defaultPresets: Preset[] = [
   { id: 'preset-chest-day', name: '胸の日', exerciseIds: [] },
   { id: 'preset-back-day', name: '背中の日', exerciseIds: [] },
@@ -59,6 +60,7 @@ function buildPartsFromNames(names: string[]): PartSetting[] {
 
 export function createDefaultState(): State {
   return {
+    schemaVersion: stateSchemaVersion,
     exercises: starterExercises,
     goalAchievements: [],
     workouts: [],
@@ -99,6 +101,7 @@ export function normalizeState(saved: Partial<State> | null | undefined): State 
   const trainingDays = normalizeTrainingDays(saved.trainingDays);
   const trainingPlans = normalizeTrainingPlans(saved.trainingPlans);
   return {
+    schemaVersion: normalizeSchemaVersion(saved.schemaVersion),
     exercises: mergedExercises,
     goalAchievements: normalizeGoalAchievements(saved.goalAchievements),
     workouts,
@@ -125,6 +128,12 @@ export function parseImportedState(json: string): State | null {
 
 function normalizeWeightUnit(value: unknown): WeightUnit {
   return value === 'lbs' ? 'lbs' : 'kg';
+}
+
+function normalizeSchemaVersion(value: unknown): number {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0
+    ? value
+    : stateSchemaVersion;
 }
 
 function normalizeGoalAchievements(value: unknown): ExerciseGoalAchievement[] {

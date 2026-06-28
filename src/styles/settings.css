@@ -100,3 +100,138 @@
 .settings-link-row + .settings-link-row {
   border-top: 1px solid var(--line);
 }
+
+.settings-cloud-panel {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.settings-help {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.settings-section-body {
+  padding: 12px;
+}
+
+.settings-cloud-account,
+.settings-backup-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-cloud-email {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.settings-cloud-email input {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.settings-primary-button,
+.settings-small-button,
+.settings-text-button,
+.settings-icon-button {
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.settings-primary-button {
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--red);
+  color: var(--text-on-primary);
+  font-size: 15px;
+}
+
+.settings-small-button {
+  min-height: 36px;
+  padding: 0 12px;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.settings-text-button {
+  min-height: 32px;
+  color: var(--red);
+  font-size: 13px;
+}
+
+.settings-icon-button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
+.settings-icon-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.settings-icon-button.danger {
+  color: var(--red);
+}
+
+.settings-primary-button:disabled,
+.settings-small-button:disabled,
+.settings-text-button:disabled,
+.settings-icon-button:disabled {
+  background: var(--disabled-bg);
+  color: var(--disabled-text);
+}
+
+.settings-cloud-list {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-cloud-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.settings-backup-row {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.settings-backup-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-version {
+  padding: 18px 4px 0;
+  color: var(--text-muted-light);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}

@@ -5,7 +5,8 @@ FitLog の仕様・設計ドキュメントの入口です。
 ## FitLog とは
 
 - React + Vite + TypeScript で作られた筋トレ記録 **PWA** です。
-- すべてのデータは端末の `localStorage` に保存され、サーバー通信を行いません（ローカル完結）。
+- 通常の記録データは端末の `localStorage` に保存され、未ログインでもローカル完結で使えます。
+- Supabase設定がある環境では、希望するユーザーだけメールアドレス・パスワードでログインし、手動クラウドバックアップ/復元を利用できます。
 - モバイル優先で、起動直後から選択日のトレーニングを記録できます。
 - GitHub Pages で公開し、公開パスは `/FitLog/`。`main` への push でデプロイが自動実行されます。
 
@@ -14,6 +15,7 @@ FitLog の仕様・設計ドキュメントの入口です。
 | ドキュメント | 内容 |
 | --- | --- |
 | [`specification.md`](./specification.md) | 実装に基づく詳細仕様（型・永続化・画面・ロジック・機能） |
+| [`supabase-migration.md`](./supabase-migration.md) | Supabase 移行に向けた現行データ構造・更新規則・設計論点の調査 |
 | [`improvements.md`](./improvements.md) | 今後の改善候補（備忘録） |
 
 > リポジトリ運用ルール（コミット方針・コーディング方針など）は、ルートの [`AGENTS.md`](../AGENTS.md) を参照してください。

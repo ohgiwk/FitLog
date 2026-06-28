@@ -1,8 +1,8 @@
-import { ChangeEvent, useRef } from 'react';
-import { ChevronLeft, ExportIcon, ImportIcon, PartsIcon } from '../icons';
+import { ChevronLeft, ExportIcon, PartsIcon } from '../icons';
 import { WeightUnit } from '../types';
 import { weightUnitLabel } from '../utils';
 import { useFitLogContext } from '../hooks/useFitLogContext';
+import { appVersion } from '../version';
 
 const unitOptions: WeightUnit[] = ['kg', 'lbs'];
 
@@ -17,8 +17,8 @@ function useSettingsScreenModel() {
     onBack: () => actions.setScreen('home'),
     onEditParts: () => actions.setScreen('partEdit'),
     onChangeWeightUnit: actions.setWeightUnit,
-    onExport: actions.exportState,
-    onImport: actions.importState,
+    onOpenLocalBackup: () => actions.setScreen('localBackup'),
+    onOpenCloudBackup: () => actions.setScreen(actions.cloud.userEmail ? 'cloudBackups' : 'cloudAuth'),
   };
 }
 
@@ -26,19 +26,8 @@ function useSettingsScreenModel() {
  * アプリ全体の表示・入力設定を変更する画面
  */
 export function SettingsScreen() {
-  const { weightUnit, onBack, onEditParts, onChangeWeightUnit, onExport, onImport } =
+  const { weightUnit, onBack, onEditParts, onChangeWeightUnit, onOpenLocalBackup, onOpenCloudBackup } =
     useSettingsScreenModel();
-  const importInputRef = useRef<HTMLInputElement | null>(null);
-
-  /**
-   * 選択されたバックアップファイルを読み込み処理へ渡す
-   */
-  async function handleImport(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    await onImport(file);
-  }
 
   return (
     <section className="screen active settings-screen">
@@ -52,13 +41,6 @@ export function SettingsScreen() {
         </div>
       </header>
       <div className="settings-content">
-        <input
-          ref={importInputRef}
-          hidden
-          accept="application/json,.json"
-          type="file"
-          onChange={(event) => void handleImport(event)}
-        />
         <section className="settings-section" aria-label="単位設定">
           <div className="settings-row">
             <div className="settings-label">
@@ -90,19 +72,18 @@ export function SettingsScreen() {
           <h2 className="settings-section-title" id="data-management-title">
             データ管理
           </h2>
-          <button className="settings-link-row" type="button" onClick={onExport}>
+          <button className="settings-link-row" type="button" onClick={onOpenLocalBackup}>
             <ExportIcon />
-            <span>記録を書き出す</span>
+            <span>ローカルバックアップ</span>
           </button>
-          <button
-            className="settings-link-row"
-            type="button"
-            onClick={() => importInputRef.current?.click()}
-          >
-            <ImportIcon />
-            <span>記録を読み込む</span>
+          <button className="settings-link-row" type="button" onClick={onOpenCloudBackup}>
+            <ExportIcon />
+            <span>クラウドバックアップ</span>
           </button>
         </section>
+        <div className="settings-version" aria-label={`アプリバージョン ${appVersion}`}>
+          {appVersion}
+        </div>
       </div>
     </section>
   );

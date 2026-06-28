@@ -10,7 +10,10 @@ export type Screen =
   | 'trainingMenu'
   | 'analysis'
   | 'partEdit'
-  | 'settings';
+  | 'settings'
+  | 'localBackup'
+  | 'cloudAuth'
+  | 'cloudBackups';
 
 export type MeasurementType = 'reps' | 'seconds';
 
@@ -118,6 +121,7 @@ export type PartSetting = {
 };
 
 export type State = {
+  schemaVersion: number;
   exercises: Exercise[];
   goalAchievements: ExerciseGoalAchievement[];
   workouts: Workout[];

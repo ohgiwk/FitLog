@@ -9,7 +9,8 @@
 ## 1. プロジェクト概要
 
 - **FitLog** は React + Vite + TypeScript で作られた筋トレ記録 PWA です。
-- すべてのデータは端末の `localStorage` に保存され、サーバー通信は行いません（ローカル完結）。
+- 通常の記録データは端末の `localStorage` に保存され、未ログインでもローカル完結で利用できます。
+- Supabase設定がある環境では、希望するユーザーだけメールアドレス・パスワードでログインし、手動クラウドバックアップ/復元を利用できます。
 - モバイル優先のレイアウトで、起動直後から記録を始められます（ランディングページは持ちません）。
 - GitHub Pages で公開し、公開パスは `/FitLog/` です。`main` ブランチへの push でデプロイ workflow が自動実行されます。
 
@@ -30,6 +31,7 @@
 | ビルド | Vite |
 | 言語 | TypeScript |
 | PWA | `vite-plugin-pwa`（workbox） |
+| クラウドバックアップ | Supabase |
 | アイコン | `@tabler/icons-react` |
 | テスト | Vitest + jsdom |
 | Lint / Format | ESLint + Prettier |
@@ -191,6 +193,7 @@ useFitLogCore (state + 永続化 + トースト)
 
 | フィールド | 型 | 内容 |
 | --- | --- | --- |
+| `schemaVersion` | `number` | 保存データ全体のスキーマバージョン |
 | `exercises` | `Exercise[]` | 種目マスタ（部位・名前・計測方法・器具カテゴリ） |
 | `goalAchievements` | `ExerciseGoalAchievement[]` | 種目目標の達成記録（達成日・実際のセット値・達成時の目標値） |
 | `workouts` | `Workout[]` | 日付ごとの記録（セットを含む） |
@@ -321,6 +324,7 @@ type PartSetting = {
 | --- | --- |
 | `fit-log-v2` | 通常の保存データ |
 | `fit-log-v2-corrupt` | 読み込みに失敗した壊れたデータの退避先 |
+| `fit-log-device-id` | クラウドバックアップ時に作成元端末を識別する端末ID |
 
 ### 5.2 保存戦略（`useFitLogCore`）
 
@@ -349,6 +353,7 @@ type PartSetting = {
 - `goalAchievements`: 空配列。
 - `workoutStartTimes` / `workoutEndTimes`: 空オブジェクト。
 - `weightUnit`: `'kg'`。
+- `schemaVersion`: 現在の保存データバージョン。
 - `catalogVersion`: `starterCatalogVersion`（現在 `5`）。
 
 ### 5.5 正規化・移行（`normalizeState`）
@@ -372,6 +377,7 @@ type PartSetting = {
   - `parts`（`normalizePartSettings`）: 保存済み設定（`name` + `color`、空名・重複・「レスト」は除外、色が無ければ既定色）を順序を保って取り込み、その後、種目・記録・実施日・計画に現れる未登録の部位を末尾へ追加してパレット色を割り当てる。旧データに `parts` が無くても、ここで既存部位から自動生成される。
   - `weightUnit`: `'lbs'` のみ lbs として採用し、それ以外・未設定は `'kg'` に丸める。
 - **初期状態の `parts`**: スターター種目の部位（胸 / 背中 / 脚 / 肩 / 腕）をその順序で生成し、パレット色を循環で割り当てる。
+- `schemaVersion`: 正の整数のみ採用し、未設定・不正値は現在の保存データバージョンへ補完する。
 
 ### 5.6 エクスポート / インポート（`useBackup`）
 
@@ -381,11 +387,43 @@ type PartSetting = {
   - 成功 → `setState` で全置き換え。`currentWorkoutId` を解除、選択プリセットを先頭に、編集対象を解除、選択日を本日へ。「データをインポートしました」。
   - 例外時 →「JSONの読み込みに失敗しました」。
 
+### 5.7 クラウドバックアップ / 復元
+
+Supabase環境変数が設定されている場合だけ、クラウドバックアップ機能を有効化します。設定画面には「クラウドバックアップ」リンクを表示し、未ログイン時は新規登録/ログイン画面、ログイン後はバックアップ一覧画面へ遷移します。
+
+- 必要な環境変数:
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
+- Supabase未設定時:
+  - アプリは通常どおり起動します。
+  - ローカル保存、JSONエクスポート/インポートは利用できます。
+  - 新規登録/ログイン画面には「Supabaseの設定がないため無効」と表示します。
+- 認証:
+  - メールアドレス・パスワード認証を使います。
+  - 新規登録とログインを同じ画面から実行できます。
+  - ログインはバックアップ利用時だけ必要で、アプリ起動時には要求しません。
+  - ログアウトしてもローカルデータは削除しません。
+  - ログイン中のみ、メールアドレスとログアウトボタンをホームのドロワーメニュー下部に表示します。
+- バックアップ:
+  - ユーザーが手動で実行します。
+  - 実行前に現在の `State` を `localStorage` へ即時保存します。
+  - `cloud_backups.state_json` に `State` 全体を保存します。
+  - 保存後、最新5件だけ残し、古いバックアップは削除します。
+  - バックアップ一覧では、各バックアップをアプリ内の確認ダイアログで確認後に個別削除できます。
+- 復元:
+  - 最新5件のクラウドバックアップから選択します。
+  - 復元前にアプリ内の確認ダイアログを表示します。
+  - 復元前に現在のローカル `State` を `fitlog-before-cloud-restore-<date>.json` としてダウンロード退避します。
+  - 選択した `state_json` を `normalizeState` へ通し、成功した場合だけローカル `State` を全置換します。
+  - 復元後は `currentWorkoutId` を解除し、選択プリセットを先頭に戻し、選択日を本日にします。
+
+クラウドバックアップの最小DBは `profiles`、`devices`、`cloud_backups` です。SQLは `supabase/migrations/202606280001_cloud_backups.sql` を参照してください。
+
 ---
 
 ## 6. 画面仕様
 
-`Screen` 型: `'home' | 'select' | 'exerciseEdit' | 'detail' | 'exerciseHistory' | 'goalAchievements' | 'trainingMenu' | 'presetEdit' | 'presetExerciseSelect' | 'analysis' | 'partEdit' | 'settings'`。
+`Screen` 型: `'home' | 'select' | 'exerciseEdit' | 'detail' | 'exerciseHistory' | 'goalAchievements' | 'trainingMenu' | 'presetEdit' | 'presetExerciseSelect' | 'analysis' | 'partEdit' | 'settings' | 'localBackup' | 'cloudAuth' | 'cloudBackups'`。
 
 ### 6.1 アプリ外枠とナビゲーション（`App.tsx`）
 
@@ -428,7 +466,7 @@ type PartSetting = {
   - 一覧が空で未終了のときは、種目一覧の代わりに開始パネルを表示する。
 - **FAB（＋）**: 未終了かつ種目追加済みの日だけ表示し、追加の種目選択画面へ進む。
 - **削除確認ダイアログ**: 記録ありの種目を削除しようとすると確認ダイアログを表示。未開始ワークアウトは確認なしで即削除。
-- **バージョン表示**: ホームのドロワメニュー下部にアプリバージョン（現在 `v0.0.1`）を小さなグレー文字で表示。
+- **ドロワーメニュー**: トレーニングメニュー、目標達成記録、分析、設定へ遷移する。下部にはクラウドバックアップのログイン状態を表示し、ログイン中はメールアドレスとログアウトボタンを表示する。
 
 ### 6.3 種目選択（`SelectScreen`）
 
@@ -536,11 +574,21 @@ type PartSetting = {
 ### 6.12 設定（`SettingsScreen`）
 
 - ホーム画面のドロワメニューから遷移する。トップバーの戻るでホームへ戻る。
+- 単位設定、部位編集、データ管理を表示する。
 - **単位**: kg / Lbs の切り替えスイッチを表示する。
   - 切り替えた単位は `state.weightUnit` に保存され、重量入力欄、ホームのセット行、種目別履歴の重量・RM・負荷量表示に反映される。
   - 既存記録の保存値は kg のまま維持し、lbs 表示時のみ換算する。
 - **部位を編集**: 部位の追加・削除・並び替え・表示色変更を行う部位編集画面（`partEdit`）へ遷移する。
-- **データ管理**: 記録の JSON 書き出しと、バックアップ JSON の読み込みを行う。
+- データ管理には「ローカルバックアップ」と「クラウドバックアップ」の2リンクを表示する。
+  - ローカルバックアップ: JSON書き出し/読み込み画面へ遷移する。
+  - クラウドバックアップ: 未ログイン時は新規登録/ログイン画面、ログイン後はバックアップ一覧画面へ遷移する。
+- 画面下部にアプリバージョンを小さなグレー文字で表示する。
+
+### 6.13 ローカルバックアップ（`LocalBackupScreen`）
+
+- 設定画面の「ローカルバックアップ」から遷移する。
+- 「記録を書き出す」で現在の `State` をJSONファイルとしてダウンロードする。
+- 「記録を読み込む」でJSONファイルを選択し、`parseImportedState` で正規化できた場合だけローカル `State` を全置換する。
 
 ---
 

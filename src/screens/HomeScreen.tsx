@@ -64,6 +64,7 @@ function useHomeScreenModel() {
     onOpenGoalAchievements: () => actions.setScreen('goalAchievements'),
     onOpenDetail: actions.openWorkoutDetail,
     onDeleteWorkout: actions.deleteWorkout,
+    cloud: actions.cloud,
   };
 }
 
@@ -94,6 +95,7 @@ export function HomeScreen() {
     onOpenGoalAchievements,
     onOpenDetail,
     onDeleteWorkout,
+    cloud,
   } = useHomeScreenModel();
   const [deleteTarget, setDeleteTarget] = useState<Workout | null>(null);
   const [finishConfirmationOpen, setFinishConfirmationOpen] = useState(false);
@@ -189,6 +191,7 @@ export function HomeScreen() {
         onOpenAnalysis={onOpenAnalysis}
         onOpenSettings={onOpenSettings}
         onOpenGoalAchievements={onOpenGoalAchievements}
+        cloud={cloud}
       />
       {!selectedWorkouts.length && !workoutEndTime && (
         <div className="workout-start-area">

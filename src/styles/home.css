@@ -356,7 +356,7 @@
 
 .home-drawer {
   display: grid;
-  grid-template-rows: auto repeat(4, auto) 1fr;
+  grid-template-rows: auto repeat(4, auto) 1fr auto;
   width: min(78vw, 320px);
   min-height: 100dvh;
   padding: max(18px, env(safe-area-inset-top)) 14px 18px;
@@ -406,6 +406,54 @@
 
 .drawer-link svg {
   color: var(--red);
+}
+
+.drawer-account {
+  display: grid;
+  gap: 10px;
+  align-self: end;
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface);
+}
+
+.drawer-account div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.drawer-account span {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.drawer-account strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.drawer-logout {
+  min-height: 36px;
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.drawer-logout:disabled {
+  background: var(--disabled-bg);
+  color: var(--disabled-text);
+}
+
+.drawer-spacer {
+  min-height: 18px;
 }
 
 .home-calendar-body {
@@ -537,13 +585,4 @@
   border-radius: 999px;
   background: var(--text-muted-light);
   content: '';
-}
-
-.drawer-version {
-  align-self: end;
-  padding-top: 18px;
-  color: var(--text-muted-light);
-  font-size: 11px;
-  font-weight: 700;
-  text-align: left;
 }

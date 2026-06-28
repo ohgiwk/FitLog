@@ -6,7 +6,9 @@ import {
   parseImportedState,
   storeKey,
 } from './storage';
+import { deviceIdKey, getDeviceId } from './device';
 import { starterCatalogVersion, starterExercises } from './data/starterExercises';
+import { stateSchemaVersion } from './storageNormalization';
 import { State } from './types';
 
 /**
@@ -48,6 +50,7 @@ describe('loadState', () => {
     localStorage.setItem(storeKey, JSON.stringify(makeValidSaved()));
     const result = loadState();
     expect(result.recoveredFromCorruption).toBe(false);
+    expect(result.state.schemaVersion).toBe(stateSchemaVersion);
     expect(result.state.exercises).toHaveLength(1);
     expect(result.state.exercises[0].name).toBe('ベンチプレス');
   });
@@ -73,6 +76,11 @@ describe('normalizeState', () => {
   it('null や空オブジェクトは null を返す', () => {
     expect(normalizeState(null)).toBeNull();
     expect(normalizeState({})).toBeNull();
+  });
+
+  it('schemaVersion が無い旧データには現在のバージョンを補完する', () => {
+    const result = normalizeState(makeValidSaved() as unknown as Partial<State>);
+    expect(result?.schemaVersion).toBe(stateSchemaVersion);
   });
 
   it('reps を recordValue へ移行する', () => {
@@ -456,5 +464,14 @@ describe('parseImportedState', () => {
 
   it('必須フィールドが無い JSON は null を返す', () => {
     expect(parseImportedState('{}')).toBeNull();
+  });
+});
+
+describe('getDeviceId', () => {
+  it('端末IDを作成して localStorage に保持する', () => {
+    const first = getDeviceId();
+    const second = getDeviceId();
+    expect(first).toBe(second);
+    expect(localStorage.getItem(deviceIdKey)).toBe(first);
   });
 });

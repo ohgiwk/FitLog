@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadState, storeKey } from '../storage';
 import { State } from '../types';
 
@@ -43,9 +43,9 @@ export function useFitLogCore() {
   /**
    * 保存に失敗したことをトーストで知らせる
    */
-  function notifySaveError() {
+  const notifySaveError = useCallback(() => {
     setToast('保存に失敗しました。空き容量を確認してください');
-  }
+  }, []);
 
   /**
    * 壊れた保存データから初期化へ復帰した場合に、その旨をトーストで知らせる。
@@ -69,7 +69,7 @@ export function useFitLogCore() {
       persistState(state, notifySaveError);
     }, SAVE_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [state]);
+  }, [notifySaveError, state]);
 
   /**
    * アプリが非表示・終了に向かう瞬間に、デバウンス待ちの内容を取りこぼさず保存する
@@ -87,7 +87,7 @@ export function useFitLogCore() {
       document.removeEventListener('visibilitychange', flush);
       window.removeEventListener('pagehide', flushNow);
     };
-  }, []);
+  }, [notifySaveError]);
 
   /**
    * トースト表示後、一定時間で自動的に消す
@@ -106,11 +106,18 @@ export function useFitLogCore() {
   }
 
   /**
-   * 画面下部に短いメッセージを表示する
+   * 現在の state を localStorage へ即時保存する
    */
-  function showToast(message: string) {
-    setToast(message);
+  function flushState() {
+    persistState(stateRef.current, notifySaveError);
   }
 
-  return { state, setState, saveState, toast, showToast };
+  /**
+   * 画面下部に短いメッセージを表示する
+   */
+  const showToast = useCallback((message: string) => {
+    setToast(message);
+  }, []);
+
+  return { state, setState, saveState, flushState, toast, showToast };
 }

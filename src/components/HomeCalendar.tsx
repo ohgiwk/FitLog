@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react';
 import { AnalysisIcon, CalendarIcon, MenuIcon, SettingsIcon, TrophyIcon } from '../icons';
 import { useHomeCalendar } from '../hooks/useHomeCalendar';
 import { localDate, weekdayLabels } from '../utils';
-import { appVersion } from '../version';
 import { Workout } from '../types';
+import { useFitLogContext } from '../hooks/useFitLogContext';
+
+type CloudActions = ReturnType<typeof useFitLogContext>['actions']['cloud'];
 
 type HomeCalendarProps = {
   selectedDate: string;
@@ -13,6 +15,7 @@ type HomeCalendarProps = {
   onOpenAnalysis: () => void;
   onOpenSettings: () => void;
   onOpenGoalAchievements: () => void;
+  cloud: CloudActions;
 };
 
 export function HomeCalendar({
@@ -23,6 +26,7 @@ export function HomeCalendar({
   onOpenAnalysis,
   onOpenSettings,
   onOpenGoalAchievements,
+  cloud,
 }: HomeCalendarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const calendar = useHomeCalendar(selectedDate, onSelectDate);
@@ -105,9 +109,25 @@ export function HomeCalendar({
               <SettingsIcon />
               <span>設定</span>
             </button>
-            <div className="drawer-version" aria-label={`アプリバージョン ${appVersion}`}>
-              {appVersion}
-            </div>
+            {cloud.userEmail && (
+              <>
+                <div className="drawer-spacer" aria-hidden="true" />
+                <div className="drawer-account" aria-label="ログイン状態">
+                  <div>
+                    <span>ログイン中</span>
+                    <strong>{cloud.userEmail}</strong>
+                  </div>
+                <button
+                  className="drawer-logout"
+                  type="button"
+                  disabled={cloud.loading}
+                  onClick={() => void cloud.signOut()}
+                >
+                  ログアウト
+                </button>
+                </div>
+              </>
+            )}
           </aside>
         </div>
       )}
