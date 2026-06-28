@@ -25,6 +25,7 @@ const screenDepth: Record<Screen, number> = {
   exerciseEdit: 2,
   presetEdit: 2,
   partEdit: 2,
+  exerciseManage: 2,
   localBackup: 2,
   cloudAuth: 2,
   cloudBackups: 2,

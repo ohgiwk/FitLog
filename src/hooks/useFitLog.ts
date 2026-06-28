@@ -7,7 +7,7 @@ import { useNavigation } from './useNavigation';
 import { usePartActions } from './usePartActions';
 import { usePresetActions } from './usePresetActions';
 import { useWorkoutActions } from './useWorkoutActions';
-import { Preset, WeightUnit } from '../types';
+import { Preset, Screen, WeightUnit } from '../types';
 import { uid } from '../utils';
 
 /**
@@ -71,14 +71,19 @@ export function useFitLog() {
     core.saveState((current) => ({ ...current, weightUnit }));
   }
 
-  function openExerciseEditor(part: string, exerciseId: string | null = null) {
+  function openExerciseEditor(
+    part: string,
+    exerciseId: string | null = null,
+    returnScreen: Screen = 'select',
+  ) {
     ui.setExerciseEditor({ part, exerciseId });
+    ui.setExerciseEditorReturnScreen(returnScreen);
     nav.showScreen('exerciseEdit');
   }
 
   function closeExerciseEditor() {
     ui.setExerciseEditor(null);
-    nav.showScreen('select');
+    nav.showScreen(ui.exerciseEditorReturnScreen);
   }
 
   /**

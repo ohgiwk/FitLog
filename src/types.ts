@@ -10,6 +10,7 @@ export type Screen =
   | 'trainingMenu'
   | 'analysis'
   | 'partEdit'
+  | 'exerciseManage'
   | 'settings'
   | 'localBackup'
   | 'cloudAuth'

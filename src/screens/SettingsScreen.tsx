@@ -1,4 +1,4 @@
-import { ChevronLeft, ExportIcon, PartsIcon } from '../icons';
+import { ChevronLeft, EditIcon, ExportIcon, PartsIcon } from '../icons';
 import { WeightUnit } from '../types';
 import { weightUnitLabel } from '../utils';
 import { useFitLogContext } from '../hooks/useFitLogContext';
@@ -16,6 +16,7 @@ function useSettingsScreenModel() {
     weightUnit: state.weightUnit,
     onBack: () => actions.setScreen('home'),
     onEditParts: () => actions.setScreen('partEdit'),
+    onEditExercises: () => actions.setScreen('exerciseManage'),
     onChangeWeightUnit: actions.setWeightUnit,
     onOpenLocalBackup: () => actions.setScreen('localBackup'),
     onOpenCloudBackup: () => actions.setScreen(actions.cloud.userEmail ? 'cloudBackups' : 'cloudAuth'),
@@ -26,7 +27,15 @@ function useSettingsScreenModel() {
  * アプリ全体の表示・入力設定を変更する画面
  */
 export function SettingsScreen() {
-  const { weightUnit, onBack, onEditParts, onChangeWeightUnit, onOpenLocalBackup, onOpenCloudBackup } =
+  const {
+    weightUnit,
+    onBack,
+    onEditParts,
+    onEditExercises,
+    onChangeWeightUnit,
+    onOpenLocalBackup,
+    onOpenCloudBackup,
+  } =
     useSettingsScreenModel();
 
   return (
@@ -66,6 +75,10 @@ export function SettingsScreen() {
           <button className="settings-link-row" type="button" onClick={onEditParts}>
             <PartsIcon />
             <span>部位を編集</span>
+          </button>
+          <button className="settings-link-row" type="button" onClick={onEditExercises}>
+            <EditIcon />
+            <span>種目を編集</span>
           </button>
         </section>
         <section className="settings-section" aria-labelledby="data-management-title">

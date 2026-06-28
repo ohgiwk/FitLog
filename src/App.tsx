@@ -9,7 +9,7 @@ import { GoalAchievementScreen } from './screens/GoalAchievementScreen';
 import { PartEditScreen } from './screens/PartEditScreen';
 import { PresetEditScreen } from './screens/PresetEditScreen';
 import { PresetExerciseSelectScreen } from './screens/PresetExerciseSelectScreen';
-import { SelectScreen } from './screens/SelectScreen';
+import { ExerciseManageScreen, SelectScreen } from './screens/SelectScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { LocalBackupScreen } from './screens/LocalBackupScreen';
 import { CloudAuthScreen } from './screens/CloudAuthScreen';
@@ -97,6 +97,7 @@ function AppShell() {
     if (targetScreen === 'trainingMenu') return <TrainingMenuScreen />;
     if (targetScreen === 'analysis') return <AnalysisScreen />;
     if (targetScreen === 'partEdit') return <PartEditScreen />;
+    if (targetScreen === 'exerciseManage') return <ExerciseManageScreen />;
     if (targetScreen === 'settings') return <SettingsScreen />;
     if (targetScreen === 'localBackup') return <LocalBackupScreen />;
     if (targetScreen === 'cloudAuth') return <CloudAuthScreen />;
