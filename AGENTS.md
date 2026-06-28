@@ -99,6 +99,11 @@ http://<MacのローカルIP>:5173/FitLog/
 - コミット対象は、依頼された変更に関係するファイルだけにしてください。
 - ステージ前に `git status --short --branch` を確認してください。
 - アプリ本体に関わる変更では、コミット前に `npm run build` を実行してください。
+- コミットメッセージは Conventional Commits 形式を基本としてください。
+  - 形式: `<type>: <summary>`
+  - `type` は `feat` / `fix` / `refactor` / `docs` / `test` / `style` / `chore` など、変更内容に合うものを使ってください。
+  - `summary` は英語の命令形・現在形を基本に、簡潔に変更内容を表してください。
+  - 破壊的変更や補足説明が必要な場合だけ、本文や `BREAKING CHANGE:` を追加してください。
 - push はユーザーから依頼された場合だけ実行してください。
 - `main` に push すると GitHub Pages のデプロイが自動実行されます。
 
