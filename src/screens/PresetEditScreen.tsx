@@ -8,10 +8,11 @@ import { parseDate, weekdayLabels } from '../utils';
  * プリセット編集画面が必要とする state・操作を Context から組み立てる view-model フック
  */
 function usePresetEditScreenModel() {
-  const { presetDraft, selectedDate, state, actions } = useFitLogContext();
+  const { presetDraft, presetDraftMode, selectedDate, state, actions } = useFitLogContext();
 
   return {
     preset: presetDraft,
+    isStartFlow: presetDraftMode === 'start',
     selectedDate,
     exercises: state.exercises,
     onBack: actions.cancelPresetDraft,
@@ -25,8 +26,16 @@ function usePresetEditScreenModel() {
  * プリセット編集画面。名称変更・種目の追加/削除/並び替えを行う
  */
 export function PresetEditScreen() {
-  const { preset, selectedDate, exercises, onBack, onSave, onUpdate, onOpenExerciseSelect } =
-    usePresetEditScreenModel();
+  const {
+    preset,
+    isStartFlow,
+    selectedDate,
+    exercises,
+    onBack,
+    onSave,
+    onUpdate,
+    onOpenExerciseSelect,
+  } = usePresetEditScreenModel();
 
   /**
    * 下書き内の種目順を1つ前後へ移動する
@@ -58,7 +67,7 @@ export function PresetEditScreen() {
           </button>
           <div className="bar-title">メニュー編集</div>
           <button className="bar-btn right" type="button" onClick={onSave}>
-            保存
+            {isStartFlow ? '開始' : '保存'}
           </button>
         </div>
       </header>

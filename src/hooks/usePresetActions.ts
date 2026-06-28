@@ -53,10 +53,10 @@ export function usePresetActions({
   }, [scheduledPresetId, selectedDate]);
 
   /**
-   * 編集画面の下書きを新規作成または既存プリセットへ反映する
+   * 編集画面の下書きを保存可能なプリセットへ整える
    */
-  function savePreset(preset: Preset) {
-    const normalizedPreset: Preset = {
+  function normalizePreset(preset: Preset): Preset {
+    return {
       ...preset,
       name: preset.name.trim() || '名称未設定',
       exerciseIds: [...new Set(preset.exerciseIds)],
@@ -77,6 +77,13 @@ export function usePresetActions({
           }
         : undefined,
     };
+  }
+
+  /**
+   * 編集画面の下書きを新規作成または既存プリセットへ反映する
+   */
+  function savePreset(preset: Preset) {
+    const normalizedPreset = normalizePreset(preset);
     saveState((prev) => ({
       ...prev,
       presets: prev.presets.some((item) => item.id === normalizedPreset.id)
@@ -143,11 +150,66 @@ export function usePresetActions({
     showToast(`${exercisesToAdd.length}種目を追加しました`);
   }
 
+  /**
+   * プリセット下書きを保存し、同じ更新で選択日のトレーニングを開始する
+   */
+  function saveAndStartPreset(preset: Preset) {
+    if (state.workoutEndTimes[selectedDate]) return;
+    const normalizedPreset = normalizePreset(preset);
+    if (!normalizedPreset.exerciseIds.length)
+      return showToast('プリセットに種目を追加してください');
+
+    const todayExerciseIds = new Set(
+      state.workouts
+        .filter((workout) => workout.date === selectedDate)
+        .map((workout) => workout.exerciseId),
+    );
+    const queuedExerciseIds = new Set<string>();
+    const exercisesToAdd = normalizedPreset.exerciseIds.flatMap((exerciseId) => {
+      if (todayExerciseIds.has(exerciseId) || queuedExerciseIds.has(exerciseId)) return [];
+      const exercise = state.exercises.find((item) => item.id === exerciseId);
+      if (!exercise) return [];
+      queuedExerciseIds.add(exerciseId);
+      return [exercise];
+    });
+    if (!exercisesToAdd.length) {
+      showScreen('home');
+      const hasExisting = normalizedPreset.exerciseIds.some((exerciseId) =>
+        todayExerciseIds.has(exerciseId),
+      );
+      return showToast(hasExisting ? 'すでに追加されています' : 'プリセットの種目が見つかりません');
+    }
+
+    const newWorkouts = exercisesToAdd.map((exercise) => createWorkout(exercise, selectedDate));
+    const now = new Date();
+    const startTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    saveState((prev) => {
+      const hasWorkoutsForDate = prev.workouts.some((workout) => workout.date === selectedDate);
+      return {
+        ...prev,
+        presets: prev.presets.some((item) => item.id === normalizedPreset.id)
+          ? prev.presets.map((item) => (item.id === normalizedPreset.id ? normalizedPreset : item))
+          : [normalizedPreset, ...prev.presets],
+        workouts: [...prev.workouts, ...newWorkouts],
+        workoutStartTimes: {
+          ...prev.workoutStartTimes,
+          [selectedDate]: hasWorkoutsForDate
+            ? prev.workoutStartTimes[selectedDate] || startTime
+            : startTime,
+        },
+      };
+    });
+    setCurrentPresetId(normalizedPreset.id);
+    showScreen('home');
+    showToast(`${exercisesToAdd.length}種目を追加しました`);
+  }
+
   return {
     currentPresetId,
     setCurrentPresetId,
     currentPreset,
     savePreset,
+    saveAndStartPreset,
     deletePreset,
     startPreset,
   };

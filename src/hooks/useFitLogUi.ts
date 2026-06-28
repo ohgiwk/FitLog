@@ -13,6 +13,7 @@ export type GoalAchievement = {
  */
 export function useFitLogUi() {
   const [presetDraft, setPresetDraft] = useState<Preset | null>(null);
+  const [presetDraftMode, setPresetDraftMode] = useState<'menu' | 'start'>('menu');
   const [editMode, setEditMode] = useState(false);
   const [activePart, setActivePart] = useState<string | null>(null);
   const [exerciseEditor, setExerciseEditor] = useState<{
@@ -31,6 +32,8 @@ export function useFitLogUi() {
   return {
     presetDraft,
     setPresetDraft,
+    presetDraftMode,
+    setPresetDraftMode,
     editMode,
     setEditMode,
     activePart,

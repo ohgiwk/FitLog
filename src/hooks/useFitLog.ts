@@ -85,6 +85,16 @@ export function useFitLog() {
    * 新規プリセットの下書きを作成して編集画面を開く
    */
   function createPresetDraft() {
+    ui.setPresetDraftMode('menu');
+    ui.setPresetDraft({ id: uid(), name: '新規メニュー', exerciseIds: [] });
+    nav.showScreen('presetEdit');
+  }
+
+  /**
+   * ホームの開始導線から、新規メニューの下書きを開く
+   */
+  function createPresetDraftForStart() {
+    ui.setPresetDraftMode('start');
     ui.setPresetDraft({ id: uid(), name: '新規メニュー', exerciseIds: [] });
     nav.showScreen('presetEdit');
   }
@@ -95,6 +105,24 @@ export function useFitLog() {
   function editPreset(presetId: string) {
     const preset = core.state.presets.find((item) => item.id === presetId);
     if (!preset) return;
+    ui.setPresetDraftMode('menu');
+    ui.setPresetDraft({
+      ...preset,
+      exerciseIds: [...preset.exerciseIds],
+      schedule: preset.schedule
+        ? { ...preset.schedule, weekdays: [...preset.schedule.weekdays] }
+        : undefined,
+    });
+    nav.showScreen('presetEdit');
+  }
+
+  /**
+   * ホームの開始導線から、選択中メニューの下書きを開く
+   */
+  function editPresetForStart(presetId: string) {
+    const preset = core.state.presets.find((item) => item.id === presetId);
+    if (!preset) return;
+    ui.setPresetDraftMode('start');
     ui.setPresetDraft({
       ...preset,
       exerciseIds: [...preset.exerciseIds],
@@ -130,8 +158,15 @@ export function useFitLog() {
    */
   function savePresetDraft() {
     if (!ui.presetDraft) return;
+    if (ui.presetDraftMode === 'start') {
+      presets.saveAndStartPreset(ui.presetDraft);
+      ui.setPresetDraft(null);
+      ui.setPresetDraftMode('menu');
+      return;
+    }
     presets.savePreset(ui.presetDraft);
     ui.setPresetDraft(null);
+    ui.setPresetDraftMode('menu');
     nav.showScreen('trainingMenu');
   }
 
@@ -139,8 +174,10 @@ export function useFitLog() {
    * プリセット下書きを破棄してトレーニングメニュー画面へ戻る
    */
   function cancelPresetDraft() {
+    const nextScreen = ui.presetDraftMode === 'start' ? 'home' : 'trainingMenu';
     ui.setPresetDraft(null);
-    nav.showScreen('trainingMenu');
+    ui.setPresetDraftMode('menu');
+    nav.showScreen(nextScreen);
   }
 
   return {
@@ -148,6 +185,7 @@ export function useFitLog() {
     currentWorkout: nav.currentWorkout,
     editMode: ui.editMode,
     presetDraft: ui.presetDraft,
+    presetDraftMode: ui.presetDraftMode,
     activePart: ui.activePart,
     exerciseEditor: ui.exerciseEditor,
     groupedExercises: selectors.groupedExercises,
@@ -168,6 +206,7 @@ export function useFitLog() {
       addSet: workout.addSet,
       reorderPartExercises: exercise.reorderPartExercises,
       createPresetDraft,
+      createPresetDraftForStart,
       deleteExercise: exercise.deleteExercise,
       deletePreset: presets.deletePreset,
       deleteSet: workout.deleteSet,
@@ -182,6 +221,7 @@ export function useFitLog() {
       openWorkoutDetail: workout.openWorkoutDetail,
       openExerciseEditor,
       editPreset,
+      editPresetForStart,
       updatePresetDraft,
       togglePresetDraftExercise,
       savePresetDraft,

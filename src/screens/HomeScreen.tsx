@@ -1,4 +1,4 @@
-import { KeyboardEvent, MouseEvent, useState } from 'react';
+import { KeyboardEvent, MouseEvent, useEffect, useState } from 'react';
 import { PlusIcon, TrashIcon } from '../icons';
 import { Workout } from '../types';
 import {
@@ -19,6 +19,8 @@ type WorkoutSummary = {
   exerciseCount: number;
   setCount: number;
 };
+
+const newPresetOptionValue = '__new_preset__';
 
 /**
  * ホーム画面が必要とする state・派生値・操作を Context から組み立てる view-model フック
@@ -57,8 +59,10 @@ function useHomeScreenModel() {
     onEndWorkoutDay: actions.endWorkoutDay,
     onResumeWorkoutDay: actions.resumeWorkoutDay,
     onStartPreset: actions.startPreset,
+    onCreatePresetDraftForStart: actions.createPresetDraftForStart,
     onOpenSelect: () => actions.setScreen('select'),
     onOpenTrainingMenu: () => actions.setScreen('trainingMenu'),
+    onEditPresetForStart: actions.editPresetForStart,
     onOpenAnalysis: () => actions.setScreen('analysis'),
     onOpenSettings: () => actions.setScreen('settings'),
     onOpenGoalAchievements: () => actions.setScreen('goalAchievements'),
@@ -88,8 +92,10 @@ export function HomeScreen() {
     onEndWorkoutDay,
     onResumeWorkoutDay,
     onStartPreset,
+    onCreatePresetDraftForStart,
     onOpenSelect,
     onOpenTrainingMenu,
+    onEditPresetForStart,
     onOpenAnalysis,
     onOpenSettings,
     onOpenGoalAchievements,
@@ -100,6 +106,16 @@ export function HomeScreen() {
   const [deleteTarget, setDeleteTarget] = useState<Workout | null>(null);
   const [finishConfirmationOpen, setFinishConfirmationOpen] = useState(false);
   const [workoutSummary, setWorkoutSummary] = useState<WorkoutSummary | null>(null);
+  const [selectedPresetValue, setSelectedPresetValue] = useState(
+    currentPreset?.id || newPresetOptionValue,
+  );
+  const isNewPresetSelected = selectedPresetValue === newPresetOptionValue;
+  const selectedPreset = presets.find((preset) => preset.id === selectedPresetValue) || null;
+  const currentPresetIsEmpty = !!selectedPreset && selectedPreset.exerciseIds.length === 0;
+
+  useEffect(() => {
+    setSelectedPresetValue(currentPreset?.id || newPresetOptionValue);
+  }, [currentPreset?.id]);
 
   /**
    * キーボード操作(Enter/Space)で種目の詳細画面を開く
@@ -205,27 +221,34 @@ export function HomeScreen() {
               )}
               <select
                 aria-label="トレーニングメニューを選択"
-                disabled={!presets.length}
-                value={currentPreset?.id || ''}
-                onChange={(event) => onSelectPreset(event.target.value)}
+                value={selectedPresetValue}
+                onChange={(event) => {
+                  const presetId = event.target.value;
+                  setSelectedPresetValue(presetId);
+                  if (presetId !== newPresetOptionValue) onSelectPreset(presetId);
+                }}
               >
-                {presets.length ? (
-                  presets.map((preset) => (
-                    <option key={preset.id} value={preset.id}>
-                      {preset.name}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">メニューなし</option>
-                )}
+                {presets.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.name}
+                  </option>
+                ))}
+                <option value={newPresetOptionValue}>[新規作成]</option>
               </select>
               <button
                 className="primary workout-start-primary"
-                disabled={!currentPreset}
                 type="button"
-                onClick={() => onStartPreset(currentPreset?.id || '')}
+                onClick={() =>
+                  isNewPresetSelected
+                    ? onCreatePresetDraftForStart()
+                    : currentPresetIsEmpty
+                      ? onEditPresetForStart(selectedPreset?.id || '')
+                      : onStartPreset(selectedPreset?.id || '')
+                }
               >
-                トレーニングメニューから開始
+                {isNewPresetSelected || currentPresetIsEmpty
+                  ? 'トレーニングメニューを作成する'
+                  : 'トレーニングメニューから開始'}
               </button>
             </div>
             <div className="workout-start-divider">
