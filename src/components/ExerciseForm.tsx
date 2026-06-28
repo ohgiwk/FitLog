@@ -121,7 +121,6 @@ export function ExerciseForm({
           <label>
             <span>種目名</span>
             <input
-              autoFocus
               maxLength={30}
               value={value.name}
               onChange={(event) => update('name', event.target.value)}

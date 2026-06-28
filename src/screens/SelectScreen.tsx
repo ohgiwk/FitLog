@@ -43,7 +43,7 @@ function ExerciseListScreen({ mode }: { mode: ExerciseListMode }) {
           <button className="bar-btn" type="button" aria-label="戻る" onClick={model.onBack}>
             <ChevronLeft />
           </button>
-          <div className="bar-title">{mode === 'manage' ? '種目を編集' : '種目を選択'}</div>
+          <div className="bar-title">{mode === 'manage' ? '種目一覧を編集' : '種目を選択'}</div>
           <span />
         </div>
       </header>
