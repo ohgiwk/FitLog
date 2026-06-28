@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnalysisIcon, CalendarIcon, MenuIcon, SettingsIcon, TrophyIcon } from '../icons';
 import { useHomeCalendar } from '../hooks/useHomeCalendar';
 import { localDate, weekdayLabels } from '../utils';
@@ -28,14 +28,39 @@ export function HomeCalendar({
   onOpenGoalAchievements,
   cloud,
 }: HomeCalendarProps) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerState, setDrawerState] = useState<'closed' | 'open' | 'closing'>('closed');
+  const pendingDrawerActionRef = useRef<(() => void) | null>(null);
   const calendar = useHomeCalendar(selectedDate, onSelectDate);
   const trainedDates = useMemo(() => new Set(workouts.map((workout) => workout.date)), [workouts]);
   const today = localDate(new Date());
+  const drawerVisible = drawerState !== 'closed';
+
+  useEffect(() => {
+    if (drawerState !== 'closing') return undefined;
+    const timeoutId = window.setTimeout(finishDrawerClose, 260);
+    return () => window.clearTimeout(timeoutId);
+  }, [drawerState]);
+
+  function openDrawer() {
+    pendingDrawerActionRef.current = null;
+    setDrawerState('open');
+  }
+
+  function closeDrawer(action?: () => void) {
+    pendingDrawerActionRef.current = action || null;
+    setDrawerState((current) => (current === 'closed' ? 'closed' : 'closing'));
+  }
+
+  function finishDrawerClose() {
+    if (drawerState !== 'closing') return;
+    setDrawerState('closed');
+    const action = pendingDrawerActionRef.current;
+    pendingDrawerActionRef.current = null;
+    action?.();
+  }
 
   function openFromDrawer(action: () => void) {
-    setDrawerOpen(false);
-    action();
+    closeDrawer(action);
   }
 
   return (
@@ -45,8 +70,8 @@ export function HomeCalendar({
           className="home-menu-btn"
           type="button"
           aria-label="メニューを開く"
-          aria-expanded={drawerOpen}
-          onClick={() => setDrawerOpen(true)}
+          aria-expanded={drawerVisible}
+          onClick={openDrawer}
         >
           <MenuIcon />
         </button>
@@ -62,18 +87,27 @@ export function HomeCalendar({
           今日
         </button>
       </div>
-      {drawerOpen && (
-        <div className="drawer-layer" role="presentation" onClick={() => setDrawerOpen(false)}>
+      {drawerVisible && (
+        <div
+          className={`drawer-layer ${drawerState}`}
+          role="presentation"
+          onClick={() => closeDrawer()}
+        >
           <aside
-            className="home-drawer"
+            className={`home-drawer ${drawerState}`}
             role="dialog"
             aria-modal="true"
             aria-label="メニュー"
             onClick={(event) => event.stopPropagation()}
+            onAnimationEnd={(event) => {
+              if (event.currentTarget !== event.target) return;
+              if (event.animationName !== 'drawer-slide-out') return;
+              finishDrawerClose();
+            }}
           >
             <div className="drawer-head">
               <strong>メニュー</strong>
-              <button className="drawer-close" type="button" onClick={() => setDrawerOpen(false)}>
+              <button className="drawer-close" type="button" onClick={() => closeDrawer()}>
                 閉じる
               </button>
             </div>
