@@ -1,6 +1,8 @@
 @import './styles/base.css';
 @import './styles/layout.css';
 @import './styles/controls.css';
+@import './styles/forms.css';
+@import './styles/dialogs.css';
 @import './styles/home.css';
 @import './styles/select.css';
 @import './styles/presets.css';

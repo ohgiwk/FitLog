@@ -5,9 +5,7 @@
 }
 
 .analysis-view-switch {
-  display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 4px;
   border: 1px solid var(--border-medium);
   border-radius: 10px;
   padding: 4px;
@@ -19,12 +17,9 @@
   border-radius: 7px;
   color: var(--text-secondary);
   font-size: 14px;
-  font-weight: 900;
 }
 
 .analysis-view-switch button.active {
-  background: var(--red);
-  color: var(--text-on-primary);
   box-shadow: 0 4px 12px var(--shadow-medium);
 }
 

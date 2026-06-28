@@ -55,9 +55,10 @@ export function CloudAuthScreen() {
               <p className="settings-help">
                 機種変更やバックアップが必要な場合だけログインしてください。未ログインでも記録は端末内に保存されます。
               </p>
-              <label className="settings-cloud-email">
+              <label className="form-field settings-cloud-email">
                 <span>メールアドレス</span>
                 <input
+                  className="form-input"
                   name="email"
                   type="email"
                   inputMode="email"
@@ -65,9 +66,10 @@ export function CloudAuthScreen() {
                   placeholder="you@example.com"
                 />
               </label>
-              <label className="settings-cloud-email">
+              <label className="form-field settings-cloud-email">
                 <span>パスワード</span>
                 <input
+                  className="form-input"
                   name="password"
                   type="password"
                   autoComplete="current-password"

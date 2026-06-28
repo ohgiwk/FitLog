@@ -1,0 +1,49 @@
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: var(--overlay);
+}
+
+.confirm-dialog {
+  display: grid;
+  gap: 14px;
+  width: min(100%, 340px);
+  border-radius: 12px;
+  padding: 18px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 14px 30px var(--shadow-dialog);
+}
+
+.confirm-title {
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.confirm-dialog p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.danger-button {
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 0 14px;
+  background: var(--red);
+  color: var(--text-on-primary);
+  font-size: 16px;
+  font-weight: 900;
+}

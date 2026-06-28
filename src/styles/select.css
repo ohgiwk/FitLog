@@ -182,7 +182,6 @@
 }
 
 .measurement-toggle {
-  display: grid;
   grid-template-columns: 1fr 1fr;
   width: min(220px, 100%);
   min-height: 38px;
@@ -196,7 +195,6 @@
   border-radius: 6px;
   color: var(--text-secondary-strong);
   font-size: 14px;
-  font-weight: 900;
 }
 
 .measurement-toggle button.active {

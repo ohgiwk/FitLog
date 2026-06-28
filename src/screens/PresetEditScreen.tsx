@@ -277,9 +277,10 @@ function PresetScheduleEditor({
       )}
       {schedule?.mode === 'interval' && (
         <div className="interval-fields">
-          <label>
+          <label className="form-field">
             <span>間隔</span>
             <input
+              className="form-input form-input-compact"
               inputMode="numeric"
               min="1"
               type="number"
@@ -287,9 +288,10 @@ function PresetScheduleEditor({
               onChange={(event) => updateInterval(event.target.value)}
             />
           </label>
-          <label>
+          <label className="form-field">
             <span>開始日</span>
             <input
+              className="form-input form-input-compact"
               type="date"
               value={startDate}
               onChange={(event) =>
