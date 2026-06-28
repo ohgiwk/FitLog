@@ -208,6 +208,7 @@
   display: grid;
   gap: 18px;
   width: calc(100% - 32px);
+  transform: translateY(-60px);
   border-radius: 12px;
   padding: 22px 18px;
   background: var(--surface-subtle);
