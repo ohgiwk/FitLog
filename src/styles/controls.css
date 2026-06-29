@@ -34,6 +34,16 @@
   background: var(--red);
   color: var(--text-on-primary);
   box-shadow: 0 5px 13px var(--shadow-strong);
+  opacity: 1;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.fab.faded {
+  transform: translateY(8px);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .plus-muted svg,

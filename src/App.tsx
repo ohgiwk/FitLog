@@ -16,6 +16,7 @@ import { CloudAuthScreen } from './screens/CloudAuthScreen';
 import { CloudBackupsScreen } from './screens/CloudBackupsScreen';
 import { AnalysisScreen } from './screens/AnalysisScreen';
 import { TrainingMenuScreen } from './screens/TrainingMenuScreen';
+import { PlusIcon } from './icons';
 import type { Screen } from './types';
 import {
   formatStoredWeightInput,
@@ -45,6 +46,10 @@ function AppShell() {
     transitionFrom,
     transitionDirection,
     currentWorkout,
+    selectedDate,
+    selectedWorkouts,
+    groupedExercises,
+    activePart,
     toast,
     goalAchievement,
     state,
@@ -53,6 +58,13 @@ function AppShell() {
   const appRef = useRef<HTMLElement>(null);
   const [updateServiceWorker, setUpdateServiceWorker] = useState<UpdateServiceWorker | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [fabFaded, setFabFaded] = useState(false);
+  const workoutEndTime = state.workoutEndTimes[selectedDate];
+  const currentExerciseManagePart =
+    activePart && groupedExercises.has(activePart) ? activePart : [...groupedExercises.keys()][0];
+  const showHomeFab = screen === 'home' && !workoutEndTime && selectedWorkouts.length > 0;
+  const showExerciseManageFab = screen === 'exerciseManage' && Boolean(currentExerciseManagePart);
+  const showFab = showHomeFab || showExerciseManageFab;
 
   useLayoutEffect(() => {
     appRef.current?.scrollTo({ top: 0 });
@@ -73,6 +85,65 @@ function AppShell() {
     window.addEventListener('fitlog:pwa-update', onPwaUpdate);
     return () => window.removeEventListener('fitlog:pwa-update', onPwaUpdate);
   }, []);
+
+  useLayoutEffect(() => {
+    if (!showFab) {
+      setFabFaded(false);
+      return undefined;
+    }
+
+    const app = appRef.current;
+    if (!app) return undefined;
+
+    let frameId = 0;
+
+    const checkFabOverlap = () => {
+      const fab = document.querySelector<HTMLElement>('.fab');
+      const editRows = document.querySelectorAll<HTMLElement>('.exercise-option.edit-row');
+      const target =
+        screen === 'home'
+          ? document.querySelector<HTMLElement>('.workout-action-button.primary')
+          : editRows[editRows.length - 1];
+
+      if (!fab || !target) {
+        setFabFaded(false);
+        return;
+      }
+
+      const fabRect = fab.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const margin = 12;
+      const overlaps =
+        targetRect.bottom > fabRect.top - margin &&
+        targetRect.top < fabRect.bottom + margin &&
+        targetRect.right > fabRect.left - margin &&
+        targetRect.left < fabRect.right + margin;
+
+      setFabFaded(overlaps);
+    };
+
+    const scheduleCheck = () => {
+      window.cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(checkFabOverlap);
+    };
+
+    scheduleCheck();
+    app.addEventListener('scroll', scheduleCheck, { passive: true });
+    window.addEventListener('resize', scheduleCheck);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      app.removeEventListener('scroll', scheduleCheck);
+      window.removeEventListener('resize', scheduleCheck);
+    };
+  }, [
+    activePart,
+    currentExerciseManagePart,
+    screen,
+    selectedWorkouts.length,
+    showFab,
+    workoutEndTime,
+  ]);
 
   async function applyUpdate() {
     if (!updateServiceWorker) return;
@@ -135,6 +206,26 @@ function AppShell() {
       <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">
         {toast}
       </div>
+      {showHomeFab && (
+        <button
+          className={`fab ${fabFaded ? 'faded' : ''}`}
+          type="button"
+          aria-label="種目を追加"
+          onClick={() => actions.setScreen('select')}
+        >
+          <PlusIcon />
+        </button>
+      )}
+      {showExerciseManageFab && currentExerciseManagePart && (
+        <button
+          className={`fab ${fabFaded ? 'faded' : ''}`}
+          type="button"
+          aria-label={`${currentExerciseManagePart}に種目を追加`}
+          onClick={() => actions.openExerciseEditor(currentExerciseManagePart, null, 'exerciseManage')}
+        >
+          <PlusIcon />
+        </button>
+      )}
       {updateServiceWorker && (
         <div className="update-banner" role="status" aria-live="polite">
           <span>新しいバージョンがあります</span>

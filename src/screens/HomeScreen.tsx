@@ -346,11 +346,6 @@ export function HomeScreen() {
           </div>
         )}
       </div>
-      {!workoutEndTime && !!selectedWorkouts.length && (
-        <button className="fab" type="button" aria-label="種目を追加" onClick={onOpenSelect}>
-          <PlusIcon />
-        </button>
-      )}
       {deleteTarget && (
         <div className="dialog-backdrop" role="presentation">
           <div

@@ -59,7 +59,6 @@ function ExerciseListScreen({ mode }: { mode: ExerciseListMode }) {
         }
         mode={isManageMode ? 'manage' : 'single'}
         partColors={model.partColors}
-        onAddExercise={model.onOpenExerciseEditor}
         onDeleteExercise={model.onDeleteExercise}
         onEditExercise={model.onOpenExerciseEditor}
         onReorder={model.onReorder}

@@ -1,4 +1,4 @@
-import { DragHandle, EditIcon, PlusIcon, TrashIcon } from '../icons';
+import { DragHandle, EditIcon, TrashIcon } from '../icons';
 import { ReorderItem, useExerciseReorder } from '../hooks/useExerciseReorder';
 import type { Exercise } from '../types';
 import { exerciseCategories } from '../utils';
@@ -10,7 +10,6 @@ type ExercisePickerProps = {
   mode: 'single' | 'multi' | 'manage';
   partColors: Map<string, string>;
   selectedExerciseIds?: string[];
-  onAddExercise?: (part: string) => void;
   onDeleteExercise?: (exerciseId: string) => void;
   onEditExercise?: (part: string, exerciseId: string) => void;
   onReorder?: (part: string, layout: ReorderItem[]) => void;
@@ -25,7 +24,6 @@ export function ExercisePicker({
   mode,
   partColors,
   selectedExerciseIds = [],
-  onAddExercise,
   onDeleteExercise,
   onEditExercise,
   onReorder,
@@ -70,16 +68,6 @@ export function ExercisePicker({
           <section className="part-card">
             <div className="part-list-head">
               <span className="part-list-label">{label}</span>
-              {mode === 'manage' && onAddExercise && (
-                <button
-                  className="part-add"
-                  type="button"
-                  aria-label={`${currentPart}に種目を追加`}
-                  onClick={() => onAddExercise(currentPart)}
-                >
-                  <PlusIcon />
-                </button>
-              )}
             </div>
             {mode === 'manage' ? (
               <div className="exercise-list" ref={reorder.listRef}>
