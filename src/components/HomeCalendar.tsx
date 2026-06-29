@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnalysisIcon, CalendarIcon, MenuIcon, SettingsIcon, TrophyIcon } from '../icons';
 import { useHomeCalendar } from '../hooks/useHomeCalendar';
 import { localDate, weekdayLabels } from '../utils';
@@ -35,11 +35,18 @@ export function HomeCalendar({
   const today = localDate(new Date());
   const drawerVisible = drawerState !== 'closed';
 
+  const finishDrawerClose = useCallback(() => {
+    setDrawerState('closed');
+    const action = pendingDrawerActionRef.current;
+    pendingDrawerActionRef.current = null;
+    action?.();
+  }, []);
+
   useEffect(() => {
     if (drawerState !== 'closing') return undefined;
     const timeoutId = window.setTimeout(finishDrawerClose, 260);
     return () => window.clearTimeout(timeoutId);
-  }, [drawerState]);
+  }, [drawerState, finishDrawerClose]);
 
   function openDrawer() {
     pendingDrawerActionRef.current = null;
@@ -49,14 +56,6 @@ export function HomeCalendar({
   function closeDrawer(action?: () => void) {
     pendingDrawerActionRef.current = action || null;
     setDrawerState((current) => (current === 'closed' ? 'closed' : 'closing'));
-  }
-
-  function finishDrawerClose() {
-    if (drawerState !== 'closing') return;
-    setDrawerState('closed');
-    const action = pendingDrawerActionRef.current;
-    pendingDrawerActionRef.current = null;
-    action?.();
   }
 
   function openFromDrawer(action: () => void) {

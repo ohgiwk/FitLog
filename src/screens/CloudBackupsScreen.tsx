@@ -5,6 +5,14 @@ import { useFitLogContext } from '../hooks/useFitLogContext';
 type CloudBackupItem = ReturnType<typeof useFitLogContext>['actions']['cloud']['backups'][number];
 
 /**
+ * FormData から文字列の値だけを取り出す
+ */
+function readFormString(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return typeof value === 'string' ? value : '';
+}
+
+/**
  * バックアップ作成日時を表示用に整える
  */
 function formatBackupDate(value: string) {
@@ -37,14 +45,14 @@ export function CloudBackupsScreen() {
     return null;
   }, null);
   const [, restoreAction, restorePending] = useActionState(async (_: null, formData: FormData) => {
-    const targetId = String(formData.get('backupId') ?? '');
+    const targetId = readFormString(formData, 'backupId');
     if (!targetId) return null;
     setRestoreTarget(null);
     await cloud.restoreFromCloud(targetId);
     return null;
   }, null);
   const [, deleteAction, deletePending] = useActionState(async (_: null, formData: FormData) => {
-    const targetId = String(formData.get('backupId') ?? '');
+    const targetId = readFormString(formData, 'backupId');
     if (!targetId) return null;
     setDeleteTarget(null);
     await cloud.deleteBackupFromCloud(targetId);

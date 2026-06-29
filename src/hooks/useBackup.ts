@@ -104,8 +104,10 @@ export function useBackup({
    * 認証フォームの入力値を取り出して検証する
    */
   function readAuthFields(formData: FormData) {
-    const email = String(formData.get('email') ?? '').trim();
-    const password = String(formData.get('password') ?? '');
+    const emailValue = formData.get('email');
+    const passwordValue = formData.get('password');
+    const email = (typeof emailValue === 'string' ? emailValue : '').trim();
+    const password = typeof passwordValue === 'string' ? passwordValue : '';
     if (!email) {
       showToast('メールアドレスを入力してください');
       return null;
