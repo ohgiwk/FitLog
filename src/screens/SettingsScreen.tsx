@@ -50,7 +50,10 @@ export function SettingsScreen() {
         </div>
       </header>
       <div className="settings-content">
-        <section className="settings-section" aria-label="単位設定">
+        <section className="settings-section" aria-labelledby="display-settings-title">
+          <h2 className="settings-section-title" id="display-settings-title">
+            表示設定
+          </h2>
           <div className="settings-row">
             <div className="settings-label">
               <span>単位</span>
@@ -71,7 +74,10 @@ export function SettingsScreen() {
             </div>
           </div>
         </section>
-        <section className="settings-section" aria-label="部位設定">
+        <section className="settings-section" aria-labelledby="master-management-title">
+          <h2 className="settings-section-title" id="master-management-title">
+            マスタ管理
+          </h2>
           <button className="settings-link-row" type="button" onClick={onEditParts}>
             <PartsIcon />
             <span>部位を編集</span>
