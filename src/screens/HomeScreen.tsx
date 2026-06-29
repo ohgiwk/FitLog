@@ -1,4 +1,4 @@
-import { KeyboardEvent, MouseEvent, useEffect, useState } from 'react';
+import { KeyboardEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { PlusIcon, TrashIcon } from '../icons';
 import { Workout } from '../types';
 import {
@@ -21,6 +21,7 @@ type WorkoutSummary = {
 };
 
 const newPresetOptionValue = '__new_preset__';
+const workoutRemoveAnimationMs = 220;
 
 /**
  * ホーム画面が必要とする state・派生値・操作を Context から組み立てる view-model フック
@@ -104,8 +105,10 @@ export function HomeScreen() {
     cloud,
   } = useHomeScreenModel();
   const [deleteTarget, setDeleteTarget] = useState<Workout | null>(null);
+  const [removingWorkoutId, setRemovingWorkoutId] = useState<string | null>(null);
   const [finishConfirmationOpen, setFinishConfirmationOpen] = useState(false);
   const [workoutSummary, setWorkoutSummary] = useState<WorkoutSummary | null>(null);
+  const removeTimerRef = useRef<number | null>(null);
   const [selectedPresetValue, setSelectedPresetValue] = useState(
     currentPreset?.id || newPresetOptionValue,
   );
@@ -116,6 +119,32 @@ export function HomeScreen() {
   useEffect(() => {
     setSelectedPresetValue(currentPreset?.id || newPresetOptionValue);
   }, [currentPreset?.id]);
+
+  useEffect(
+    () => () => {
+      if (removeTimerRef.current !== null) {
+        globalThis.clearTimeout(removeTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  /**
+   * 削除対象のカードをフェードアウトさせたあと、実データを削除する
+   */
+  function removeWorkoutAfterAnimation(workoutId: string) {
+    if (removingWorkoutId) return;
+    setRemovingWorkoutId(workoutId);
+    const reduceMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    removeTimerRef.current = globalThis.setTimeout(
+      () => {
+        onDeleteWorkout(workoutId);
+        setRemovingWorkoutId(null);
+        removeTimerRef.current = null;
+      },
+      reduceMotion ? 0 : workoutRemoveAnimationMs,
+    );
+  }
 
   /**
    * キーボード操作(Enter/Space)で種目の詳細画面を開く
@@ -132,7 +161,7 @@ export function HomeScreen() {
   function requestDelete(event: MouseEvent<HTMLButtonElement>, workout: Workout) {
     event.stopPropagation();
     if (isUnstartedWorkout(workout)) {
-      onDeleteWorkout(workout.id);
+      removeWorkoutAfterAnimation(workout.id);
       return;
     }
     setDeleteTarget(workout);
@@ -143,7 +172,7 @@ export function HomeScreen() {
    */
   function confirmDelete() {
     if (!deleteTarget) return;
-    onDeleteWorkout(deleteTarget.id);
+    removeWorkoutAfterAnimation(deleteTarget.id);
     setDeleteTarget(null);
   }
 
@@ -265,12 +294,16 @@ export function HomeScreen() {
       <div className="content home-day-fade" key={`content-${selectedDate}`}>
         {selectedWorkouts.map((workout) => (
           <article
-            className="exercise-card"
+            className={`exercise-card ${removingWorkoutId === workout.id ? 'removing' : ''}`}
             key={workout.id}
             role="button"
             tabIndex={0}
-            onClick={() => onOpenDetail(workout.id)}
-            onKeyDown={(event) => openDetailFromKey(event, workout.id)}
+            onClick={() => {
+              if (removingWorkoutId !== workout.id) onOpenDetail(workout.id);
+            }}
+            onKeyDown={(event) => {
+              if (removingWorkoutId !== workout.id) openDetailFromKey(event, workout.id);
+            }}
           >
             <header
               className="exercise-head"

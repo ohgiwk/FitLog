@@ -6,6 +6,21 @@
   cursor: pointer;
 }
 
+.exercise-card.removing {
+  animation: exercise-card-remove 0.22s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes exercise-card-remove {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
 .exercise-head {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -440,6 +455,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .home-day-fade,
+  .exercise-card.removing,
   .drawer-layer.open,
   .drawer-layer.closing,
   .home-drawer.open,
