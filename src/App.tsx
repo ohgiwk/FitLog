@@ -59,12 +59,36 @@ function AppShell() {
   const [updateServiceWorker, setUpdateServiceWorker] = useState<UpdateServiceWorker | null>(null);
   const [updating, setUpdating] = useState(false);
   const [fabFaded, setFabFaded] = useState(false);
+  const [partAddDialogOpen, setPartAddDialogOpen] = useState(false);
   const workoutEndTime = state.workoutEndTimes[selectedDate];
   const currentExerciseManagePart =
     activePart && groupedExercises.has(activePart) ? activePart : [...groupedExercises.keys()][0];
   const showHomeFab = screen === 'home' && !workoutEndTime && selectedWorkouts.length > 0;
   const showExerciseManageFab = screen === 'exerciseManage' && Boolean(currentExerciseManagePart);
-  const showFab = showHomeFab || showExerciseManageFab;
+  const showTrainingMenuFab = screen === 'trainingMenu';
+  const showPartEditFab = screen === 'partEdit';
+  const showFab = showHomeFab || showExerciseManageFab || showTrainingMenuFab || showPartEditFab;
+  let fabKey = '';
+  let fabLabel = '';
+  let fabAction: (() => void) | null = null;
+
+  if (showHomeFab) {
+    fabKey = 'home-add-exercise';
+    fabLabel = '種目を追加';
+    fabAction = () => actions.setScreen('select');
+  } else if (showExerciseManageFab && currentExerciseManagePart) {
+    fabKey = `exercise-manage-add-${currentExerciseManagePart}`;
+    fabLabel = `${currentExerciseManagePart}に種目を追加`;
+    fabAction = () => actions.openExerciseEditor(currentExerciseManagePart, null, 'exerciseManage');
+  } else if (showTrainingMenuFab) {
+    fabKey = 'training-menu-add';
+    fabLabel = 'トレーニングメニューを追加';
+    fabAction = actions.createPresetDraft;
+  } else if (showPartEditFab) {
+    fabKey = 'part-edit-add';
+    fabLabel = '部位を追加';
+    fabAction = () => setPartAddDialogOpen(true);
+  }
 
   useLayoutEffect(() => {
     appRef.current?.scrollTo({ top: 0 });
@@ -100,10 +124,19 @@ function AppShell() {
     const checkFabOverlap = () => {
       const fab = document.querySelector<HTMLElement>('.fab');
       const editRows = document.querySelectorAll<HTMLElement>('.exercise-option.edit-row');
-      const target =
-        screen === 'home'
-          ? document.querySelector<HTMLElement>('.workout-action-button.primary')
-          : editRows[editRows.length - 1];
+      const presetRows = document.querySelectorAll<HTMLElement>('.preset-plan-row');
+      const partRows = document.querySelectorAll<HTMLElement>('.part-edit-row');
+      let target: HTMLElement | null | undefined = null;
+
+      if (screen === 'home') {
+        target = document.querySelector<HTMLElement>('.workout-action-button.primary');
+      } else if (screen === 'exerciseManage') {
+        target = editRows[editRows.length - 1];
+      } else if (screen === 'trainingMenu') {
+        target = presetRows[presetRows.length - 1];
+      } else if (screen === 'partEdit') {
+        target = partRows[partRows.length - 1];
+      }
 
       if (!fab || !target) {
         setFabFaded(false);
@@ -145,6 +178,10 @@ function AppShell() {
     workoutEndTime,
   ]);
 
+  useEffect(() => {
+    if (screen !== 'partEdit') setPartAddDialogOpen(false);
+  }, [screen]);
+
   async function applyUpdate() {
     if (!updateServiceWorker) return;
     setUpdating(true);
@@ -167,7 +204,14 @@ function AppShell() {
     if (targetScreen === 'presetExerciseSelect') return <PresetExerciseSelectScreen />;
     if (targetScreen === 'trainingMenu') return <TrainingMenuScreen />;
     if (targetScreen === 'analysis') return <AnalysisScreen />;
-    if (targetScreen === 'partEdit') return <PartEditScreen />;
+    if (targetScreen === 'partEdit') {
+      return (
+        <PartEditScreen
+          addDialogOpen={partAddDialogOpen}
+          onCloseAddDialog={() => setPartAddDialogOpen(false)}
+        />
+      );
+    }
     if (targetScreen === 'exerciseManage') return <ExerciseManageScreen />;
     if (targetScreen === 'settings') return <SettingsScreen />;
     if (targetScreen === 'localBackup') return <LocalBackupScreen />;
@@ -206,22 +250,13 @@ function AppShell() {
       <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">
         {toast}
       </div>
-      {showHomeFab && (
+      {fabAction && (
         <button
+          key={fabKey}
           className={`fab ${fabFaded ? 'faded' : ''}`}
           type="button"
-          aria-label="種目を追加"
-          onClick={() => actions.setScreen('select')}
-        >
-          <PlusIcon />
-        </button>
-      )}
-      {showExerciseManageFab && currentExerciseManagePart && (
-        <button
-          className={`fab ${fabFaded ? 'faded' : ''}`}
-          type="button"
-          aria-label={`${currentExerciseManagePart}に種目を追加`}
-          onClick={() => actions.openExerciseEditor(currentExerciseManagePart, null, 'exerciseManage')}
+          aria-label={fabLabel}
+          onClick={fabAction}
         >
           <PlusIcon />
         </button>

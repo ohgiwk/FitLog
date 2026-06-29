@@ -34,10 +34,8 @@
 }
 
 .schedule-panel-head {
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
   align-items: center;
-  gap: 10px;
 }
 
 .schedule-title {
@@ -52,19 +50,6 @@
   height: 22px;
   flex: 0 0 auto;
   color: var(--red);
-}
-
-.schedule-add-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-height: 36px;
-  padding: 0 12px;
-}
-
-.schedule-add-button svg {
-  width: 18px;
-  height: 18px;
 }
 
 .schedule-desc {

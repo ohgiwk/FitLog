@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { PartSetting } from '../types';
 import { partColorPalette } from '../data/partColors';
 import { ChevronDown, ChevronUp, ChevronLeft, TrashIcon } from '../icons';
@@ -22,10 +22,19 @@ function usePartEditScreenModel() {
 /**
  * 部位の編集画面。部位の追加・削除・並び替え・表示色の変更を行う
  */
-export function PartEditScreen() {
+type PartEditScreenProps = {
+  addDialogOpen: boolean;
+  onCloseAddDialog: () => void;
+};
+
+export function PartEditScreen({ addDialogOpen, onCloseAddDialog }: PartEditScreenProps) {
   const { orderedParts, onBack, onAddPart, onDeletePart, onMovePart, onSetPartColor } =
     usePartEditScreenModel();
   const [newPartName, setNewPartName] = useState('');
+
+  useEffect(() => {
+    if (addDialogOpen) setNewPartName('');
+  }, [addDialogOpen]);
 
   /**
    * 入力中の名前で部位を追加し、入力欄を空に戻す
@@ -36,6 +45,7 @@ export function PartEditScreen() {
     if (!trimmed) return;
     onAddPart(trimmed);
     setNewPartName('');
+    onCloseAddDialog();
   }
 
   return (
@@ -50,17 +60,6 @@ export function PartEditScreen() {
         </div>
       </header>
       <div className="content">
-        <form className="part-add-form" onSubmit={handleAddPart}>
-          <input
-            maxLength={12}
-            placeholder="部位名を追加（例: 腹）"
-            value={newPartName}
-            onChange={(event) => setNewPartName(event.target.value)}
-          />
-          <button className="small-primary" type="submit">
-            追加
-          </button>
-        </form>
         {!orderedParts.length ? (
           <div className="part-edit-empty">部位がありません</div>
         ) : (
@@ -80,6 +79,37 @@ export function PartEditScreen() {
           </div>
         )}
       </div>
+      {addDialogOpen && (
+        <div className="dialog-backdrop" role="presentation">
+          <form
+            className="confirm-dialog part-add-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="part-add-title"
+            onSubmit={handleAddPart}
+          >
+            <div id="part-add-title" className="confirm-title">
+              部位を追加
+            </div>
+            <input
+              autoFocus
+              maxLength={12}
+              placeholder="例: 腹"
+              value={newPartName}
+              aria-label="部位名"
+              onChange={(event) => setNewPartName(event.target.value)}
+            />
+            <div className="confirm-actions">
+              <button className="small-outline" type="button" onClick={onCloseAddDialog}>
+                キャンセル
+              </button>
+              <button className="small-primary" type="submit" disabled={!newPartName.trim()}>
+                追加
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </section>
   );
 }

@@ -35,6 +35,7 @@
   color: var(--text-on-primary);
   box-shadow: 0 5px 13px var(--shadow-strong);
   opacity: 1;
+  animation: fab-enter 0.22s ease;
   transition:
     opacity 0.18s ease,
     transform 0.18s ease;
@@ -44,6 +45,18 @@
   transform: translateY(8px);
   opacity: 0;
   pointer-events: none;
+}
+
+@keyframes fab-enter {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .plus-muted svg,

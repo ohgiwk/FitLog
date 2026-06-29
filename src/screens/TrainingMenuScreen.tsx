@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarIcon, ChevronLeft, EditIcon, PlusIcon, TrashIcon } from '../icons';
+import { CalendarIcon, ChevronLeft, EditIcon, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import { Preset } from '../types';
 import { weekdayLabels } from '../utils';
@@ -13,7 +13,6 @@ function useTrainingMenuScreenModel() {
   return {
     presets: state.presets,
     onBack: () => actions.setScreen('home'),
-    onCreatePreset: actions.createPresetDraft,
     onEditPreset: actions.editPreset,
     onDeletePreset: actions.deletePreset,
   };
@@ -23,8 +22,7 @@ function useTrainingMenuScreenModel() {
  * トレーニングメニューの一覧・追加・編集・削除を行う画面
  */
 export function TrainingMenuScreen() {
-  const { presets, onBack, onCreatePreset, onEditPreset, onDeletePreset } =
-    useTrainingMenuScreenModel();
+  const { presets, onBack, onEditPreset, onDeletePreset } = useTrainingMenuScreenModel();
   const [deleteTarget, setDeleteTarget] = useState<Preset | null>(null);
 
   /**
@@ -54,14 +52,6 @@ export function TrainingMenuScreen() {
               <CalendarIcon />
               <h2>メニュー一覧</h2>
             </div>
-            <button
-              className="small-primary schedule-add-button"
-              type="button"
-              onClick={onCreatePreset}
-            >
-              <PlusIcon />
-              <span>追加</span>
-            </button>
           </div>
           <p className="schedule-desc">曜日や間隔は各メニューの編集画面で設定できます。</p>
           {!presets.length ? (
