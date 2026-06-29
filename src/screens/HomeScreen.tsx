@@ -210,7 +210,7 @@ export function HomeScreen() {
         cloud={cloud}
       />
       {!selectedWorkouts.length && !workoutEndTime && (
-        <div className="workout-start-area">
+        <div className="workout-start-area home-day-fade" key={`start-${selectedDate}`}>
           <section className="workout-start-panel" aria-labelledby="workout-menu-start-title">
             <div className="workout-start-section">
               <h2 id="workout-menu-start-title">トレーニングを開始</h2>
@@ -262,7 +262,7 @@ export function HomeScreen() {
           </section>
         </div>
       )}
-      <div className="content">
+      <div className="content home-day-fade" key={`content-${selectedDate}`}>
         {selectedWorkouts.map((workout) => (
           <article
             className="exercise-card"
