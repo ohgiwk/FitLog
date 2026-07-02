@@ -302,15 +302,6 @@ function CountView({
     <>
       <div className="analysis-view-switch" role="tablist" aria-label="分析の表示単位">
         <button
-          className={activeView === 'part' ? 'active' : ''}
-          type="button"
-          role="tab"
-          aria-selected={activeView === 'part'}
-          onClick={() => onChangeView('part')}
-        >
-          部位別
-        </button>
-        <button
           className={activeView === 'exercise' ? 'active' : ''}
           type="button"
           role="tab"
@@ -318,6 +309,15 @@ function CountView({
           onClick={() => onChangeView('exercise')}
         >
           種目別
+        </button>
+        <button
+          className={activeView === 'part' ? 'active' : ''}
+          type="button"
+          role="tab"
+          aria-selected={activeView === 'part'}
+          onClick={() => onChangeView('part')}
+        >
+          部位別
         </button>
       </div>
 
