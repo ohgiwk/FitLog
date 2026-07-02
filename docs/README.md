@@ -16,6 +16,7 @@ FitLog の仕様・設計ドキュメントの入口です。
 | --- | --- |
 | [`specification.md`](./specification.md) | 実装に基づく詳細仕様（型・永続化・画面・ロジック・機能） |
 | [`supabase-migration.md`](./supabase-migration.md) | Supabase 移行に向けた現行データ構造・更新規則・設計論点の調査 |
+| [`store-release.md`](./store-release.md) | iOS App Store / Google Play 公開に向けた準備メモ |
 | [`improvements.md`](./improvements.md) | 今後の改善候補（備忘録） |
 
 > リポジトリ運用ルール（コミット方針・コーディング方針など）は、ルートの [`AGENTS.md`](../AGENTS.md) を参照してください。
