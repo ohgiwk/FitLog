@@ -1,5 +1,5 @@
 import { useActionState, useState } from 'react';
-import { ChevronLeft, TrashIcon } from '../icons';
+import { ChevronDown, ChevronLeft, ChevronUp, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 
 type CloudBackupItem = ReturnType<typeof useFitLogContext>['actions']['cloud']['backups'][number];
@@ -32,6 +32,8 @@ export function CloudBackupsScreen() {
   const cloud = actions.cloud;
   const [restoreTarget, setRestoreTarget] = useState<CloudBackupItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CloudBackupItem | null>(null);
+  const [accountPanelOpen, setAccountPanelOpen] = useState(false);
+  const [accountDeleteOpen, setAccountDeleteOpen] = useState(false);
 
   /**
    * クラウド操作中は対象操作だけ React の Action pending に任せる
@@ -58,8 +60,19 @@ export function CloudBackupsScreen() {
     await cloud.deleteBackupFromCloud(targetId);
     return null;
   }, null);
+  const [, accountDeleteAction, accountDeletePending] = useActionState(async () => {
+    setAccountDeleteOpen(false);
+    const deleted = await cloud.deleteAccountFromCloud();
+    if (deleted) actions.setScreen('settings');
+    return null;
+  }, null);
   const cloudPending =
-    backupPending || refreshPending || restorePending || deletePending || cloud.loading;
+    backupPending ||
+    refreshPending ||
+    restorePending ||
+    deletePending ||
+    accountDeletePending ||
+    cloud.loading;
 
   return (
     <section className="screen active settings-screen">
@@ -153,6 +166,43 @@ export function CloudBackupsScreen() {
             </div>
           )}
         </section>
+        {cloud.enabled && cloud.userEmail && (
+          <section className="settings-section" aria-labelledby="cloud-account-delete-title">
+            <button
+              className="settings-accordion-title"
+              type="button"
+              aria-expanded={accountPanelOpen}
+              aria-controls="cloud-account-delete-panel"
+              onClick={() => setAccountPanelOpen((current) => !current)}
+            >
+              <span id="cloud-account-delete-title">アカウント</span>
+              {accountPanelOpen ? <ChevronUp /> : <ChevronDown />}
+            </button>
+            <div
+              className={`settings-cloud-panel settings-accordion-panel${
+                accountPanelOpen ? ' open' : ''
+              }`}
+              id="cloud-account-delete-panel"
+              hidden={!accountPanelOpen}
+            >
+              <div className="settings-label">
+                <span>ログイン中</span>
+                <strong>{cloud.userEmail}</strong>
+              </div>
+              <p className="settings-help">
+                クラウドアカウントと保存済みバックアップを削除します。端末内の記録は残ります。
+              </p>
+              <button
+                className="danger-button"
+                type="button"
+                disabled={cloudPending}
+                onClick={() => setAccountDeleteOpen(true)}
+              >
+                アカウントを削除
+              </button>
+            </div>
+          </section>
+        )}
       </div>
       {restoreTarget && (
         <div className="dialog-backdrop" role="presentation">
@@ -208,6 +258,37 @@ export function CloudBackupsScreen() {
                 type="button"
                 disabled={cloudPending}
                 onClick={() => setDeleteTarget(null)}
+              >
+                キャンセル
+              </button>
+              <button className="danger-button" type="submit" disabled={cloudPending}>
+                削除
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+      {accountDeleteOpen && (
+        <div className="dialog-backdrop" role="presentation">
+          <div
+            className="confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cloud-account-delete-confirm-title"
+          >
+            <div className="confirm-title" id="cloud-account-delete-confirm-title">
+              アカウントを削除しますか？
+            </div>
+            <p>
+              {cloud.userEmail}
+              のクラウドアカウントと保存済みバックアップを削除します。この操作は元に戻せません。端末内の記録は削除されません。
+            </p>
+            <form className="confirm-actions" action={accountDeleteAction}>
+              <button
+                className="small-outline"
+                type="button"
+                disabled={cloudPending}
+                onClick={() => setAccountDeleteOpen(false)}
               >
                 キャンセル
               </button>

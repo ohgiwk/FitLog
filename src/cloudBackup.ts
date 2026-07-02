@@ -190,6 +190,17 @@ export async function deleteCloudBackup(id: string) {
 }
 
 /**
+ * ログイン中のクラウドアカウントを削除する。ローカルデータは削除しない
+ */
+export async function deleteCloudAccount() {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase is not configured');
+  const { error } = await supabase.rpc('delete_current_user');
+  if (error) throw error;
+  await supabase.auth.signOut().catch(() => undefined);
+}
+
+/**
  * 最新5件だけ残し、古いバックアップを削除する
  */
 async function pruneCloudBackups(userId: string) {

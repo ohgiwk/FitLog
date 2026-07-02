@@ -404,6 +404,7 @@ Supabase環境変数が設定されている場合だけ、クラウドバック
   - ログインはバックアップ利用時だけ必要で、アプリ起動時には要求しません。
   - ログアウトしてもローカルデータは削除しません。
   - ログイン中のみ、メールアドレスとログアウトボタンをホームのドロワーメニュー下部に表示します。
+  - バックアップ一覧画面からクラウドアカウントを削除できます。削除すると `auth.users` のユーザーを削除し、`on delete cascade` により `profiles`、`devices`、`cloud_backups` の該当データも削除します。端末内のローカルデータは削除しません。
 - バックアップ:
   - ユーザーが手動で実行します。
   - 実行前に現在の `State` を `localStorage` へ即時保存します。
@@ -417,7 +418,7 @@ Supabase環境変数が設定されている場合だけ、クラウドバック
   - 選択した `state_json` を `normalizeState` へ通し、成功した場合だけローカル `State` を全置換します。
   - 復元後は `currentWorkoutId` を解除し、選択プリセットを先頭に戻し、選択日を本日にします。
 
-クラウドバックアップの最小DBは `profiles`、`devices`、`cloud_backups` です。SQLは `supabase/migrations/202606280001_cloud_backups.sql` を参照してください。
+クラウドバックアップの最小DBは `profiles`、`devices`、`cloud_backups` です。SQLは `supabase/migrations/202606280001_cloud_backups.sql`、アカウント削除RPCは `supabase/migrations/202607020001_delete_current_user.sql` を参照してください。
 
 ---
 

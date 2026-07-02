@@ -3,6 +3,7 @@ import {
   CloudBackup,
   cloudBackupAvailable,
   createCloudBackup,
+  deleteCloudAccount,
   deleteCloudBackup,
   ensureCloudProfile,
   fetchCloudBackupState,
@@ -223,6 +224,25 @@ export function useBackup({
   }
 
   /**
+   * クラウドアカウントを削除する。ローカルデータは残す
+   */
+  async function deleteAccountFromCloud() {
+    setCloudLoading(true);
+    try {
+      await deleteCloudAccount();
+      setCloudUserEmail(null);
+      setCloudBackups([]);
+      showToast('クラウドアカウントを削除しました');
+      return true;
+    } catch {
+      showToast('クラウドアカウントの削除に失敗しました');
+      return false;
+    } finally {
+      setCloudLoading(false);
+    }
+  }
+
+  /**
    * 起動時と認証変更時にログイン状態を同期する
    */
   useEffect(() => {
@@ -275,6 +295,7 @@ export function useBackup({
       backupToCloud,
       restoreFromCloud,
       deleteBackupFromCloud,
+      deleteAccountFromCloud,
       refreshBackups: refreshCloudBackups,
     },
   };
