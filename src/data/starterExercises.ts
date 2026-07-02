@@ -1,7 +1,7 @@
 import { Exercise, ExerciseCategory, gripStyleTypes, gripTypes } from '../types';
 import { uid } from '../utils';
 
-export const starterCatalogVersion = 5;
+export const starterCatalogVersion = 6;
 
 /**
  * 部位ごと・カテゴリごとの種目名定義。
@@ -143,6 +143,31 @@ const starterCatalog: {
       {
         category: 'bodyweight',
         names: ['ディップス', 'ダイヤモンドプッシュアップ', 'ベンチディップス'],
+      },
+    ],
+  },
+  {
+    part: '腹筋',
+    categories: [
+      {
+        category: 'free',
+        names: ['バーベルロールアウト', 'ランドマインローテーション'],
+      },
+      {
+        category: 'machine',
+        names: ['アブドミナルクランチ', 'ロータリートルソー', 'アブコースター'],
+      },
+      {
+        category: 'dumbbell',
+        names: ['ダンベルサイドベント', 'ダンベルロシアンツイスト', 'ダンベルクランチ'],
+      },
+      {
+        category: 'cable',
+        names: ['ケーブルクランチ', 'ケーブルウッドチョッパー', 'ケーブルサイドベント'],
+      },
+      {
+        category: 'bodyweight',
+        names: ['クランチ', 'プランク', 'サイドプランク', 'シットアップ', 'マウンテンクライマー'],
       },
     ],
   },

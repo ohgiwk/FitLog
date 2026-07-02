@@ -354,7 +354,7 @@ type PartSetting = {
 - `workoutStartTimes` / `workoutEndTimes`: 空オブジェクト。
 - `weightUnit`: `'kg'`。
 - `schemaVersion`: 現在の保存データバージョン。
-- `catalogVersion`: `starterCatalogVersion`（現在 `5`）。
+- `catalogVersion`: `starterCatalogVersion`（現在 `6`）。
 
 ### 5.5 正規化・移行（`normalizeState`）
 
@@ -376,7 +376,7 @@ type PartSetting = {
   - `TrainingPlan`: `part` 必須。`mode` は `'interval'` 以外を `'weekly'`。`weekdays` は 0〜6 の整数のみ・重複排除・ソート。`intervalDays` は正の整数（既定 1）。
   - `parts`（`normalizePartSettings`）: 保存済み設定（`name` + `color`、空名・重複・「レスト」は除外、色が無ければ既定色）を順序を保って取り込み、その後、種目・記録・実施日・計画に現れる未登録の部位を末尾へ追加してパレット色を割り当てる。旧データに `parts` が無くても、ここで既存部位から自動生成される。
   - `weightUnit`: `'lbs'` のみ lbs として採用し、それ以外・未設定は `'kg'` に丸める。
-- **初期状態の `parts`**: スターター種目の部位（胸 / 背中 / 脚 / 肩 / 腕）をその順序で生成し、パレット色を循環で割り当てる。
+- **初期状態の `parts`**: スターター種目の部位（胸 / 背中 / 脚 / 肩 / 腕 / 腹筋）をその順序で生成し、パレット色を循環で割り当てる。
 - `schemaVersion`: 正の整数のみ採用し、未設定・不正値は現在の保存データバージョンへ補完する。
 
 ### 5.6 エクスポート / インポート（`useBackup`）
