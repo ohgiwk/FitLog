@@ -2,6 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadState, storeKey } from '../storage';
 import { State } from '../types';
 
+export type ToastState = {
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+};
+
 /**
  * state を localStorage へ保存するまでの待ち時間(ミリ秒)。
  * 連続入力のたびに書き込むのを避け、最後の入力からこの時間後にまとめて保存する
@@ -29,7 +35,7 @@ export function useFitLogCore() {
    */
   const [loadResult] = useState(loadState);
   const [state, setState] = useState<State>(loadResult.state);
-  const [toast, setToast] = useState('');
+  const [toast, setToast] = useState<ToastState | null>(null);
   /**
    * 即時保存(flush)で常に最新の state を参照するための保持用 ref
    */
@@ -44,7 +50,7 @@ export function useFitLogCore() {
    * 保存に失敗したことをトーストで知らせる
    */
   const notifySaveError = useCallback(() => {
-    setToast('保存に失敗しました。空き容量を確認してください');
+    setToast({ message: '保存に失敗しました。空き容量を確認してください' });
   }, []);
 
   /**
@@ -53,7 +59,7 @@ export function useFitLogCore() {
    */
   useEffect(() => {
     if (loadResult.recoveredFromCorruption) {
-      setToast('保存データを読み込めませんでした。旧データは退避済みです');
+      setToast({ message: '保存データを読み込めませんでした。旧データは退避済みです' });
     }
   }, [loadResult.recoveredFromCorruption]);
 
@@ -94,7 +100,7 @@ export function useFitLogCore() {
    */
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(() => setToast(''), 1800);
+    const timer = window.setTimeout(() => setToast(null), toast.onAction ? 5000 : 1800);
     return () => window.clearTimeout(timer);
   }, [toast]);
 
@@ -115,9 +121,13 @@ export function useFitLogCore() {
   /**
    * 画面下部に短いメッセージを表示する
    */
-  const showToast = useCallback((message: string) => {
-    setToast(message);
+  const showToast = useCallback((message: string, action?: Omit<ToastState, 'message'>) => {
+    setToast({ message, ...action });
   }, []);
 
-  return { state, setState, saveState, flushState, toast, showToast };
+  const clearToast = useCallback(() => {
+    setToast(null);
+  }, []);
+
+  return { state, setState, saveState, flushState, toast, showToast, clearToast };
 }

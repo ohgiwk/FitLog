@@ -275,7 +275,25 @@ function AppShell() {
         <div className={`home-app-backdrop ${homeOverlayClass}`} aria-hidden="true" />
       )}
       <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">
-        {toast}
+        {toast && (
+          <>
+            <span>{toast.message}</span>
+            {toast.onAction && (
+              <button
+                className="toast-action"
+                type="button"
+                onClick={() => {
+                  const undo = toast.onAction;
+                  if (!undo) return;
+                  actions.clearToast();
+                  undo();
+                }}
+              >
+                {toast.actionLabel || '元に戻す'}
+              </button>
+            )}
+          </>
+        )}
       </div>
       {fabAction && (
         <button

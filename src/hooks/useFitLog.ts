@@ -269,6 +269,7 @@ export function useFitLog() {
       updateExerciseGoal: exercise.updateExerciseGoal,
       clearGoalAchievement: () => ui.setGoalAchievement(null),
       clearScreenTransition: nav.clearScreenTransition,
+      clearToast: core.clearToast,
       closeExerciseEditor,
       updateSet: workout.updateSet,
       updateWorkoutNote: workout.updateWorkoutNote,

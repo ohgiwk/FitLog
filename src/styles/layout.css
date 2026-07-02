@@ -130,6 +130,10 @@
   bottom: var(--bottom-floating-offset);
   left: 16px;
   z-index: 30;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
   max-width: 440px;
   margin: 0 auto;
   transform: translateY(60px);
@@ -141,13 +145,32 @@
   padding: 12px 14px;
   background: var(--toast-bg);
   color: var(--text-on-primary);
-  text-align: center;
+  text-align: left;
   pointer-events: none;
+}
+
+.toast span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .toast.show {
   transform: translateY(0);
   opacity: 1;
+  pointer-events: auto;
+}
+
+.toast-action {
+  min-height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 8px;
+  padding: 0 10px;
+  color: var(--text-on-primary);
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .update-banner {

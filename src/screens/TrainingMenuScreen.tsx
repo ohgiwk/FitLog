@@ -104,7 +104,7 @@ export function TrainingMenuScreen() {
             <div id="training-menu-delete-title" className="confirm-title">
               トレーニングメニューを削除しますか？
             </div>
-            <p>「{deleteTarget.name}」を削除します。この操作は元に戻せません。</p>
+            <p>「{deleteTarget.name}」を削除します。削除後に画面下部から元に戻せます。</p>
             <div className="confirm-actions">
               <button className="small-outline" type="button" onClick={() => setDeleteTarget(null)}>
                 キャンセル

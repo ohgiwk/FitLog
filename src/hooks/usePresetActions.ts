@@ -9,7 +9,7 @@ import {
 type PresetActionsDeps = {
   state: State;
   saveState: (updater: (draft: State) => State) => void;
-  showToast: (message: string) => void;
+  showToast: (message: string, action?: { actionLabel?: string; onAction?: () => void }) => void;
   showScreen: (next: Screen) => void;
   selectedDate: string;
 };
@@ -97,11 +97,27 @@ export function usePresetActions({
    * プリセットを削除し、選択・編集中の参照も解除する
    */
   function deletePreset(presetId: string) {
+    const presetIndex = state.presets.findIndex((preset) => preset.id === presetId);
+    const deletedPreset = state.presets[presetIndex];
+    if (!deletedPreset) return;
     saveState((prev) => ({
       ...prev,
       presets: prev.presets.filter((preset) => preset.id !== presetId),
     }));
     if (currentPresetId === presetId) setCurrentPresetId(null);
+    showToast(`${deletedPreset.name}を削除しました`, {
+      actionLabel: '元に戻す',
+      onAction: () => {
+        saveState((prev) => {
+          if (prev.presets.some((preset) => preset.id === presetId)) return prev;
+          const presets = [...prev.presets];
+          presets.splice(Math.min(presetIndex, presets.length), 0, deletedPreset);
+          return { ...prev, presets };
+        });
+        setCurrentPresetId(deletedPreset.id);
+        showToast(`${deletedPreset.name}を戻しました`);
+      },
+    });
   }
 
   /**

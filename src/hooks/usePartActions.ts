@@ -5,7 +5,7 @@ import { buildOrderedParts } from '../selectors/fitLogSelectors';
 type PartActionsDeps = {
   state: State;
   saveState: (updater: (draft: State) => State) => void;
-  showToast: (message: string) => void;
+  showToast: (message: string, action?: { actionLabel?: string; onAction?: () => void }) => void;
 };
 
 /**
@@ -50,12 +50,40 @@ export function usePartActions({ state, saveState, showToast }: PartActionsDeps)
     if (state.exercises.some((exercise) => exercise.part === name)) {
       return showToast('種目がある部位は削除できません');
     }
+    const orderedParts = orderedPartsOf(state);
+    const partIndex = orderedParts.findIndex((part) => part.name === name);
+    const deletedPart = orderedParts[partIndex];
+    if (!deletedPart) return;
+    const deletedPlans = state.trainingPlans.filter((plan) => plan.part === name);
     saveState((prev) => ({
       ...prev,
       parts: orderedPartsOf(prev).filter((part) => part.name !== name),
       trainingPlans: prev.trainingPlans.filter((plan) => plan.part !== name),
     }));
-    showToast('部位を削除しました');
+    showToast('部位を削除しました', {
+      actionLabel: '元に戻す',
+      onAction: () => {
+        saveState((prev) => {
+          const parts = orderedPartsOf(prev).some((part) => part.name === name)
+            ? orderedPartsOf(prev)
+            : [
+                ...orderedPartsOf(prev).slice(0, Math.min(partIndex, orderedPartsOf(prev).length)),
+                deletedPart,
+                ...orderedPartsOf(prev).slice(Math.min(partIndex, orderedPartsOf(prev).length)),
+              ];
+          const existingPlanIds = new Set(prev.trainingPlans.map((plan) => plan.id));
+          return {
+            ...prev,
+            parts,
+            trainingPlans: [
+              ...prev.trainingPlans,
+              ...deletedPlans.filter((plan) => !existingPlanIds.has(plan.id)),
+            ],
+          };
+        });
+        showToast('部位を戻しました');
+      },
+    });
   }
 
   /**

@@ -13,7 +13,7 @@ import { paletteColorAt } from '../data/partColors';
 type ExerciseActionsDeps = {
   state: State;
   saveState: (updater: (draft: State) => State) => void;
-  showToast: (message: string) => void;
+  showToast: (message: string, action?: { actionLabel?: string; onAction?: () => void }) => void;
 };
 
 /**
@@ -161,8 +161,13 @@ export function useExerciseActions({ state, saveState, showToast }: ExerciseActi
    * 種目を削除し、各プリセットからも該当 ID を取り除く
    */
   function deleteExercise(exerciseId: string) {
-    const exercise = state.exercises.find((item) => item.id === exerciseId);
+    const exerciseIndex = state.exercises.findIndex((item) => item.id === exerciseId);
+    const exercise = state.exercises[exerciseIndex];
     if (!exercise) return;
+    const presetSnapshots = state.presets.map((preset) => ({
+      id: preset.id,
+      exerciseIds: preset.exerciseIds,
+    }));
     saveState((prev) => ({
       ...prev,
       exercises: prev.exercises.filter((item) => item.id !== exerciseId),
@@ -171,7 +176,29 @@ export function useExerciseActions({ state, saveState, showToast }: ExerciseActi
         exerciseIds: preset.exerciseIds.filter((id) => id !== exerciseId),
       })),
     }));
-    showToast(`${exercise.name}を削除しました`);
+    showToast(`${exercise.name}を削除しました`, {
+      actionLabel: '元に戻す',
+      onAction: () => {
+        saveState((prev) => {
+          const exercises = prev.exercises.some((item) => item.id === exerciseId)
+            ? prev.exercises
+            : [
+                ...prev.exercises.slice(0, Math.min(exerciseIndex, prev.exercises.length)),
+                exercise,
+                ...prev.exercises.slice(Math.min(exerciseIndex, prev.exercises.length)),
+              ];
+          return {
+            ...prev,
+            exercises,
+            presets: prev.presets.map((preset) => {
+              const snapshot = presetSnapshots.find((item) => item.id === preset.id);
+              return snapshot ? { ...preset, exerciseIds: snapshot.exerciseIds } : preset;
+            }),
+          };
+        });
+        showToast(`${exercise.name}を戻しました`);
+      },
+    });
   }
 
   return {

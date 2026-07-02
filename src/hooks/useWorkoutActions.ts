@@ -5,7 +5,7 @@ import { createWorkout } from '../selectors/fitLogSelectors';
 type WorkoutActionsDeps = {
   state: State;
   saveState: (updater: (draft: State) => State) => void;
-  showToast: (message: string) => void;
+  showToast: (message: string, action?: { actionLabel?: string; onAction?: () => void }) => void;
   showScreen: (next: Screen) => void;
   selectedDate: string;
   currentWorkout: Workout | null;
@@ -245,6 +245,9 @@ export function useWorkoutActions({
    */
   function deleteSet(setId: string) {
     if (!currentWorkout || isWorkoutDayEnded(currentWorkout.date)) return;
+    const setIndex = currentWorkout.sets.findIndex((set) => set.id === setId);
+    const deletedSet = currentWorkout.sets[setIndex];
+    if (!deletedSet) return;
     saveState((prev) => ({
       ...prev,
       workouts: prev.workouts.map((workout) =>
@@ -253,20 +256,51 @@ export function useWorkoutActions({
           : workout,
       ),
     }));
+    showToast('セットを削除しました', {
+      actionLabel: '元に戻す',
+      onAction: () => {
+        saveState((prev) => ({
+          ...prev,
+          workouts: prev.workouts.map((workout) => {
+            if (workout.id !== currentWorkout.id || workout.sets.some((set) => set.id === setId)) {
+              return workout;
+            }
+            const sets = [...workout.sets];
+            sets.splice(Math.min(setIndex, sets.length), 0, deletedSet);
+            return { ...workout, sets };
+          }),
+        }));
+        setCurrentWorkoutId(currentWorkout.id);
+        showToast('セットを戻しました');
+      },
+    });
   }
 
   /**
    * ワークアウト(種目の記録)ごと削除する
    */
   function deleteWorkout(workoutId: string) {
-    const target = state.workouts.find((workout) => workout.id === workoutId);
+    const targetIndex = state.workouts.findIndex((workout) => workout.id === workoutId);
+    const target = state.workouts[targetIndex];
     if (!target || isWorkoutDayEnded(target.date)) return;
     saveState((prev) => ({
       ...prev,
       workouts: prev.workouts.filter((workout) => workout.id !== workoutId),
     }));
     if (currentWorkoutId === workoutId) setCurrentWorkoutId(null);
-    showToast('種目の記録を削除しました');
+    showToast('種目の記録を削除しました', {
+      actionLabel: '元に戻す',
+      onAction: () => {
+        saveState((prev) => {
+          if (prev.workouts.some((workout) => workout.id === workoutId)) return prev;
+          const workouts = [...prev.workouts];
+          workouts.splice(Math.min(targetIndex, workouts.length), 0, target);
+          return { ...prev, workouts };
+        });
+        setCurrentWorkoutId(target.id);
+        showToast('種目の記録を戻しました');
+      },
+    });
   }
 
   /**
