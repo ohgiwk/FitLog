@@ -438,7 +438,7 @@ Supabase環境変数が設定されている場合だけ、クラウドバック
 
 ## 6. 画面仕様
 
-`Screen` 型: `'home' | 'select' | 'exerciseEdit' | 'detail' | 'exerciseHistory' | 'goalAchievements' | 'trainingMenu' | 'presetEdit' | 'presetExerciseSelect' | 'analysis' | 'partEdit' | 'exerciseManage' | 'settings' | 'localBackup' | 'cloudAuth' | 'cloudBackups'`。
+`Screen` 型: `'home' | 'select' | 'exerciseEdit' | 'detail' | 'exerciseHistory' | 'goalAchievements' | 'trainingMenu' | 'presetEdit' | 'presetExerciseSelect' | 'analysis' | 'partEdit' | 'exerciseManage' | 'settings' | 'privacyPolicy' | 'localBackup' | 'cloudAuth' | 'cloudBackups'`。
 
 ### 6.1 アプリ外枠とナビゲーション（`App.tsx`）
 
@@ -607,7 +607,7 @@ Supabase環境変数が設定されている場合だけ、クラウドバック
 ### 6.13 設定（`SettingsScreen`）
 
 - ホーム画面のドロワメニューから遷移する。トップバーの戻るでホームへ戻る。
-- 表示設定、マスタ管理、データ管理の各パネルを表示する。
+- 表示設定、マスタ管理、データ管理、アプリ情報の各パネルを表示する。
 - **単位**: kg / Lbs の切り替えスイッチを表示する。
   - 切り替えた単位は `state.weightUnit` に保存され、重量入力欄、ホームのセット行、種目別履歴の重量・RM・負荷量表示に反映される。
   - 既存記録の保存値は kg のまま維持し、lbs 表示時のみ換算する。
@@ -617,9 +617,16 @@ Supabase環境変数が設定されている場合だけ、クラウドバック
 - データ管理には「ローカルバックアップ」と「クラウドバックアップ」の2リンクを表示する。
   - ローカルバックアップ: JSON書き出し/読み込み画面へ遷移する。
   - クラウドバックアップ: 未ログイン時は新規登録/ログイン画面、ログイン後はバックアップ一覧画面へ遷移する。
+- アプリ情報には「プライバシーポリシー」を表示し、アプリ内のポリシー画面へ遷移する。
 - 画面下部にアプリバージョンを小さなグレー文字で表示する。
 
-### 6.14 ローカルバックアップ（`LocalBackupScreen`）
+### 6.14 プライバシーポリシー（`PrivacyPolicyScreen`）
+
+- 設定画面の「プライバシーポリシー」から遷移する。
+- FitLogが扱う情報、利用目的、保存場所、第三者提供、データ管理、問い合わせ、改定について表示する。
+- 通常の記録データは端末内に保存され、クラウドバックアップは任意操作時だけクラウド上に保存されることを明記する。
+
+### 6.15 ローカルバックアップ（`LocalBackupScreen`）
 
 - 設定画面の「ローカルバックアップ」から遷移する。
 - 「記録を書き出す」で現在の `State` をJSONファイルとしてダウンロードする。

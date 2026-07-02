@@ -1,4 +1,4 @@
-import { ChevronLeft, EditIcon, ExportIcon, PartsIcon } from '../icons';
+import { ChevronLeft, EditIcon, ExportIcon, PartsIcon, PrivacyIcon } from '../icons';
 import { WeightUnit } from '../types';
 import { weightUnitLabel } from '../utils';
 import { useFitLogContext } from '../hooks/useFitLogContext';
@@ -20,6 +20,7 @@ function useSettingsScreenModel() {
     onChangeWeightUnit: actions.setWeightUnit,
     onOpenLocalBackup: () => actions.setScreen('localBackup'),
     onOpenCloudBackup: () => actions.setScreen(actions.cloud.userEmail ? 'cloudBackups' : 'cloudAuth'),
+    onOpenPrivacyPolicy: () => actions.setScreen('privacyPolicy'),
   };
 }
 
@@ -35,6 +36,7 @@ export function SettingsScreen() {
     onChangeWeightUnit,
     onOpenLocalBackup,
     onOpenCloudBackup,
+    onOpenPrivacyPolicy,
   } =
     useSettingsScreenModel();
 
@@ -98,6 +100,15 @@ export function SettingsScreen() {
           <button className="settings-link-row" type="button" onClick={onOpenCloudBackup}>
             <ExportIcon />
             <span>クラウドバックアップ</span>
+          </button>
+        </section>
+        <section className="settings-section" aria-labelledby="about-app-title">
+          <h2 className="settings-section-title" id="about-app-title">
+            アプリ情報
+          </h2>
+          <button className="settings-link-row" type="button" onClick={onOpenPrivacyPolicy}>
+            <PrivacyIcon />
+            <span>プライバシーポリシー</span>
           </button>
         </section>
         <div className="settings-version" aria-label={`アプリバージョン ${appVersion}`}>

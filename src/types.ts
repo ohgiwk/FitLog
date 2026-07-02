@@ -12,6 +12,7 @@ export type Screen =
   | 'partEdit'
   | 'exerciseManage'
   | 'settings'
+  | 'privacyPolicy'
   | 'localBackup'
   | 'cloudAuth'
   | 'cloudBackups';

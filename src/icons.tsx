@@ -13,6 +13,7 @@ import {
   IconPencil,
   IconPlus,
   IconSettings,
+  IconShieldLock,
   IconTrophy,
   IconTrash,
   IconUpload,
@@ -68,6 +69,10 @@ export function AnalysisIcon() {
 
 export function SettingsIcon() {
   return <IconSettings />;
+}
+
+export function PrivacyIcon() {
+  return <IconShieldLock />;
 }
 
 export function TrophyIcon() {
