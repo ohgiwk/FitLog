@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildExerciseCounts,
+  buildExerciseGrowthSeries,
+  buildExerciseBestRecords,
   buildPartCounts,
+  buildWeeklyVolumeSeries,
   buildVisibleHistory,
   plannedPartsForDate,
   scheduledPresetsForDate,
@@ -92,6 +95,174 @@ describe('history selectors', () => {
 });
 
 describe('analysis selectors', () => {
+  it('reps 種目の総ボリュームを週ごとに集計する', () => {
+    const result = buildWeeklyVolumeSeries([
+      {
+        ...workout,
+        id: 'w1',
+        date: '2026-06-20',
+        sets: [{ id: 's1', weight: 60, recordValue: 10 }],
+      },
+      {
+        ...workout,
+        id: 'w2',
+        date: '2026-06-21',
+        sets: [{ id: 's2', weight: 50, recordValue: 8 }],
+      },
+      {
+        ...workout,
+        id: 'w3',
+        date: '2026-06-22',
+        sets: [{ id: 's3', weight: 70, recordValue: 5 }],
+      },
+      {
+        ...workout,
+        id: 'w4',
+        measurementType: 'seconds',
+        sets: [{ id: 's4', weight: 10, recordValue: 60 }],
+      },
+      {
+        ...workout,
+        id: 'w5',
+        date: '2026-06-23',
+        sets: [{ id: 's5', weight: '', recordValue: '' }],
+      },
+    ]);
+
+    expect(result).toEqual([
+      { weekStart: '2026-06-15', weekEnd: '2026-06-21', value: 1000 },
+      { weekStart: '2026-06-22', weekEnd: '2026-06-28', value: 350 },
+    ]);
+  });
+
+  it('種目ごとの自己ベストを集計する', () => {
+    const result = buildExerciseBestRecords([
+      {
+        ...workout,
+        id: 'w1',
+        date: '2026-06-20',
+        sets: [
+          { id: 's1', weight: 60, recordValue: 10 },
+          { id: 's2', weight: 70, recordValue: 5 },
+        ],
+      },
+      {
+        ...workout,
+        id: 'w2',
+        date: '2026-06-22',
+        sets: [{ id: 's3', weight: 72.5, recordValue: 6 }],
+      },
+      {
+        ...workout,
+        id: 'w3',
+        exerciseId: 'e2',
+        date: '2026-06-21',
+        name: 'プランク',
+        part: '体幹',
+        measurementType: 'seconds',
+        sets: [
+          { id: 's4', weight: '', recordValue: 45 },
+          { id: 's5', weight: '', recordValue: 60 },
+        ],
+      },
+      {
+        ...workout,
+        id: 'w4',
+        exerciseId: 'e2',
+        date: '2026-06-23',
+        name: 'プランク',
+        part: '体幹',
+        measurementType: 'seconds',
+        sets: [{ id: 's6', weight: '', recordValue: 90 }],
+      },
+    ]);
+
+    expect(result).toEqual([
+      {
+        exerciseId: 'e1',
+        part: '胸',
+        name: 'ベンチプレス',
+        measurementType: 'reps',
+        date: '2026-06-22',
+        mainLabel: 'MAX 1RM',
+        mainValue: 87,
+        subRecords: [
+          { label: '最大重量', value: 72.5, unit: 'weight' },
+          { label: '最大回数', value: 10, unit: 'count' },
+          { label: '最大負荷量', value: 950, unit: 'weight' },
+        ],
+      },
+      {
+        exerciseId: 'e2',
+        part: '体幹',
+        name: 'プランク',
+        measurementType: 'seconds',
+        date: '2026-06-23',
+        mainLabel: '最長記録',
+        mainValue: 90,
+        subRecords: [
+          { label: '最大重量', value: 0, unit: 'weight' },
+          { label: '最大合計秒数', value: 105, unit: 'seconds' },
+        ],
+      },
+    ]);
+  });
+
+  it('種目ごとの成長推移を日付順にまとめる', () => {
+    const result = buildExerciseGrowthSeries([
+      {
+        ...workout,
+        id: 'w2',
+        date: '2026-06-22',
+        sets: [{ id: 's2', weight: 70, recordValue: 8 }],
+      },
+      {
+        ...workout,
+        id: 'w1',
+        date: '2026-06-20',
+        sets: [{ id: 's1', weight: 60, recordValue: 10 }],
+      },
+      {
+        ...workout,
+        id: 'w3',
+        date: '2026-06-22',
+        sets: [{ id: 's3', weight: 72.5, recordValue: 6 }],
+      },
+      {
+        ...workout,
+        id: 'w4',
+        exerciseId: 'e2',
+        date: '2026-06-22',
+        name: 'プランク',
+        part: '体幹',
+        measurementType: 'seconds',
+        sets: [{ id: 's4', weight: '', recordValue: 60 }],
+      },
+    ]);
+
+    expect(result).toEqual([
+      {
+        exerciseId: 'e1',
+        part: '胸',
+        name: 'ベンチプレス',
+        measurementType: 'reps',
+        metric: 'rm',
+        points: [
+          { date: '2026-06-20', value: 80 },
+          { date: '2026-06-22', value: 88.7 },
+        ],
+      },
+      {
+        exerciseId: 'e2',
+        part: '体幹',
+        name: 'プランク',
+        measurementType: 'seconds',
+        metric: 'seconds',
+        points: [{ date: '2026-06-22', value: 60 }],
+      },
+    ]);
+  });
+
   it('記録済みワークアウトだけを種目別に集計し、回数の多い順に並べる', () => {
     const result = buildExerciseCounts([
       { ...workout, sets: [{ id: 's1', weight: 60, recordValue: 10 }] },
