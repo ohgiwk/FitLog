@@ -419,7 +419,6 @@ function GrowthGraphView({
   const color = selectedSeries
     ? (partColors.get(selectedSeries.part) ?? 'var(--red)')
     : 'var(--red)';
-  const unit = selectedSeries ? growthMetricUnit(selectedSeries.metric, weightUnit) : '';
   const latestPoint = selectedSeries
     ? selectedSeries.points[selectedSeries.points.length - 1]
     : undefined;
@@ -450,7 +449,7 @@ function GrowthGraphView({
             <strong>{selectedSeries.name}</strong>
             <span>{growthMetricLabel(selectedSeries.metric)}</span>
           </div>
-          <GrowthChart series={selectedSeries} color={color} unit={unit} weightUnit={weightUnit} />
+          <GrowthChart series={selectedSeries} color={color} weightUnit={weightUnit} />
         </div>
       )}
 
@@ -469,7 +468,7 @@ function GrowthGraphView({
             </button>
           ))}
         </div>
-        <div className="growth-switch" role="tablist" aria-label="種目">
+        <div className="growth-switch growth-exercise-list" role="tablist" aria-label="種目">
           {seriesList.map((series) => (
             <button
               className={series.exerciseId === selectedExerciseId ? 'active' : ''}
@@ -491,17 +490,15 @@ function GrowthGraphView({
 function GrowthChart({
   color,
   series,
-  unit,
   weightUnit,
 }: {
   color: string;
   series: ExerciseGrowthSeries;
-  unit: string;
   weightUnit: 'kg' | 'lbs';
 }) {
   const width = 320;
   const height = 190;
-  const padding = { top: 20, right: 18, bottom: 38, left: 42 };
+  const padding = { top: 20, right: 14, bottom: 38, left: 68 };
   const values = series.points.map((point) => point.value);
   const minValue = Math.min(...values, 0);
   const maxValue = Math.max(...values, 1);
@@ -520,6 +517,16 @@ function GrowthChart({
   const path = points
     .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
     .join(' ');
+  const baselineY = padding.top + chartHeight;
+  const areaPath = path
+    ? `${path} L ${points[points.length - 1].x} ${baselineY} L ${points[0].x} ${baselineY} Z`
+    : '';
+  const gridTicks = Array.from({ length: 5 }, (_, index) => {
+    const ratio = index / 4;
+    const value = minValue + valueRange * ratio;
+    const y = padding.top + chartHeight - ratio * chartHeight;
+    return { value, y };
+  });
   const ariaLabel = `${series.name} ${series.points
     .map((point) => `${point.date} ${formatGrowthValue(point.value, series.metric, weightUnit)}`)
     .join('、')}`;
@@ -531,6 +538,25 @@ function GrowthChart({
       role="img"
       aria-label={ariaLabel}
     >
+      {gridTicks.map((tick) => (
+        <g key={tick.value}>
+          <line
+            className="growth-chart-grid"
+            x1={padding.left}
+            x2={padding.left + chartWidth}
+            y1={tick.y}
+            y2={tick.y}
+          />
+          <text
+            className="growth-chart-scale"
+            x={padding.left - 10}
+            y={tick.y + 4}
+            textAnchor="end"
+          >
+            {formatGrowthValue(tick.value, series.metric, weightUnit)}
+          </text>
+        </g>
+      ))}
       <line
         className="growth-chart-axis"
         x1={padding.left}
@@ -545,22 +571,9 @@ function GrowthChart({
         y1={padding.top + chartHeight}
         y2={padding.top + chartHeight}
       />
-      <text
-        className="growth-chart-scale"
-        x={padding.left - 8}
-        y={padding.top + 4}
-        textAnchor="end"
-      >
-        {formatGrowthValue(maxValue, series.metric, weightUnit)}
-      </text>
-      <text
-        className="growth-chart-scale"
-        x={padding.left - 8}
-        y={padding.top + chartHeight}
-        textAnchor="end"
-      >
-        {unit ? `0${unit}` : '0'}
-      </text>
+      {areaPath ? (
+        <path className="growth-chart-area" d={areaPath} style={{ fill: color }} />
+      ) : null}
       {path ? <path className="growth-chart-line" d={path} style={{ stroke: color }} /> : null}
       {points.map((point) => (
         <g key={`${point.date}-${point.value}`}>
@@ -589,7 +602,7 @@ function VolumeChart({
 }) {
   const width = 320;
   const height = 190;
-  const padding = { top: 20, right: 18, bottom: 38, left: 52 };
+  const padding = { top: 20, right: 14, bottom: 38, left: 68 };
   const values = series.map((point) => point.value);
   const maxValue = Math.max(...values, 1);
   const chartWidth = width - padding.left - padding.right;
@@ -604,6 +617,16 @@ function VolumeChart({
   const path = points
     .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
     .join(' ');
+  const baselineY = padding.top + chartHeight;
+  const areaPath = path
+    ? `${path} L ${points[points.length - 1].x} ${baselineY} L ${points[0].x} ${baselineY} Z`
+    : '';
+  const gridTicks = Array.from({ length: 5 }, (_, index) => {
+    const ratio = index / 4;
+    const value = maxValue * ratio;
+    const y = padding.top + chartHeight - ratio * chartHeight;
+    return { value, y };
+  });
   const ariaLabel = series
     .map(
       (point) =>
@@ -618,6 +641,25 @@ function VolumeChart({
       role="img"
       aria-label={ariaLabel}
     >
+      {gridTicks.map((tick) => (
+        <g key={tick.value}>
+          <line
+            className="growth-chart-grid"
+            x1={padding.left}
+            x2={padding.left + chartWidth}
+            y1={tick.y}
+            y2={tick.y}
+          />
+          <text
+            className="growth-chart-scale"
+            x={padding.left - 10}
+            y={tick.y + 4}
+            textAnchor="end"
+          >
+            {formatWeight(tick.value, weightUnit)}
+          </text>
+        </g>
+      ))}
       <line
         className="growth-chart-axis"
         x1={padding.left}
@@ -632,22 +674,7 @@ function VolumeChart({
         y1={padding.top + chartHeight}
         y2={padding.top + chartHeight}
       />
-      <text
-        className="growth-chart-scale"
-        x={padding.left - 8}
-        y={padding.top + 4}
-        textAnchor="end"
-      >
-        {formatWeight(maxValue, weightUnit)}
-      </text>
-      <text
-        className="growth-chart-scale"
-        x={padding.left - 8}
-        y={padding.top + chartHeight}
-        textAnchor="end"
-      >
-        0
-      </text>
+      {areaPath ? <path className="growth-chart-area volume-chart-area" d={areaPath} /> : null}
       {path ? <path className="growth-chart-line volume-chart-line" d={path} /> : null}
       {points.map((point) => (
         <g key={point.weekStart}>

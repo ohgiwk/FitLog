@@ -303,6 +303,15 @@
   stroke-width: 1.5;
 }
 
+.growth-chart-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.growth-chart-area {
+  opacity: 0.14;
+}
+
 .growth-chart-line {
   fill: none;
   stroke-linecap: round;
@@ -317,6 +326,10 @@
 
 .volume-chart-line {
   stroke: var(--red);
+}
+
+.volume-chart-area {
+  fill: var(--red);
 }
 
 .volume-chart-dot {
@@ -368,6 +381,24 @@
   background: var(--red);
   color: #fff;
   box-shadow: 0 6px 16px var(--shadow-medium);
+}
+
+.growth-exercise-list {
+  display: grid;
+  gap: 8px;
+  overflow: visible;
+  padding-bottom: 0;
+}
+
+.growth-exercise-list button {
+  display: grid;
+  width: 100%;
+  max-width: none;
+  min-height: 44px;
+  align-items: center;
+  justify-content: start;
+  border-radius: 10px;
+  text-align: left;
 }
 
 .volume-list {
