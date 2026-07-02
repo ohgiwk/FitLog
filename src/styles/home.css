@@ -331,7 +331,28 @@
   background: var(--panel);
 }
 
+.home-calendar-shell.backdrop-visible {
+  z-index: 40;
+}
+
+.home-app-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(0, 0, 0, 0.48);
+}
+
+.home-app-backdrop.open {
+  animation: home-calendar-backdrop-in 0.22s ease-out;
+}
+
+.home-app-backdrop.closing {
+  animation: home-calendar-backdrop-out 0.22s ease-out forwards;
+}
+
 .home-calendar-head {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 64px minmax(0, 1fr) 64px;
   align-items: center;
@@ -381,7 +402,7 @@
   position: fixed;
   inset: 0;
   z-index: 45;
-  background: var(--overlay);
+  background: transparent;
 }
 
 .drawer-layer.open {
@@ -453,9 +474,30 @@
   }
 }
 
+@keyframes home-calendar-backdrop-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes home-calendar-backdrop-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .home-day-fade,
   .exercise-card.removing,
+  .home-app-backdrop,
   .drawer-layer.open,
   .drawer-layer.closing,
   .home-drawer.open,
@@ -557,6 +599,7 @@
 
 .home-calendar-body {
   position: relative;
+  z-index: 1;
 }
 
 .home-calendar-reserved {

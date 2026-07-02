@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnalysisIcon, CalendarIcon, MenuIcon, SettingsIcon, TrophyIcon } from '../icons';
 import { useHomeCalendar } from '../hooks/useHomeCalendar';
 import { localDate, weekdayLabels } from '../utils';
@@ -15,7 +16,13 @@ type HomeCalendarProps = {
   onOpenAnalysis: () => void;
   onOpenSettings: () => void;
   onOpenGoalAchievements: () => void;
+  onOverlayStateChange: (state: HomeCalendarOverlayState) => void;
   cloud: CloudActions;
+};
+
+export type HomeCalendarOverlayState = {
+  calendarBackdropState: 'closed' | 'open' | 'closing';
+  drawerState: 'closed' | 'open' | 'closing';
 };
 
 export function HomeCalendar({
@@ -26,14 +33,17 @@ export function HomeCalendar({
   onOpenAnalysis,
   onOpenSettings,
   onOpenGoalAchievements,
+  onOverlayStateChange,
   cloud,
 }: HomeCalendarProps) {
   const [drawerState, setDrawerState] = useState<'closed' | 'open' | 'closing'>('closed');
+  const [backdropState, setBackdropState] = useState<'closed' | 'open' | 'closing'>('closed');
   const pendingDrawerActionRef = useRef<(() => void) | null>(null);
   const calendar = useHomeCalendar(selectedDate, onSelectDate);
   const trainedDates = useMemo(() => new Set(workouts.map((workout) => workout.date)), [workouts]);
   const today = localDate(new Date());
   const drawerVisible = drawerState !== 'closed';
+  const backdropVisible = backdropState !== 'closed';
 
   const finishDrawerClose = useCallback(() => {
     setDrawerState('closed');
@@ -47,6 +57,26 @@ export function HomeCalendar({
     const timeoutId = window.setTimeout(finishDrawerClose, 260);
     return () => window.clearTimeout(timeoutId);
   }, [drawerState, finishDrawerClose]);
+
+  useEffect(() => {
+    if (calendar.mode === 'month') {
+      setBackdropState('open');
+      return;
+    }
+    setBackdropState((current) => (current === 'closed' ? 'closed' : 'closing'));
+  }, [calendar.mode]);
+
+  useEffect(() => {
+    if (backdropState !== 'closing') return undefined;
+    const timeoutId = window.setTimeout(() => {
+      setBackdropState('closed');
+    }, 220);
+    return () => window.clearTimeout(timeoutId);
+  }, [backdropState]);
+
+  useEffect(() => {
+    onOverlayStateChange({ calendarBackdropState: backdropState, drawerState });
+  }, [backdropState, drawerState, onOverlayStateChange]);
 
   function openDrawer() {
     pendingDrawerActionRef.current = null;
@@ -62,8 +92,77 @@ export function HomeCalendar({
     closeDrawer(action);
   }
 
+  const drawerLayer = drawerVisible ? (
+    <div className={`drawer-layer ${drawerState}`} role="presentation" onClick={() => closeDrawer()}>
+      <aside
+        className={`home-drawer ${drawerState}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="メニュー"
+        onClick={(event) => event.stopPropagation()}
+        onAnimationEnd={(event) => {
+          if (event.currentTarget !== event.target) return;
+          if (event.animationName !== 'drawer-slide-out') return;
+          finishDrawerClose();
+        }}
+      >
+        <div className="drawer-head">
+          <strong>メニュー</strong>
+          <button className="drawer-close" type="button" onClick={() => closeDrawer()}>
+            閉じる
+          </button>
+        </div>
+        <button
+          className="drawer-link"
+          type="button"
+          onClick={() => openFromDrawer(onOpenTrainingMenu)}
+        >
+          <CalendarIcon />
+          <span>トレーニングメニュー</span>
+        </button>
+        <button
+          className="drawer-link"
+          type="button"
+          onClick={() => openFromDrawer(onOpenGoalAchievements)}
+        >
+          <TrophyIcon />
+          <span>目標達成記録</span>
+        </button>
+        <button className="drawer-link" type="button" onClick={() => openFromDrawer(onOpenAnalysis)}>
+          <AnalysisIcon />
+          <span>分析</span>
+        </button>
+        <button className="drawer-link" type="button" onClick={() => openFromDrawer(onOpenSettings)}>
+          <SettingsIcon />
+          <span>設定</span>
+        </button>
+        {cloud.userEmail && (
+          <>
+            <div className="drawer-spacer" aria-hidden="true" />
+            <div className="drawer-account" aria-label="ログイン状態">
+              <div>
+                <span>ログイン中</span>
+                <strong>{cloud.userEmail}</strong>
+              </div>
+              <button
+                className="drawer-logout"
+                type="button"
+                disabled={cloud.loading}
+                onClick={() => void cloud.signOut()}
+              >
+                ログアウト
+              </button>
+            </div>
+          </>
+        )}
+      </aside>
+    </div>
+  ) : null;
+
   return (
-    <header className={`home-calendar-shell ${calendar.mode}`}>
+    <header
+      className={`home-calendar-shell ${calendar.mode} ${backdropVisible ? 'backdrop-visible' : ''}`}
+    >
       <div className="home-calendar-head">
         <button
           className="home-menu-btn"
@@ -86,84 +185,7 @@ export function HomeCalendar({
           今日
         </button>
       </div>
-      {drawerVisible && (
-        <div
-          className={`drawer-layer ${drawerState}`}
-          role="presentation"
-          onClick={() => closeDrawer()}
-        >
-          <aside
-            className={`home-drawer ${drawerState}`}
-            role="dialog"
-            aria-modal="true"
-            aria-label="メニュー"
-            onClick={(event) => event.stopPropagation()}
-            onAnimationEnd={(event) => {
-              if (event.currentTarget !== event.target) return;
-              if (event.animationName !== 'drawer-slide-out') return;
-              finishDrawerClose();
-            }}
-          >
-            <div className="drawer-head">
-              <strong>メニュー</strong>
-              <button className="drawer-close" type="button" onClick={() => closeDrawer()}>
-                閉じる
-              </button>
-            </div>
-            <button
-              className="drawer-link"
-              type="button"
-              onClick={() => openFromDrawer(onOpenTrainingMenu)}
-            >
-              <CalendarIcon />
-              <span>トレーニングメニュー</span>
-            </button>
-            <button
-              className="drawer-link"
-              type="button"
-              onClick={() => openFromDrawer(onOpenGoalAchievements)}
-            >
-              <TrophyIcon />
-              <span>目標達成記録</span>
-            </button>
-            <button
-              className="drawer-link"
-              type="button"
-              onClick={() => openFromDrawer(onOpenAnalysis)}
-            >
-              <AnalysisIcon />
-              <span>分析</span>
-            </button>
-            <button
-              className="drawer-link"
-              type="button"
-              onClick={() => openFromDrawer(onOpenSettings)}
-            >
-              <SettingsIcon />
-              <span>設定</span>
-            </button>
-            {cloud.userEmail && (
-              <>
-                <div className="drawer-spacer" aria-hidden="true" />
-                <div className="drawer-account" aria-label="ログイン状態">
-                  <div>
-                    <span>ログイン中</span>
-                    <strong>{cloud.userEmail}</strong>
-                  </div>
-                <button
-                  className="drawer-logout"
-                  type="button"
-                  disabled={cloud.loading}
-                  onClick={() => void cloud.signOut()}
-                >
-                  ログアウト
-                </button>
-                </div>
-              </>
-            )}
-          </aside>
-        </div>
-      )}
+      {drawerLayer && typeof document !== 'undefined' && createPortal(drawerLayer, document.body)}
       <div className="home-calendar-body">
         <div className="home-calendar-reserved" aria-hidden="true">
           <div className="home-calendar-grid">

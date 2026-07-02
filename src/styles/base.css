@@ -175,6 +175,10 @@ input {
   z-index: 2;
 }
 
+body:has(.home-app-backdrop) .screen-layer.current {
+  z-index: auto;
+}
+
 .screen-layer.current.forward {
   animation: screen-cover-forward 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
   box-shadow: -10px 0 24px var(--shadow-soft);

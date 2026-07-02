@@ -10,7 +10,7 @@ import {
 } from '../utils';
 import { HomeSetRow } from '../components/HomeSetRow';
 import { useFitLogContext } from '../hooks/useFitLogContext';
-import { HomeCalendar } from '../components/HomeCalendar';
+import { HomeCalendar, type HomeCalendarOverlayState } from '../components/HomeCalendar';
 
 type WorkoutSummary = {
   startTime: string;
@@ -76,7 +76,11 @@ function useHomeScreenModel() {
 /**
  * ホーム画面。選択日のトレーニング一覧・集計・プリセット開始・カレンダーを表示する
  */
-export function HomeScreen() {
+type HomeScreenProps = {
+  onOverlayStateChange: (state: HomeCalendarOverlayState) => void;
+};
+
+export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
   const {
     selectedDate,
     workouts,
@@ -236,6 +240,7 @@ export function HomeScreen() {
         onOpenAnalysis={onOpenAnalysis}
         onOpenSettings={onOpenSettings}
         onOpenGoalAchievements={onOpenGoalAchievements}
+        onOverlayStateChange={onOverlayStateChange}
         cloud={cloud}
       />
       {!selectedWorkouts.length && !workoutEndTime && (

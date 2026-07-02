@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type AnimationEvent } from 'react';
+import type { HomeCalendarOverlayState } from './components/HomeCalendar';
 import { FitLogProvider } from './hooks/FitLogContext';
 import { useFitLogContext } from './hooks/useFitLogContext';
 import { DetailScreen } from './screens/DetailScreen';
@@ -60,6 +61,10 @@ function AppShell() {
   const [updating, setUpdating] = useState(false);
   const [fabFaded, setFabFaded] = useState(false);
   const [partAddDialogOpen, setPartAddDialogOpen] = useState(false);
+  const [homeOverlayState, setHomeOverlayState] = useState<HomeCalendarOverlayState>({
+    calendarBackdropState: 'closed',
+    drawerState: 'closed',
+  });
   const workoutEndTime = state.workoutEndTimes[selectedDate];
   const currentExerciseManagePart =
     activePart && groupedExercises.has(activePart) ? activePart : [...groupedExercises.keys()][0];
@@ -68,6 +73,12 @@ function AppShell() {
   const showTrainingMenuFab = screen === 'trainingMenu';
   const showPartEditFab = screen === 'partEdit';
   const showFab = showHomeFab || showExerciseManageFab || showTrainingMenuFab || showPartEditFab;
+  const homeOverlayVisible =
+    homeOverlayState.calendarBackdropState !== 'closed' || homeOverlayState.drawerState !== 'closed';
+  const homeOverlayClass =
+    homeOverlayState.drawerState !== 'closed'
+      ? homeOverlayState.drawerState
+      : homeOverlayState.calendarBackdropState;
   let fabKey = '';
   let fabLabel = '';
   let fabAction: (() => void) | null = null;
@@ -188,6 +199,11 @@ function AppShell() {
     if (screen !== 'partEdit') setPartAddDialogOpen(false);
   }, [screen]);
 
+  useEffect(() => {
+    if (screen === 'home') return;
+    setHomeOverlayState({ calendarBackdropState: 'closed', drawerState: 'closed' });
+  }, [screen]);
+
   async function applyUpdate() {
     if (!updateServiceWorker) return;
     setUpdating(true);
@@ -200,7 +216,9 @@ function AppShell() {
   }
 
   function renderScreen(targetScreen: Screen) {
-    if (targetScreen === 'home') return <HomeScreen />;
+    if (targetScreen === 'home') {
+      return <HomeScreen onOverlayStateChange={setHomeOverlayState} />;
+    }
     if (targetScreen === 'select') return <SelectScreen />;
     if (targetScreen === 'exerciseEdit') return <ExerciseEditScreen />;
     if (targetScreen === 'detail' && currentWorkout) return <DetailScreen />;
@@ -253,6 +271,9 @@ function AppShell() {
         </div>
       </main>
 
+      {homeOverlayVisible && (
+        <div className={`home-app-backdrop ${homeOverlayClass}`} aria-hidden="true" />
+      )}
       <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">
         {toast}
       </div>
