@@ -5,6 +5,7 @@ FitLog の仕様・設計ドキュメントの入口です。
 ## FitLog とは
 
 - React + Vite + TypeScript で作られた筋トレ記録 **PWA** です。
+- Capacitor で iOS アプリとしてビルドできる構成も持ちます。
 - 通常の記録データは端末の `localStorage` に保存され、未ログインでもローカル完結で使えます。
 - Supabase設定がある環境では、希望するユーザーだけメールアドレス・パスワードでログインし、手動クラウドバックアップ/復元を利用できます。
 - モバイル優先で、起動直後から選択日のトレーニングを記録できます。
@@ -76,7 +77,21 @@ useFitLogCore (state + 永続化 + トースト)
 ```bash
 npm run dev          # 開発サーバー
 npm run build        # tsc + vite build（PWA 生成を含む）
+npm run build:ios    # Capacitor/iOS 向けの Web アセット生成
+npm run cap:sync:ios # build:ios 後に iOS プロジェクトへ同期
+npm run cap:open:ios # Xcode で ios プロジェクトを開く
 npm run preview      # ビルド成果物のプレビュー
 npm test             # vitest run
 npm run test:watch   # vitest watch
 ```
+
+## iOS アプリ化
+
+Capacitor の iOS プロジェクトは `ios/` 配下にあります。
+
+```bash
+npm run cap:sync:ios
+npm run cap:open:ios
+```
+
+`npm run build` は GitHub Pages 用に `/FitLog/` を base とする PWA を生成します。iOS へ同期する場合は `npm run build:ios` を含む `npm run cap:sync:ios` を使い、Capacitor の WebView で読み込める相対パスのアセットを生成します。

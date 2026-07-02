@@ -9,6 +9,7 @@
 ## 1. プロジェクト概要
 
 - **FitLog** は React + Vite + TypeScript で作られた筋トレ記録 PWA です。
+- Capacitor を使い、同じ React アプリを iOS アプリとしてビルドできます。
 - 通常の記録データは端末の `localStorage` に保存され、未ログインでもローカル完結で利用できます。
 - Supabase設定がある環境では、希望するユーザーだけメールアドレス・パスワードでログインし、手動クラウドバックアップ/復元を利用できます。
 - モバイル優先のレイアウトで、起動直後から記録を始められます（ランディングページは持ちません）。
@@ -31,6 +32,7 @@
 | ビルド | Vite |
 | 言語 | TypeScript |
 | PWA | `vite-plugin-pwa`（workbox） |
+| ネイティブアプリ | Capacitor iOS |
 | クラウドバックアップ | Supabase |
 | アイコン | `@tabler/icons-react` |
 | テスト | Vitest + jsdom |
@@ -41,6 +43,9 @@
 ```bash
 npm run dev          # 開発サーバー
 npm run build        # tsc + vite build（PWA 生成を含む）
+npm run build:ios    # Capacitor/iOS 向け Web アセット生成
+npm run cap:sync:ios # build:ios 後に iOS プロジェクトへ同期
+npm run cap:open:ios # Xcode で ios プロジェクトを開く
 npm run preview      # ビルド成果物のプレビュー
 npm test             # vitest run
 npm run test:watch   # vitest watch
@@ -50,15 +55,20 @@ npm run format       # prettier --write
 
 - `npm run build` は `tsc -b` でアプリ本体と `vite.config.ts` の両方を型チェックした後に
   `vite build` を実行し、PWA の Service Worker と manifest を生成します。
+- `npm run build:ios` は `vite build --mode capacitor` を実行し、Capacitor の WebView で読み込める相対パスの Web アセットを生成します。
+- `npm run cap:sync:ios` は `build:ios` の後に `cap sync ios` で `dist/` を `ios/` プロジェクトへ同期します。
 
 ### 2.2 ビルド設定（`vite.config.ts`）
 
-- `base: '/FitLog/'`（GitHub Pages の公開パス）。
+- 通常ビルドは `base: '/FitLog/'`（GitHub Pages の公開パス）。
+- `capacitor` mode のビルドは `base: './'` とし、PWA 生成を無効化します。
 - PWA manifest:
   - `id` / `start_url` / `scope`: `/FitLog/`
   - `display: 'standalone'`、`orientation: 'portrait'`
   - `theme_color: '#ef2331'`、`background_color: '#0f1115'`、`lang: 'ja'`
   - アイコン: `pwa-192x192.png`（any）、`pwa-512x512.png`（any maskable）
+- PWA / iOS のアイコンは `public/image.png` から生成した `favicon.png`、`apple-touch-icon.png`、`pwa-192x192.png`、`pwa-512x512.png`、`ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png` を使います。
+- スプラッシュ画像は `public/splash.png` を PWA の `apple-touch-startup-image` として参照し、iOS は `ios/App/App/Assets.xcassets/Splash.imageset/` の LaunchScreen 用画像を使います。
 - `registerType: 'prompt'`（新しい Service Worker を検出したらアプリ側で更新通知を表示し、更新ボタンで取り込む）。
 - workbox: `navigateFallback: '/FitLog/index.html'`、`globPatterns` に `js,css,html,svg,png,ico` をプリキャッシュ。
 
@@ -73,6 +83,7 @@ npm run format       # prettier --write
 | --- | --- |
 | `index.html` | HTML エントリー |
 | `package.json` | 依存とスクリプト |
+| `capacitor.config.ts` | Capacitor の appId / appName / webDir 設定 |
 | `vite.config.ts` | Vite + PWA 設定（base: `/FitLog/`） |
 | `vitest.config.ts` | Vitest 設定（jsdom） |
 | `tsconfig.json` | TypeScript プロジェクト参照の統括設定 |
@@ -80,6 +91,7 @@ npm run format       # prettier --write
 | `tsconfig.node.json` | Vite 設定の TypeScript 設定 |
 | `eslint.config.mjs` | ESLint 設定 |
 | `.github/workflows/deploy-pages.yml` | GitHub Pages デプロイ workflow |
+| `ios/` | Capacitor が生成した iOS / Xcode プロジェクト |
 | `docs/` | 仕様・設計ドキュメント |
 | `src/main.tsx` | エントリー（`ErrorBoundary` + PWA 登録） |
 | `src/App.tsx` | 画面切り替え・ボトムナビ・トースト |
@@ -103,6 +115,7 @@ npm run format       # prettier --write
 FitLog/
 ├── index.html                # HTML エントリー
 ├── package.json              # 依存とスクリプト
+├── capacitor.config.ts       # Capacitor 設定
 ├── vite.config.ts            # Vite + PWA 設定(base: /FitLog/)
 ├── vitest.config.ts          # Vitest 設定(jsdom)
 ├── tsconfig.json             # TypeScript 設定
@@ -111,6 +124,7 @@ FitLog/
 │   └── workflows/
 │       └── deploy-pages.yml  # GitHub Pages デプロイ
 ├── docs/                     # 仕様・設計ドキュメント
+├── ios/                      # Capacitor iOS プロジェクト
 │   ├── README.md             # 概要・索引
 │   ├── specification.md      # 詳細仕様
 │   └── improvements.md       # 改善候補の備忘録
