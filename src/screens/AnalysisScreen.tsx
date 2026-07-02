@@ -110,16 +110,28 @@ export function AnalysisScreen() {
         {activePage === 'menu' ? (
           <div className="analysis-page-list" aria-label="分析メニュー">
             <button type="button" onClick={() => setActivePage('growth')}>
-              <span>成長グラフ</span>
+              <span>
+                <strong>成長グラフ</strong>
+                <small>種目ごとの重量・回数の伸びを確認</small>
+              </span>
             </button>
             <button type="button" onClick={() => setActivePage('volume')}>
-              <span>総ボリューム</span>
+              <span>
+                <strong>総ボリューム</strong>
+                <small>週ごとの合計負荷量を比較</small>
+              </span>
             </button>
             <button type="button" onClick={() => setActivePage('bests')}>
-              <span>自己ベスト</span>
+              <span>
+                <strong>自己ベスト</strong>
+                <small>最大重量・1RMなどの記録を一覧</small>
+              </span>
             </button>
             <button type="button" onClick={() => setActivePage('counts')}>
-              <span>実施回数</span>
+              <span>
+                <strong>実施回数</strong>
+                <small>種目別・部位別の頻度を確認</small>
+              </span>
             </button>
           </div>
         ) : (
