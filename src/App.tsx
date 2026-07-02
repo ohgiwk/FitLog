@@ -143,6 +143,12 @@ function AppShell() {
         return;
       }
 
+      const canScroll = app.scrollHeight > app.clientHeight + 1;
+      if (screen === 'home' && !canScroll) {
+        setFabFaded(false);
+        return;
+      }
+
       const fabRect = fab.getBoundingClientRect();
       const targetRect = target.getBoundingClientRect();
       const margin = 12;

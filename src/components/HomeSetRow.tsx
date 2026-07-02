@@ -2,6 +2,7 @@ import { MeasurementType, WeightUnit, WorkoutSet } from '../types';
 import {
   calcRm,
   formatWeight,
+  isBlank,
   isRepsMeasurement,
   measurementUnit,
   number,
@@ -22,6 +23,7 @@ export function HomeSetRow({
   const weight = number(set.weight);
   const recordValue = number(set.recordValue);
   const isReps = isRepsMeasurement(measurementType);
+  const hasWeightInput = !isBlank(set.weight);
   const hasWeight = weight > 0;
   const hasRecordValue = recordValue > 0;
   return (
@@ -32,6 +34,8 @@ export function HomeSetRow({
           <>
             {formatWeight(weight, weightUnit)} <small>{weightUnitLabel(weightUnit)}</small>
           </>
+        ) : hasWeightInput ? (
+          '自重'
         ) : (
           '-'
         )}
