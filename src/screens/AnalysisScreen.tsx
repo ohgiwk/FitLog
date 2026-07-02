@@ -18,7 +18,7 @@ type AnalysisPage = 'menu' | 'growth' | 'volume' | 'bests' | 'counts';
  * 保存済みの記録を成長グラフと実施回数で表示する分析画面
  */
 export function AnalysisScreen() {
-  const { state, partColors, actions } = useFitLogContext();
+  const { state, partColors, analysisTargetExerciseId, actions } = useFitLogContext();
   const [activePage, setActivePage] = useState<AnalysisPage>('menu');
   const [activeView, setActiveView] = useState<'exercise' | 'part'>('exercise');
   const [selectedPart, setSelectedPart] = useState('');
@@ -57,6 +57,7 @@ export function AnalysisScreen() {
   const hasData = activeView === 'exercise' ? exerciseCounts.length > 0 : partCounts.length > 0;
 
   useEffect(() => {
+    if (analysisTargetExerciseId) return;
     if (!growthParts.length) {
       setSelectedPart('');
       return;
@@ -64,9 +65,10 @@ export function AnalysisScreen() {
     if (!selectedPart || !growthParts.includes(selectedPart)) {
       setSelectedPart(growthParts[0]);
     }
-  }, [growthParts, selectedPart]);
+  }, [analysisTargetExerciseId, growthParts, selectedPart]);
 
   useEffect(() => {
+    if (analysisTargetExerciseId) return;
     if (!selectedPartSeries.length) {
       setSelectedExerciseId('');
       return;
@@ -77,7 +79,16 @@ export function AnalysisScreen() {
     ) {
       setSelectedExerciseId(selectedPartSeries[0].exerciseId);
     }
-  }, [selectedExerciseId, selectedPartSeries]);
+  }, [analysisTargetExerciseId, selectedExerciseId, selectedPartSeries]);
+
+  useEffect(() => {
+    if (!analysisTargetExerciseId) return;
+    const target = growthSeries.find((series) => series.exerciseId === analysisTargetExerciseId);
+    if (!target) return;
+    setActivePage('growth');
+    setSelectedPart(target.part);
+    setSelectedExerciseId(target.exerciseId);
+  }, [analysisTargetExerciseId, growthSeries]);
 
   return (
     <section className="screen active analysis-screen">
@@ -453,35 +464,30 @@ function GrowthGraphView({
         </div>
       )}
 
-      <div className="growth-switch-area">
-        <div className="growth-switch" role="tablist" aria-label="部位">
-          {parts.map((part) => (
-            <button
-              className={part === selectedPart ? 'active' : ''}
-              type="button"
-              role="tab"
-              aria-selected={part === selectedPart}
-              key={part}
-              onClick={() => onSelectPart(part)}
-            >
-              {part}
-            </button>
-          ))}
-        </div>
-        <div className="growth-switch growth-exercise-list" role="tablist" aria-label="種目">
-          {seriesList.map((series) => (
-            <button
-              className={series.exerciseId === selectedExerciseId ? 'active' : ''}
-              type="button"
-              role="tab"
-              aria-selected={series.exerciseId === selectedExerciseId}
-              key={series.exerciseId}
-              onClick={() => onSelectExercise(series.exerciseId)}
-            >
-              {series.name}
-            </button>
-          ))}
-        </div>
+      <div className="growth-select-row">
+        <label>
+          <span>部位</span>
+          <select value={selectedPart} onChange={(event) => onSelectPart(event.target.value)}>
+            {parts.map((part) => (
+              <option value={part} key={part}>
+                {part}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>種目</span>
+          <select
+            value={selectedExerciseId}
+            onChange={(event) => onSelectExercise(event.target.value)}
+          >
+            {seriesList.map((series) => (
+              <option value={series.exerciseId} key={series.exerciseId}>
+                {series.name}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
     </>
   );

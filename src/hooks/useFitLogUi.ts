@@ -23,6 +23,7 @@ export function useFitLogUi() {
   const [exerciseEditorReturnScreen, setExerciseEditorReturnScreen] =
     useState<Screen>('select');
   const [goalAchievement, setGoalAchievement] = useState<GoalAchievement | null>(null);
+  const [analysisTargetExerciseId, setAnalysisTargetExerciseId] = useState<string | null>(null);
 
   /**
    * 種目選択画面で表示する部位タブを切り替える
@@ -47,5 +48,7 @@ export function useFitLogUi() {
     setExerciseEditorReturnScreen,
     goalAchievement,
     setGoalAchievement,
+    analysisTargetExerciseId,
+    setAnalysisTargetExerciseId,
   };
 }

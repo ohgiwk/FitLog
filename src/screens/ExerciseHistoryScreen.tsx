@@ -1,6 +1,6 @@
 import { WeightUnit, Workout, WorkoutSet } from '../types';
 import { IntensityIcon } from '../components/IntensityIcon';
-import { ChevronLeft } from '../icons';
+import { AnalysisIcon, ChevronLeft } from '../icons';
 import {
   calcRm,
   formatWeight,
@@ -26,6 +26,7 @@ function useExerciseHistoryScreenModel() {
     workouts: state.workouts,
     weightUnit: state.weightUnit,
     onBack: () => actions.setScreen('detail'),
+    onOpenGrowthGraph: (exerciseId: string) => actions.openExerciseGrowthAnalysis(exerciseId),
   };
 }
 
@@ -33,7 +34,8 @@ function useExerciseHistoryScreenModel() {
  * 種目別の履歴画面。ベスト記録と日別のセット履歴を一覧表示する
  */
 export function ExerciseHistoryScreen() {
-  const { workout, workouts, weightUnit, onBack } = useExerciseHistoryScreenModel();
+  const { workout, workouts, weightUnit, onBack, onOpenGrowthGraph } =
+    useExerciseHistoryScreenModel();
   if (!workout) return null;
   const histories = workouts
     .filter((item) => item.exerciseId === workout.exerciseId && item.sets.some(hasRecordedValue))
@@ -47,7 +49,14 @@ export function ExerciseHistoryScreen() {
             <ChevronLeft />
           </button>
           <div className="bar-title">{workout.name}</div>
-          <span />
+          <button
+            className="bar-btn right history-analysis-link"
+            type="button"
+            aria-label="成長グラフを開く"
+            onClick={() => onOpenGrowthGraph(workout.exerciseId)}
+          >
+            <AnalysisIcon />
+          </button>
         </div>
       </header>
       <div className="exercise-history-wrap">

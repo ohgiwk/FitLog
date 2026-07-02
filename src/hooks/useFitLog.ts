@@ -87,6 +87,22 @@ export function useFitLog() {
   }
 
   /**
+   * 分析画面を通常表示で開く
+   */
+  function openAnalysis() {
+    ui.setAnalysisTargetExerciseId(null);
+    nav.showScreen('analysis');
+  }
+
+  /**
+   * 指定種目の成長グラフを選択した状態で分析画面を開く
+   */
+  function openExerciseGrowthAnalysis(exerciseId: string) {
+    ui.setAnalysisTargetExerciseId(exerciseId);
+    nav.showScreen('analysis');
+  }
+
+  /**
    * 新規プリセットの下書きを作成して編集画面を開く
    */
   function createPresetDraft() {
@@ -193,6 +209,7 @@ export function useFitLog() {
     presetDraftMode: ui.presetDraftMode,
     activePart: ui.activePart,
     exerciseEditor: ui.exerciseEditor,
+    analysisTargetExerciseId: ui.analysisTargetExerciseId,
     groupedExercises: selectors.groupedExercises,
     partRecentLabels: selectors.partRecentLabels,
     orderedParts: selectors.orderedParts,
@@ -226,6 +243,8 @@ export function useFitLog() {
       moveMonth: nav.moveMonth,
       moveWorkout: workout.moveWorkout,
       openWorkoutDetail: workout.openWorkoutDetail,
+      openAnalysis,
+      openExerciseGrowthAnalysis,
       openExerciseEditor,
       editPreset,
       editPresetForStart,

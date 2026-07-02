@@ -64,7 +64,7 @@ function useHomeScreenModel() {
     onOpenSelect: () => actions.setScreen('select'),
     onOpenTrainingMenu: () => actions.setScreen('trainingMenu'),
     onEditPresetForStart: actions.editPresetForStart,
-    onOpenAnalysis: () => actions.setScreen('analysis'),
+    onOpenAnalysis: actions.openAnalysis,
     onOpenSettings: () => actions.setScreen('settings'),
     onOpenGoalAchievements: () => actions.setScreen('goalAchievements'),
     onOpenDetail: actions.openWorkoutDetail,

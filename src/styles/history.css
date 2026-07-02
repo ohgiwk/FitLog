@@ -14,6 +14,10 @@
   background: var(--history-bg);
 }
 
+.history-analysis-link {
+  color: var(--red);
+}
+
 .best-record {
   display: grid;
   gap: 12px;
