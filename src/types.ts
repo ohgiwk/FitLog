@@ -14,6 +14,7 @@ export type Screen =
   | 'settings'
   | 'privacyPolicy'
   | 'termsOfService'
+  | 'accountManagement'
   | 'backup';
 
 export type MeasurementType = 'reps' | 'seconds';

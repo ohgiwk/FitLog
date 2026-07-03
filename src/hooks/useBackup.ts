@@ -13,6 +13,7 @@ import {
   signInWithPassword,
   signOutCloud,
   signUpWithPassword,
+  updateCloudPassword,
 } from '../cloudBackup';
 import { parseImportedState } from '../storage';
 import { normalizeState } from '../storageNormalization';
@@ -161,6 +162,39 @@ export function useBackup({
   }
 
   /**
+   * ログイン中ユーザーのパスワードを変更する
+   */
+  async function changePassword(formData: FormData) {
+    const passwordValue = formData.get('newPassword');
+    const confirmationValue = formData.get('confirmPassword');
+    const password = typeof passwordValue === 'string' ? passwordValue : '';
+    const confirmation = typeof confirmationValue === 'string' ? confirmationValue : '';
+    if (!cloudUserEmail) {
+      showToast('ログインしてください');
+      return false;
+    }
+    if (password.length < 6) {
+      showToast('新しいパスワードは6文字以上で入力してください');
+      return false;
+    }
+    if (password !== confirmation) {
+      showToast('確認用パスワードが一致しません');
+      return false;
+    }
+    setCloudLoading(true);
+    try {
+      await updateCloudPassword(password);
+      showToast('パスワードを変更しました');
+      return true;
+    } catch {
+      showToast('パスワード変更に失敗しました');
+      return false;
+    } finally {
+      setCloudLoading(false);
+    }
+  }
+
+  /**
    * クラウドからログアウトする。ローカルデータは残す
    */
   async function signOut() {
@@ -295,6 +329,7 @@ export function useBackup({
       loading: cloudLoading,
       signUp,
       signIn,
+      changePassword,
       signOut,
       backupToCloud,
       restoreFromCloud,

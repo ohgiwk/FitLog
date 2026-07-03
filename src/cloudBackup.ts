@@ -89,6 +89,16 @@ export async function signInWithPassword(email: string, password: string) {
 }
 
 /**
+ * ログイン中ユーザーのパスワードを変更する
+ */
+export async function updateCloudPassword(password: string) {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase is not configured');
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+}
+
+/**
  * ログアウトする。ローカルデータは削除しない
  */
 export async function signOutCloud() {

@@ -24,6 +24,7 @@ const screenDepth: Record<Screen, number> = {
   privacyPolicy: 2,
   termsOfService: 2,
   backup: 2,
+  accountManagement: 3,
   detail: 1,
   exerciseEdit: 3,
   presetEdit: 2,
