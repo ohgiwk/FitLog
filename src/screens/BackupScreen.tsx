@@ -1,5 +1,5 @@
 import { ChangeEvent, useRef, useState, useActionState } from 'react';
-import { ChevronLeft, ExportIcon, ImportIcon, PrivacyIcon, TrashIcon } from '../icons';
+import { ChevronLeft, ExportIcon, ImportIcon, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 
 type CloudBackupItem = ReturnType<typeof useFitLogContext>['actions']['cloud']['backups'][number];
@@ -74,6 +74,10 @@ export function BackupScreen() {
     await cloud.deleteBackupFromCloud(targetId);
     return null;
   }, null);
+  const [, signOutAction, signOutPending] = useActionState(async () => {
+    await cloud.signOut();
+    return null;
+  }, null);
   const cloudPending =
     signInPending ||
     signUpPending ||
@@ -81,6 +85,7 @@ export function BackupScreen() {
     refreshPending ||
     restorePending ||
     deletePending ||
+    signOutPending ||
     cloud.loading;
 
   return (
@@ -235,15 +240,32 @@ export function BackupScreen() {
           )}
         </section>
         {cloud.enabled && cloud.userEmail && (
-          <section className="settings-section">
-            <button
-              className="settings-link-row"
-              type="button"
-              onClick={() => actions.setScreen('accountManagement')}
-            >
-              <PrivacyIcon />
-              <span>アカウント管理</span>
-            </button>
+          <section className="settings-section" aria-labelledby="account-management-title">
+            <h2 className="settings-section-title" id="account-management-title">
+              アカウント
+            </h2>
+            <div className="settings-cloud-panel">
+              <div className="settings-cloud-account">
+                <div className="settings-label">
+                  <span>ログイン中</span>
+                  <strong>{cloud.userEmail}</strong>
+                </div>
+                <div className="settings-account-actions">
+                  <button
+                    className="settings-small-button"
+                    type="button"
+                    onClick={() => actions.setScreen('accountManagement')}
+                  >
+                    管理
+                  </button>
+                  <form action={signOutAction}>
+                    <button className="settings-small-button" type="submit" disabled={cloudPending}>
+                      ログアウト
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
           </section>
         )}
       </div>

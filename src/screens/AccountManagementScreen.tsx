@@ -74,17 +74,6 @@ export function AccountManagementScreen() {
           </section>
         ) : (
           <>
-            <section className="settings-section" aria-labelledby="account-profile-title">
-              <h2 className="settings-section-title" id="account-profile-title">
-                アカウント
-              </h2>
-              <div className="settings-cloud-panel">
-                <div className="settings-label">
-                  <span>ログイン中</span>
-                  <strong>{cloud.userEmail}</strong>
-                </div>
-              </div>
-            </section>
             <section className="settings-section" aria-labelledby="password-change-title">
               <h2 className="settings-section-title" id="password-change-title">
                 パスワード変更

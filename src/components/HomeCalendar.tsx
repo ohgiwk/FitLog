@@ -151,7 +151,7 @@ export function HomeCalendar({
                 className="drawer-logout"
                 type="button"
                 disabled={cloud.loading}
-                onClick={() => void cloud.signOut()}
+                onClick={() => closeDrawer(() => void cloud.signOut())}
               >
                 ログアウト
               </button>
