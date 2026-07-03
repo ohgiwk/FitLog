@@ -21,6 +21,7 @@ function useSettingsScreenModel() {
     onOpenLocalBackup: () => actions.setScreen('localBackup'),
     onOpenCloudBackup: () => actions.setScreen(actions.cloud.userEmail ? 'cloudBackups' : 'cloudAuth'),
     onOpenPrivacyPolicy: () => actions.setScreen('privacyPolicy'),
+    onOpenTermsOfService: () => actions.setScreen('termsOfService'),
   };
 }
 
@@ -37,6 +38,7 @@ export function SettingsScreen() {
     onOpenLocalBackup,
     onOpenCloudBackup,
     onOpenPrivacyPolicy,
+    onOpenTermsOfService,
   } =
     useSettingsScreenModel();
 
@@ -109,6 +111,10 @@ export function SettingsScreen() {
           <button className="settings-link-row" type="button" onClick={onOpenPrivacyPolicy}>
             <PrivacyIcon />
             <span>プライバシーポリシー</span>
+          </button>
+          <button className="settings-link-row" type="button" onClick={onOpenTermsOfService}>
+            <PrivacyIcon />
+            <span>利用規約</span>
           </button>
         </section>
         <div className="settings-version" aria-label={`アプリバージョン ${appVersion}`}>

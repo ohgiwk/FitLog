@@ -13,6 +13,7 @@ export type Screen =
   | 'exerciseManage'
   | 'settings'
   | 'privacyPolicy'
+  | 'termsOfService'
   | 'localBackup'
   | 'cloudAuth'
   | 'cloudBackups';

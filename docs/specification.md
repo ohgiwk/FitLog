@@ -438,7 +438,7 @@ Supabase環境変数が設定されている場合だけ、クラウドバック
 
 ## 6. 画面仕様
 
-`Screen` 型: `'home' | 'select' | 'exerciseEdit' | 'detail' | 'exerciseHistory' | 'goalAchievements' | 'trainingMenu' | 'presetEdit' | 'presetExerciseSelect' | 'analysis' | 'partEdit' | 'exerciseManage' | 'settings' | 'privacyPolicy' | 'localBackup' | 'cloudAuth' | 'cloudBackups'`。
+`Screen` 型: `'home' | 'select' | 'exerciseEdit' | 'detail' | 'exerciseHistory' | 'goalAchievements' | 'trainingMenu' | 'presetEdit' | 'presetExerciseSelect' | 'analysis' | 'partEdit' | 'exerciseManage' | 'settings' | 'privacyPolicy' | 'termsOfService' | 'localBackup' | 'cloudAuth' | 'cloudBackups'`。
 
 ### 6.1 アプリ外枠とナビゲーション（`App.tsx`）
 
@@ -617,7 +617,7 @@ Supabase環境変数が設定されている場合だけ、クラウドバック
 - データ管理には「ローカルバックアップ」と「クラウドバックアップ」の2リンクを表示する。
   - ローカルバックアップ: JSON書き出し/読み込み画面へ遷移する。
   - クラウドバックアップ: 未ログイン時は新規登録/ログイン画面、ログイン後はバックアップ一覧画面へ遷移する。
-- アプリ情報には「プライバシーポリシー」を表示し、アプリ内のポリシー画面へ遷移する。
+- アプリ情報には「プライバシーポリシー」と「利用規約」を表示し、それぞれアプリ内の文書画面へ遷移する。
 - 画面下部にアプリバージョンを小さなグレー文字で表示する。
 
 ### 6.14 プライバシーポリシー（`PrivacyPolicyScreen`）
@@ -626,7 +626,13 @@ Supabase環境変数が設定されている場合だけ、クラウドバック
 - FitLogが扱う情報、利用目的、保存場所、第三者提供、データ管理、問い合わせ、改定について表示する。
 - 通常の記録データは端末内に保存され、クラウドバックアップは任意操作時だけクラウド上に保存されることを明記する。
 
-### 6.15 ローカルバックアップ（`LocalBackupScreen`）
+### 6.15 利用規約（`TermsOfServiceScreen`）
+
+- 設定画面の「利用規約」から遷移する。
+- 適用、サービス内容、利用上の注意、データ管理、禁止事項、免責事項、規約の変更、問い合わせについて表示する。
+- FitLogはトレーニング記録の管理補助アプリであり、医療・健康・運動指導の専門的助言ではないことを明記する。
+
+### 6.16 ローカルバックアップ（`LocalBackupScreen`）
 
 - 設定画面の「ローカルバックアップ」から遷移する。
 - 「記録を書き出す」で現在の `State` をJSONファイルとしてダウンロードする。
