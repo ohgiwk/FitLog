@@ -68,7 +68,7 @@ export function useBackup({
    * 現在の state を JSON ファイルとしてダウンロードする
    */
   function exportState() {
-    downloadStateBackup(state, `fitlog-backup-${selectedDate}.json`);
+    downloadStateBackup(state, `smithnote-backup-${selectedDate}.json`);
     showToast('データをエクスポートしました');
   }
 
@@ -199,7 +199,7 @@ export function useBackup({
         showToast('復元できるデータが見つかりません');
         return;
       }
-      downloadStateBackup(state, `fitlog-before-cloud-restore-${localDate(new Date())}.json`);
+      downloadStateBackup(state, `smithnote-before-cloud-restore-${localDate(new Date())}.json`);
       setState(normalized);
       setCurrentWorkoutId(null);
       setCurrentPresetId(normalized.presets[0]?.id || null);

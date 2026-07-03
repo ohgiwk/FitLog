@@ -395,7 +395,7 @@ type PartSetting = {
 
 ### 5.6 エクスポート / インポート（`useBackup`）
 
-- **エクスポート**: 現在の `state` を整形 JSON（2 スペース）にし、`fitlog-backup-<selectedDate>.json` としてダウンロード。完了トースト表示。
+- **エクスポート**: 現在の `state` を整形 JSON（2 スペース）にし、`smithnote-backup-<selectedDate>.json` としてダウンロード。完了トースト表示。
 - **インポート**: 選択ファイルを `parseImportedState`（= `JSON.parse` + `normalizeState`）で正規化。
   - 正規化に失敗（`null`）→「インポートできるデータが見つかりません」。
   - 成功 → `setState` で全置き換え。`currentWorkoutId` を解除、選択プリセットを先頭に、編集対象を解除、選択日を本日へ。「データをインポートしました」。
@@ -428,7 +428,7 @@ Supabase環境変数が設定されている場合だけ、クラウドバック
 - 復元:
   - 最新5件のクラウドバックアップから選択します。
   - 復元前にアプリ内の確認ダイアログを表示します。
-  - 復元前に現在のローカル `State` を `fitlog-before-cloud-restore-<date>.json` としてダウンロード退避します。
+  - 復元前に現在のローカル `State` を `smithnote-before-cloud-restore-<date>.json` としてダウンロード退避します。
   - 選択した `state_json` を `normalizeState` へ通し、成功した場合だけローカル `State` を全置換します。
   - 復元後は `currentWorkoutId` を解除し、選択プリセットを先頭に戻し、選択日を本日にします。
 
@@ -771,7 +771,7 @@ weight === 0 または reps === 0 → '0.0'
 ### 8.7 エラー境界（`ErrorBoundary`）
 
 - 描画中に例外が発生したら全画面の真っ白を防ぎ、復旧画面を表示。
-- 復旧手段: `localStorage` の保存データを直接読み出して `fitlog-backup.json` として書き出す / ページ再読み込み。
+- 復旧手段: `localStorage` の保存データを直接読み出して `smithnote-backup.json` として書き出す / ページ再読み込み。
 - React の state が壊れていても動くよう、保存済みデータをそのまま使う。
 
 ---

@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = 'fitlog-backup.json';
+      anchor.download = 'smithnote-backup.json';
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
