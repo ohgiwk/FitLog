@@ -16,6 +16,7 @@ import { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from './screens/TermsOfServiceScreen';
 import { BackupScreen } from './screens/BackupScreen';
 import { AccountManagementScreen } from './screens/AccountManagementScreen';
+import { ForgotPasswordScreen } from './screens/ForgotPasswordScreen';
 import { AnalysisScreen } from './screens/AnalysisScreen';
 import { TrainingMenuScreen } from './screens/TrainingMenuScreen';
 import { PlusIcon } from './icons';
@@ -243,6 +244,7 @@ function AppShell() {
     if (targetScreen === 'termsOfService') return <TermsOfServiceScreen />;
     if (targetScreen === 'backup') return <BackupScreen />;
     if (targetScreen === 'accountManagement') return <AccountManagementScreen />;
+    if (targetScreen === 'forgotPassword') return <ForgotPasswordScreen />;
     return null;
   }
 

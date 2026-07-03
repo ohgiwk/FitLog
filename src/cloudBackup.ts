@@ -99,6 +99,17 @@ export async function updateCloudPassword(password: string) {
 }
 
 /**
+ * パスワード再設定メールを送信する
+ */
+export async function sendCloudPasswordReset(email: string) {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase is not configured');
+  const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}`;
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) throw error;
+}
+
+/**
  * ログアウトする。ローカルデータは削除しない
  */
 export async function signOutCloud() {

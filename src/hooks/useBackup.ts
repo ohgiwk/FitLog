@@ -10,6 +10,7 @@ import {
   getCloudSession,
   listCloudBackups,
   onCloudAuthChange,
+  sendCloudPasswordReset,
   signInWithPassword,
   signOutCloud,
   signUpWithPassword,
@@ -195,6 +196,29 @@ export function useBackup({
   }
 
   /**
+   * パスワード再設定メールを送信する
+   */
+  async function resetPassword(formData: FormData) {
+    const emailValue = formData.get('email');
+    const email = (typeof emailValue === 'string' ? emailValue : '').trim();
+    if (!email) {
+      showToast('メールアドレスを入力してください');
+      return false;
+    }
+    setCloudLoading(true);
+    try {
+      await sendCloudPasswordReset(email);
+      showToast('パスワード再設定メールを送信しました');
+      return true;
+    } catch {
+      showToast('パスワード再設定メールの送信に失敗しました');
+      return false;
+    } finally {
+      setCloudLoading(false);
+    }
+  }
+
+  /**
    * クラウドからログアウトする。ローカルデータは残す
    */
   async function signOut() {
@@ -330,6 +354,7 @@ export function useBackup({
       signUp,
       signIn,
       changePassword,
+      resetPassword,
       signOut,
       backupToCloud,
       restoreFromCloud,

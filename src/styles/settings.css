@@ -141,6 +141,29 @@
   line-height: 1.6;
 }
 
+.settings-auth-divider {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.settings-auth-divider::before,
+.settings-auth-divider::after {
+  height: 1px;
+  background: var(--line);
+  content: '';
+  opacity: 0.6;
+}
+
+.settings-auth-submit {
+  margin-top: 4px;
+}
+
 .settings-section-body {
   padding: 12px;
 }

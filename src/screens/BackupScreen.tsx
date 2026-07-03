@@ -169,13 +169,16 @@ export function BackupScreen() {
                 />
               </label>
               <button
-                className="settings-primary-button"
+                className="settings-primary-button settings-auth-submit"
                 type="submit"
                 disabled={cloudPending}
                 formAction={signInAction}
               >
                 ログイン
               </button>
+              <div className="settings-auth-divider" aria-hidden="true">
+                または
+              </div>
               <button
                 className="settings-small-button"
                 type="submit"
@@ -183,6 +186,13 @@ export function BackupScreen() {
                 formAction={signUpAction}
               >
                 新規登録
+              </button>
+              <button
+                className="settings-text-button"
+                type="button"
+                onClick={() => actions.setScreen('forgotPassword')}
+              >
+                パスワードを忘れた場合
               </button>
             </form>
           ) : (
