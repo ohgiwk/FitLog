@@ -14,9 +14,7 @@ import { ExerciseManageScreen, SelectScreen } from './screens/SelectScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from './screens/TermsOfServiceScreen';
-import { LocalBackupScreen } from './screens/LocalBackupScreen';
-import { CloudAuthScreen } from './screens/CloudAuthScreen';
-import { CloudBackupsScreen } from './screens/CloudBackupsScreen';
+import { BackupScreen } from './screens/BackupScreen';
 import { AnalysisScreen } from './screens/AnalysisScreen';
 import { TrainingMenuScreen } from './screens/TrainingMenuScreen';
 import { PlusIcon } from './icons';
@@ -242,9 +240,7 @@ function AppShell() {
     if (targetScreen === 'settings') return <SettingsScreen />;
     if (targetScreen === 'privacyPolicy') return <PrivacyPolicyScreen />;
     if (targetScreen === 'termsOfService') return <TermsOfServiceScreen />;
-    if (targetScreen === 'localBackup') return <LocalBackupScreen />;
-    if (targetScreen === 'cloudAuth') return <CloudAuthScreen />;
-    if (targetScreen === 'cloudBackups') return <CloudBackupsScreen />;
+    if (targetScreen === 'backup') return <BackupScreen />;
     return null;
   }
 

@@ -14,9 +14,7 @@ export type Screen =
   | 'settings'
   | 'privacyPolicy'
   | 'termsOfService'
-  | 'localBackup'
-  | 'cloudAuth'
-  | 'cloudBackups';
+  | 'backup';
 
 export type MeasurementType = 'reps' | 'seconds';
 

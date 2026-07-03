@@ -1,5 +1,12 @@
-import { useActionState, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronUp, TrashIcon } from '../icons';
+import { ChangeEvent, useRef, useState, useActionState } from 'react';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronUp,
+  ExportIcon,
+  ImportIcon,
+  TrashIcon,
+} from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 
 type CloudBackupItem = ReturnType<typeof useFitLogContext>['actions']['cloud']['backups'][number];
@@ -25,19 +32,35 @@ function formatBackupDate(value: string) {
 }
 
 /**
- * クラウドバックアップの作成・復元を管理する画面
+ * ローカルとクラウドのバックアップ操作をまとめて扱う画面
  */
-export function CloudBackupsScreen() {
+export function BackupScreen() {
   const { actions } = useFitLogContext();
   const cloud = actions.cloud;
+  const importInputRef = useRef<HTMLInputElement | null>(null);
   const [restoreTarget, setRestoreTarget] = useState<CloudBackupItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CloudBackupItem | null>(null);
   const [accountPanelOpen, setAccountPanelOpen] = useState(false);
   const [accountDeleteOpen, setAccountDeleteOpen] = useState(false);
 
   /**
-   * クラウド操作中は対象操作だけ React の Action pending に任せる
+   * 選択されたバックアップファイルを読み込み処理へ渡す
    */
+  async function handleImport(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    await actions.importState(file);
+  }
+
+  const [, signInAction, signInPending] = useActionState(
+    async (_: boolean, formData: FormData) => cloud.signIn(formData),
+    false,
+  );
+  const [, signUpAction, signUpPending] = useActionState(
+    async (_: boolean, formData: FormData) => cloud.signUp(formData),
+    false,
+  );
   const [, backupAction, backupPending] = useActionState(async () => {
     await cloud.backupToCloud();
     return null;
@@ -62,11 +85,12 @@ export function CloudBackupsScreen() {
   }, null);
   const [, accountDeleteAction, accountDeletePending] = useActionState(async () => {
     setAccountDeleteOpen(false);
-    const deleted = await cloud.deleteAccountFromCloud();
-    if (deleted) actions.setScreen('settings');
+    await cloud.deleteAccountFromCloud();
     return null;
   }, null);
   const cloudPending =
+    signInPending ||
+    signUpPending ||
     backupPending ||
     refreshPending ||
     restorePending ||
@@ -86,32 +110,91 @@ export function CloudBackupsScreen() {
           >
             <ChevronLeft />
           </button>
-          <div className="bar-title">バックアップ一覧</div>
+          <div className="bar-title">バックアップ</div>
           <span />
         </div>
       </header>
       <div className="settings-content">
-        <section className="settings-section" aria-labelledby="cloud-backup-list-title">
-          <h2 className="settings-section-title" id="cloud-backup-list-title">
+        <input
+          ref={importInputRef}
+          hidden
+          accept="application/json,.json"
+          type="file"
+          onChange={(event) => void handleImport(event)}
+        />
+        <section className="settings-section" aria-labelledby="local-backup-title">
+          <h2 className="settings-section-title" id="local-backup-title">
+            ローカルバックアップ
+          </h2>
+          <p className="settings-help settings-section-body">
+            端末内の記録をJSONファイルとして保存したり、保存済みのJSONファイルから復元できます。
+          </p>
+          <button className="settings-link-row" type="button" onClick={actions.exportState}>
+            <ExportIcon />
+            <span>記録を書き出す</span>
+          </button>
+          <button
+            className="settings-link-row"
+            type="button"
+            onClick={() => importInputRef.current?.click()}
+          >
+            <ImportIcon />
+            <span>記録を読み込む</span>
+          </button>
+        </section>
+        <section className="settings-section" aria-labelledby="cloud-backup-title">
+          <h2 className="settings-section-title" id="cloud-backup-title">
             クラウドバックアップ
           </h2>
           {!cloud.enabled ? (
             <div className="settings-cloud-panel">
               <p className="settings-help">
-                Supabaseの設定がないため、クラウドバックアップは無効です。
+                Supabaseの設定がないため、クラウドバックアップは無効です。ローカル保存とJSONバックアップはそのまま使えます。
               </p>
             </div>
           ) : !cloud.userEmail ? (
-            <div className="settings-cloud-panel">
-              <p className="settings-help">バックアップ一覧を使うにはログインしてください。</p>
+            <form className="settings-cloud-panel">
+              <p className="settings-help">
+                機種変更やバックアップが必要な場合だけログインしてください。未ログインでも記録は端末内に保存されます。
+              </p>
+              <label className="form-field settings-cloud-email">
+                <span>メールアドレス</span>
+                <input
+                  className="form-input"
+                  name="email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                />
+              </label>
+              <label className="form-field settings-cloud-email">
+                <span>パスワード</span>
+                <input
+                  className="form-input"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="6文字以上"
+                />
+              </label>
               <button
                 className="settings-primary-button"
-                type="button"
-                onClick={() => actions.setScreen('cloudAuth')}
+                type="submit"
+                disabled={cloudPending}
+                formAction={signInAction}
               >
-                新規登録 / ログインへ
+                ログイン
               </button>
-            </div>
+              <button
+                className="settings-small-button"
+                type="submit"
+                disabled={cloudPending}
+                formAction={signUpAction}
+              >
+                新規登録
+              </button>
+            </form>
           ) : (
             <div className="settings-cloud-panel">
               <form className="settings-cloud-action-form" action={backupAction}>

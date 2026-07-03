@@ -18,8 +18,7 @@ function useSettingsScreenModel() {
     onEditParts: () => actions.setScreen('partEdit'),
     onEditExercises: () => actions.setScreen('exerciseManage'),
     onChangeWeightUnit: actions.setWeightUnit,
-    onOpenLocalBackup: () => actions.setScreen('localBackup'),
-    onOpenCloudBackup: () => actions.setScreen(actions.cloud.userEmail ? 'cloudBackups' : 'cloudAuth'),
+    onOpenBackup: () => actions.setScreen('backup'),
     onOpenPrivacyPolicy: () => actions.setScreen('privacyPolicy'),
     onOpenTermsOfService: () => actions.setScreen('termsOfService'),
   };
@@ -35,8 +34,7 @@ export function SettingsScreen() {
     onEditParts,
     onEditExercises,
     onChangeWeightUnit,
-    onOpenLocalBackup,
-    onOpenCloudBackup,
+    onOpenBackup,
     onOpenPrivacyPolicy,
     onOpenTermsOfService,
   } =
@@ -95,13 +93,9 @@ export function SettingsScreen() {
           <h2 className="settings-section-title" id="data-management-title">
             データ管理
           </h2>
-          <button className="settings-link-row" type="button" onClick={onOpenLocalBackup}>
+          <button className="settings-link-row" type="button" onClick={onOpenBackup}>
             <ExportIcon />
-            <span>ローカルバックアップ</span>
-          </button>
-          <button className="settings-link-row" type="button" onClick={onOpenCloudBackup}>
-            <ExportIcon />
-            <span>クラウドバックアップ</span>
+            <span>バックアップ</span>
           </button>
         </section>
         <section className="settings-section" aria-labelledby="about-app-title">
