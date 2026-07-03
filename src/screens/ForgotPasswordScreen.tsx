@@ -43,7 +43,7 @@ export function ForgotPasswordScreen() {
           {!cloud.enabled ? (
             <div className="settings-cloud-panel">
               <p className="settings-help">
-                Supabaseの設定がないため、パスワード再設定メールは送信できません。
+                Firebaseの設定がないため、パスワード再設定メールは送信できません。
               </p>
             </div>
           ) : cloud.userEmail ? (

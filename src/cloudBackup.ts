@@ -1,6 +1,30 @@
-import { Session, User } from '@supabase/supabase-js';
+import { FirebaseError } from 'firebase/app';
+import {
+  User,
+  createUserWithEmailAndPassword,
+  deleteUser,
+  onAuthStateChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signOut,
+  updatePassword,
+} from 'firebase/auth';
+import {
+  Firestore,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  setDoc,
+  writeBatch,
+} from 'firebase/firestore';
 import { getDeviceId } from './device';
-import { getSupabaseClient, isSupabaseConfigured } from './supabaseClient';
+import { getFirebaseClient, isFirebaseConfigured } from './firebaseClient';
 import { State } from './types';
 import { uid } from './utils';
 
@@ -19,127 +43,136 @@ export type SignUpResult = {
 
 type CloudBackupRow = {
   id: string;
-  device_id: string | null;
-  state_json: State;
-  state_schema_version: number;
-  created_at: string;
+  deviceId: string | null;
+  stateJson: State;
+  stateSchemaVersion: number;
+  createdAt: string;
 };
 
 function isUserAlreadyRegisteredError(error: unknown) {
-  if (!(error instanceof Error)) return false;
-  return error.message.toLowerCase().includes('user already registered');
+  return error instanceof FirebaseError && error.code === 'auth/email-already-in-use';
+}
+
+type CloudSession = {
+  user: User;
+};
+
+function requireFirebaseClient() {
+  const client = getFirebaseClient();
+  if (!client) throw new Error('Firebase is not configured');
+  return client;
+}
+
+function getUserDocPath(userId: string) {
+  return ['users', userId] as const;
+}
+
+function getUserBackupsPath(userId: string) {
+  return ['users', userId, 'backups'] as const;
+}
+
+function getUserDevicesPath(userId: string) {
+  return ['users', userId, 'devices'] as const;
 }
 
 /**
- * Supabaseが利用可能な状態かを返す
+ * Firebaseが利用可能な状態かを返す
  */
 export function cloudBackupAvailable() {
-  return isSupabaseConfigured();
+  return isFirebaseConfigured();
 }
 
 /**
  * 現在の認証セッションを取得する
  */
-export async function getCloudSession(): Promise<Session | null> {
-  const supabase = getSupabaseClient();
-  if (!supabase) return null;
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw error;
-  return data.session;
+export async function getCloudSession(): Promise<CloudSession | null> {
+  const client = getFirebaseClient();
+  if (!client) return null;
+  await client.auth.authStateReady();
+  return client.auth.currentUser ? { user: client.auth.currentUser } : null;
 }
 
 /**
  * 認証状態の変更を購読する
  */
-export function onCloudAuthChange(callback: (session: Session | null) => void) {
-  const supabase = getSupabaseClient();
-  if (!supabase) return () => undefined;
-  const {
-    data: { subscription },
-  } = supabase.auth.onAuthStateChange((_event, session) => callback(session));
-  return () => subscription.unsubscribe();
+export function onCloudAuthChange(callback: (session: CloudSession | null) => void) {
+  const client = getFirebaseClient();
+  if (!client) return () => undefined;
+  return onAuthStateChanged(client.auth, (user) => callback(user ? { user } : null));
 }
 
 /**
  * メールアドレスとパスワードで新規登録する
  */
 export async function signUpWithPassword(email: string, password: string) {
-  const supabase = getSupabaseClient();
-  if (!supabase) throw new Error('Supabase is not configured');
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-  if (isUserAlreadyRegisteredError(error)) return { alreadyRegistered: true };
-  if (error) throw error;
-  return { alreadyRegistered: data.user?.identities?.length === 0 };
+  const { auth } = requireFirebaseClient();
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    const url = `${window.location.origin}${import.meta.env.BASE_URL}`;
+    await sendEmailVerification(result.user, { url, handleCodeInApp: false });
+  } catch (error) {
+    if (isUserAlreadyRegisteredError(error)) return { alreadyRegistered: true };
+    throw error;
+  }
+  return { alreadyRegistered: false };
 }
 
 /**
  * メールアドレスとパスワードでログインする
  */
 export async function signInWithPassword(email: string, password: string) {
-  const supabase = getSupabaseClient();
-  if (!supabase) throw new Error('Supabase is not configured');
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  if (error) throw error;
+  const { auth } = requireFirebaseClient();
+  await signInWithEmailAndPassword(auth, email, password);
 }
 
 /**
  * ログイン中ユーザーのパスワードを変更する
  */
 export async function updateCloudPassword(password: string) {
-  const supabase = getSupabaseClient();
-  if (!supabase) throw new Error('Supabase is not configured');
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error) throw error;
+  const { auth } = requireFirebaseClient();
+  if (!auth.currentUser) throw new Error('Not signed in');
+  await updatePassword(auth.currentUser, password);
 }
 
 /**
  * パスワード再設定メールを送信する
  */
 export async function sendCloudPasswordReset(email: string) {
-  const supabase = getSupabaseClient();
-  if (!supabase) throw new Error('Supabase is not configured');
-  const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}`;
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-  if (error) throw error;
+  const { auth } = requireFirebaseClient();
+  const url = `${window.location.origin}${import.meta.env.BASE_URL}`;
+  await sendPasswordResetEmail(auth, email, { url, handleCodeInApp: false });
 }
 
 /**
  * ログアウトする。ローカルデータは削除しない
  */
 export async function signOutCloud() {
-  const supabase = getSupabaseClient();
-  if (!supabase) return;
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  const client = getFirebaseClient();
+  if (!client) return;
+  await signOut(client.auth);
 }
 
 /**
  * ユーザーと端末のメタデータを作成または更新する
  */
 export async function ensureCloudProfile(user: User) {
-  const supabase = getSupabaseClient();
-  if (!supabase) return;
+  const client = getFirebaseClient();
+  if (!client) return;
   const deviceId = getDeviceId();
   const now = new Date().toISOString();
-  const { error: profileError } = await supabase.from('profiles').upsert({
-    user_id: user.id,
-    updated_at: now,
-  });
-  if (profileError) throw profileError;
-  const { error: deviceError } = await supabase.from('devices').upsert({
-    id: deviceId,
-    user_id: user.id,
+  await setDoc(
+    doc(client.db, ...getUserDocPath(user.uid)),
+    {
+      email: user.email ?? null,
+      updatedAt: now,
+    },
+    { merge: true },
+  );
+  await setDoc(doc(client.db, ...getUserDevicesPath(user.uid), deviceId), {
     name: navigator.userAgent,
     platform: navigator.platform,
-    last_seen_at: now,
+    lastSeenAt: now,
   });
-  if (deviceError) throw deviceError;
 }
 
 /**
@@ -158,95 +191,105 @@ export function summarizeState(state: State) {
  * クラウドに現在のState全体を保存する
  */
 export async function createCloudBackup(state: State) {
-  const supabase = getSupabaseClient();
-  if (!supabase) throw new Error('Supabase is not configured');
+  const { db } = requireFirebaseClient();
   const session = await getCloudSession();
   if (!session) throw new Error('Not signed in');
   await ensureCloudProfile(session.user);
-  const { error } = await supabase.from('cloud_backups').insert({
-    id: uid(),
-    user_id: session.user.id,
-    device_id: getDeviceId(),
-    state_json: state,
-    state_schema_version: state.schemaVersion,
+  const backupId = uid();
+  const now = new Date().toISOString();
+  await setDoc(doc(db, ...getUserBackupsPath(session.user.uid), backupId), {
+    deviceId: getDeviceId(),
+    stateJson: state,
+    stateSchemaVersion: state.schemaVersion,
+    createdAt: now,
   });
-  if (error) throw error;
-  await pruneCloudBackups(session.user.id);
+  await pruneCloudBackups(session.user.uid);
 }
 
 /**
  * 最新バックアップ一覧を取得する
  */
 export async function listCloudBackups(): Promise<CloudBackup[]> {
-  const supabase = getSupabaseClient();
-  if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('cloud_backups')
-    .select('id, device_id, state_json, state_schema_version, created_at')
-    .order('created_at', { ascending: false })
-    .limit(5)
-    .returns<CloudBackupRow[]>();
-  if (error) throw error;
-  return data.map((row) => ({
-    id: row.id,
-    createdAt: row.created_at,
-    deviceId: row.device_id,
-    ...summarizeState(row.state_json),
-  }));
+  const client = getFirebaseClient();
+  if (!client) return [];
+  const session = await getCloudSession();
+  if (!session) return [];
+  const snapshot = await getDocs(
+    query(
+      collection(client.db, ...getUserBackupsPath(session.user.uid)),
+      orderBy('createdAt', 'desc'),
+      limit(5),
+    ),
+  );
+  return snapshot.docs.map((backupDoc) => {
+    const row = { id: backupDoc.id, ...backupDoc.data() } as CloudBackupRow;
+    return {
+      id: row.id,
+      createdAt: row.createdAt,
+      deviceId: row.deviceId,
+      ...summarizeState(row.stateJson),
+    };
+  });
 }
 
 /**
  * 指定したバックアップのStateを取得する
  */
 export async function fetchCloudBackupState(id: string): Promise<State> {
-  const supabase = getSupabaseClient();
-  if (!supabase) throw new Error('Supabase is not configured');
-  const { data, error } = await supabase
-    .from('cloud_backups')
-    .select('state_json')
-    .eq('id', id)
-    .single()
-    .returns<{ state_json: State }>();
-  if (error) throw error;
-  return data.state_json;
+  const { db } = requireFirebaseClient();
+  const session = await getCloudSession();
+  if (!session) throw new Error('Not signed in');
+  const backupSnapshot = await getDoc(doc(db, ...getUserBackupsPath(session.user.uid), id));
+  if (!backupSnapshot.exists()) throw new Error('Backup not found');
+  const row = { id: backupSnapshot.id, ...backupSnapshot.data() } as CloudBackupRow;
+  return row.stateJson;
 }
 
 /**
  * 指定したクラウドバックアップを削除する
  */
 export async function deleteCloudBackup(id: string) {
-  const supabase = getSupabaseClient();
-  if (!supabase) throw new Error('Supabase is not configured');
-  const { error } = await supabase.from('cloud_backups').delete().eq('id', id);
-  if (error) throw error;
+  const { db } = requireFirebaseClient();
+  const session = await getCloudSession();
+  if (!session) throw new Error('Not signed in');
+  await deleteDoc(doc(db, ...getUserBackupsPath(session.user.uid), id));
 }
 
 /**
  * ログイン中のクラウドアカウントを削除する。ローカルデータは削除しない
  */
 export async function deleteCloudAccount() {
-  const supabase = getSupabaseClient();
-  if (!supabase) throw new Error('Supabase is not configured');
-  const { error } = await supabase.rpc('delete_current_user');
-  if (error) throw error;
-  await supabase.auth.signOut().catch(() => undefined);
+  const { auth, db } = requireFirebaseClient();
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not signed in');
+  await deleteUserCloudData(db, user.uid);
+  await deleteUser(user);
 }
 
 /**
  * 最新5件だけ残し、古いバックアップを削除する
  */
 async function pruneCloudBackups(userId: string) {
-  const supabase = getSupabaseClient();
-  if (!supabase) return;
-  const { data, error } = await supabase
-    .from('cloud_backups')
-    .select('id')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .returns<{ id: string }[]>();
-  if (error) throw error;
-  const oldIds = data.slice(5).map((backup) => backup.id);
-  if (oldIds.length === 0) return;
-  const { error: deleteError } = await supabase.from('cloud_backups').delete().in('id', oldIds);
-  if (deleteError) throw deleteError;
+  const { db } = requireFirebaseClient();
+  const snapshot = await getDocs(
+    query(collection(db, ...getUserBackupsPath(userId)), orderBy('createdAt', 'desc')),
+  );
+  const oldDocs = snapshot.docs.slice(5);
+  if (oldDocs.length === 0) return;
+  const batch = writeBatch(db);
+  oldDocs.forEach((backupDoc) => batch.delete(backupDoc.ref));
+  await batch.commit();
+}
+
+/**
+ * ユーザー配下のクラウドデータを削除する
+ */
+async function deleteUserCloudData(db: Firestore, userId: string) {
+  const batch = writeBatch(db);
+  const backupSnapshot = await getDocs(collection(db, ...getUserBackupsPath(userId)));
+  backupSnapshot.docs.forEach((backupDoc) => batch.delete(backupDoc.ref));
+  const deviceSnapshot = await getDocs(collection(db, ...getUserDevicesPath(userId)));
+  deviceSnapshot.docs.forEach((deviceDoc) => batch.delete(deviceDoc.ref));
+  batch.delete(doc(db, ...getUserDocPath(userId)));
+  await batch.commit();
 }

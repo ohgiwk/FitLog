@@ -50,7 +50,7 @@ export function AccountManagementScreen() {
             </h2>
             <div className="settings-cloud-panel">
               <p className="settings-help">
-                Supabaseの設定がないため、クラウドアカウント管理は無効です。
+                Firebaseの設定がないため、クラウドアカウント管理は無効です。
               </p>
             </div>
           </section>

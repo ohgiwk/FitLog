@@ -134,7 +134,7 @@ export function useBackup({
         showToast('このメールアドレスはすでに登録されています');
         return false;
       }
-      showToast('登録しました。確認メールが届いた場合は承認してください');
+      showToast('登録しました。確認メールを送信しました');
       return true;
     } catch {
       showToast('新規登録に失敗しました');
@@ -245,7 +245,17 @@ export function useBackup({
       await createCloudBackup(state);
       setCloudBackups(await listCloudBackups());
       showToast('クラウドへバックアップしました');
-    } catch {
+    } catch (error) {
+      console.error('Cloud backup failed', error);
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('Missing or insufficient permissions')) {
+        showToast('Firestoreの権限設定を確認してください');
+        return;
+      }
+      if (message.includes('Unsupported field value')) {
+        showToast('保存データの形式を確認してください');
+        return;
+      }
       showToast('クラウドバックアップに失敗しました');
     }
   }

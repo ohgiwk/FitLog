@@ -139,7 +139,7 @@ export function BackupScreen() {
           {!cloud.enabled ? (
             <div className="settings-cloud-panel">
               <p className="settings-help">
-                Supabaseの設定がないため、クラウドバックアップは無効です。ローカル保存とJSONバックアップはそのまま使えます。
+                Firebaseの設定がないため、クラウドバックアップは無効です。ローカル保存とJSONバックアップはそのまま使えます。
               </p>
             </div>
           ) : !cloud.userEmail ? (
