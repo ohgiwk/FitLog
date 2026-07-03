@@ -107,7 +107,10 @@ export function HomeCalendar({
         }}
       >
         <div className="drawer-head">
-          <strong>メニュー</strong>
+          <div className="drawer-brand">
+            <img className="drawer-logo" src={`${import.meta.env.BASE_URL}logo.png`} alt="" />
+            <strong>メニュー</strong>
+          </div>
           <button className="drawer-close" type="button" onClick={() => closeDrawer()}>
             閉じる
           </button>

@@ -510,13 +510,32 @@
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
+  gap: 12px;
   min-height: 52px;
   border-bottom: 1px solid var(--line);
 }
 
-.drawer-head strong {
+.drawer-brand {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+
+.drawer-logo {
+  display: block;
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.drawer-brand strong {
+  overflow: hidden;
+  color: var(--text-primary);
   font-size: 20px;
   font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .drawer-close {
