@@ -127,7 +127,11 @@ export function useBackup({
       return false;
     }
     try {
-      await signUpWithPassword(fields.email, fields.password);
+      const result = await signUpWithPassword(fields.email, fields.password);
+      if (result.alreadyRegistered) {
+        showToast('このメールアドレスはすでに登録されています');
+        return false;
+      }
       showToast('登録しました。確認メールが届いた場合は承認してください');
       return true;
     } catch {

@@ -13,6 +13,10 @@ export type CloudBackup = {
   lastWorkoutDate: string | null;
 };
 
+export type SignUpResult = {
+  alreadyRegistered: boolean;
+};
+
 type CloudBackupRow = {
   id: string;
   device_id: string | null;
@@ -20,6 +24,11 @@ type CloudBackupRow = {
   state_schema_version: number;
   created_at: string;
 };
+
+function isUserAlreadyRegisteredError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  return error.message.toLowerCase().includes('user already registered');
+}
 
 /**
  * Supabaseが利用可能な状態かを返す
@@ -57,11 +66,13 @@ export function onCloudAuthChange(callback: (session: Session | null) => void) {
 export async function signUpWithPassword(email: string, password: string) {
   const supabase = getSupabaseClient();
   if (!supabase) throw new Error('Supabase is not configured');
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
   });
+  if (isUserAlreadyRegisteredError(error)) return { alreadyRegistered: true };
   if (error) throw error;
+  return { alreadyRegistered: data.user?.identities?.length === 0 };
 }
 
 /**
