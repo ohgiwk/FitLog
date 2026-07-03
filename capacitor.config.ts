@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.keiya.fitlog',
-  appName: 'FitLog',
+  appName: 'SmithNote',
   webDir: 'dist',
   ios: {
     scheme: 'FitLog',

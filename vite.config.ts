@@ -15,8 +15,8 @@ export default defineConfig(({ mode }) => {
         includeAssets: ['favicon.png', 'apple-touch-icon.png', 'splash.png'],
         manifest: {
           id: '/FitLog/',
-          name: 'FitLog',
-          short_name: 'FitLog',
+          name: 'SmithNote',
+          short_name: 'SmithNote',
           description: '筋トレの種目、セット、重量、回数を記録できるトレーニングログアプリ',
           start_url: '/FitLog/',
           scope: '/FitLog/',

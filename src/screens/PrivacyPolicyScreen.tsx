@@ -5,7 +5,7 @@ const policySections = [
   {
     title: '取得する情報',
     body: [
-      'FitLogは、ユーザーが入力したトレーニング記録、種目、セット、重量、回数または秒数、メモ、目標、設定、バックアップに必要なデータをアプリ内で扱います。',
+      'SmithNote（スミスノート）は、ユーザーが入力したトレーニング記録、種目、セット、重量、回数または秒数、メモ、目標、設定、バックアップに必要なデータをアプリ内で扱います。',
       'クラウドバックアップを利用する場合は、ログイン用のメールアドレスと、バックアップ対象のトレーニングデータをクラウド上に保存します。',
     ],
   },
@@ -52,7 +52,7 @@ const policySections = [
 ];
 
 /**
- * FitLogのデータ取り扱い方針を表示する画面
+ * SmithNote（スミスノート）のデータ取り扱い方針を表示する画面
  */
 export function PrivacyPolicyScreen() {
   const { actions } = useFitLogContext();
@@ -82,7 +82,7 @@ export function PrivacyPolicyScreen() {
             <p>制定日: 2026年7月3日</p>
           </div>
           <p className="privacy-policy-lead">
-            FitLogは、トレーニング記録を端末内に保存して利用できるローカルファーストのアプリです。本ポリシーでは、FitLogで扱う情報とその利用方法を説明します。
+            SmithNote（スミスノート）は、トレーニング記録を端末内に保存して利用できるローカルファーストのアプリです。本ポリシーでは、SmithNoteで扱う情報とその利用方法を説明します。
           </p>
           {policySections.map((section) => (
             <section className="privacy-policy-section" key={section.title}>
