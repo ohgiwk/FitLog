@@ -509,6 +509,8 @@
 }
 
 .rest-timer.running {
+  --rest-timer-accent: #38bdf8;
+  --rest-timer-accent-soft: rgba(56, 189, 248, 0.26);
   left: 50%;
   display: block;
   width: 196px;
@@ -520,6 +522,12 @@
   background: var(--surface-float);
   box-shadow: 0 10px 30px var(--shadow-strong);
   transform: translateX(-50%);
+  animation: rest-timer-pop-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.rest-timer.running.exiting {
+  pointer-events: none;
+  animation: rest-timer-pop-out 0.42s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
 .rest-timer-overlay {
@@ -536,6 +544,11 @@
     rgba(0, 0, 0, 0.2) 48%,
     rgba(0, 0, 0, 0) 100%
   );
+  animation: rest-timer-overlay-in 0.22s ease-out both;
+}
+
+.rest-timer-overlay.exiting {
+  animation: rest-timer-overlay-out 0.42s ease-in forwards;
 }
 
 .rest-timer {
@@ -601,11 +614,11 @@
 }
 
 .rest-timer-progress-track {
-  stroke: var(--red-soft);
+  stroke: var(--rest-timer-accent-soft, var(--red-soft));
 }
 
 .rest-timer-progress-value {
-  stroke: var(--red);
+  stroke: var(--rest-timer-accent, var(--red));
   stroke-linecap: butt;
   transition: stroke-dashoffset 250ms linear;
 }
@@ -623,6 +636,7 @@
 }
 
 .rest-timer-countdown strong {
+  color: var(--rest-timer-accent, var(--red));
   font-size: 68px;
   font-variant-numeric: tabular-nums;
   letter-spacing: -4px;
@@ -633,4 +647,67 @@
   min-height: 34px;
   background: var(--surface-soft);
   color: var(--text-secondary-strong);
+}
+
+@keyframes rest-timer-pop-in {
+  from {
+    opacity: 0;
+    transform: translate3d(-50%, 72px, 0) scale(0.74);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translate3d(-50%, -8px, 0) scale(1.03);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(-50%, 0, 0) scale(1);
+  }
+}
+
+@keyframes rest-timer-pop-out {
+  from {
+    opacity: 1;
+    transform: translate3d(-50%, 0, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(-50%, 64px, 0) scale(0.86);
+  }
+}
+
+@keyframes rest-timer-overlay-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rest-timer-overlay-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rest-timer.running,
+  .rest-timer.running.exiting,
+  .rest-timer-overlay,
+  .rest-timer-overlay.exiting {
+    animation: none;
+  }
+
+  .rest-timer.running.exiting,
+  .rest-timer-overlay.exiting {
+    opacity: 0;
+  }
 }

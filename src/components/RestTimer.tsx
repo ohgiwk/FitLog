@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 const defaultSeconds = 60;
+const exitAnimationMilliseconds = 420;
+const alarmSoundPath = `${import.meta.env.BASE_URL}Clock-Alarm.mp3`;
 
 export function RestTimer() {
   const [secondsInput, setSecondsInput] = useState(String(defaultSeconds));
@@ -9,12 +11,22 @@ export function RestTimer() {
   const [remainingMilliseconds, setRemainingMilliseconds] = useState(defaultSeconds * 1000);
   const [durationMilliseconds, setDurationMilliseconds] = useState(defaultSeconds * 1000);
   const [endTime, setEndTime] = useState<number | null>(null);
+  const [showRunningTimer, setShowRunningTimer] = useState(false);
+  const [timerExiting, setTimerExiting] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const alarmBufferRef = useRef<AudioBuffer | null>(null);
+  const alarmBufferPromiseRef = useRef<Promise<AudioBuffer | null> | null>(null);
+  const exitTimeoutRef = useRef<number | null>(null);
 
   const running = endTime !== null;
-  const progressOffset = running
+  const exiting = timerExiting;
+  const progressOffset = showRunningTimer
     ? Math.min(100, Math.max(0, 100 - (remainingMilliseconds / durationMilliseconds) * 100))
     : 0;
+
+  useEffect(() => {
+    return () => clearExitTimeout();
+  }, []);
 
   useEffect(() => {
     if (!endTime) return;
@@ -26,8 +38,9 @@ export function RestTimer() {
       setRemaining(nextRemaining);
       if (nextRemaining === 0) {
         window.clearInterval(timer);
+        hideRunningTimer();
         setEndTime(null);
-        playAlert(audioContextRef.current);
+        void playAlert(audioContextRef.current, alarmBufferRef.current, alarmBufferPromiseRef.current);
       }
     }, 250);
 
@@ -42,6 +55,7 @@ export function RestTimer() {
 
   function toggleTimer() {
     if (running) {
+      hideRunningTimer();
       setEndTime(null);
       return;
     }
@@ -50,19 +64,48 @@ export function RestTimer() {
     const context = getAudioContext(audioContextRef.current);
     audioContextRef.current = context;
     void context?.resume();
+    if (context) {
+      alarmBufferPromiseRef.current = prepareAlertSound(context, alarmBufferRef.current).then((buffer) => {
+        alarmBufferRef.current = buffer;
+        return buffer;
+      });
+    }
     const duration = seconds * 1000;
     setSecondsInput(String(seconds));
     setRemaining(seconds);
     setRemainingMilliseconds(duration);
     setDurationMilliseconds(duration);
+    showActiveTimer();
     setEndTime(Date.now() + duration);
+  }
+
+  function showActiveTimer() {
+    clearExitTimeout();
+    setShowRunningTimer(true);
+    setTimerExiting(false);
+  }
+
+  function hideRunningTimer() {
+    setTimerExiting(true);
+    clearExitTimeout();
+    exitTimeoutRef.current = window.setTimeout(() => {
+      setShowRunningTimer(false);
+      setTimerExiting(false);
+      exitTimeoutRef.current = null;
+    }, exitAnimationMilliseconds);
+  }
+
+  function clearExitTimeout() {
+    if (exitTimeoutRef.current === null) return;
+    window.clearTimeout(exitTimeoutRef.current);
+    exitTimeoutRef.current = null;
   }
 
   const timer = (
     <>
-      {running && <div className="rest-timer-overlay" aria-hidden="true" />}
-      <div className={`rest-timer ${running ? 'running' : ''}`} aria-label="レストタイマー">
-        {running ? (
+      {showRunningTimer && <div className={`rest-timer-overlay ${exiting ? 'exiting' : ''}`} aria-hidden="true" />}
+      <div className={`rest-timer ${showRunningTimer ? 'running' : ''} ${exiting ? 'exiting' : ''}`} aria-label="レストタイマー">
+        {showRunningTimer ? (
           <>
             <svg className="rest-timer-progress" viewBox="0 0 100 100" aria-hidden="true">
               <circle className="rest-timer-progress-track" cx="50" cy="50" r="46" />
@@ -128,21 +171,30 @@ function getAudioContext(context: AudioContext | null) {
   return new window.AudioContext();
 }
 
-function playAlert(context: AudioContext | null) {
-  if (!context) return;
-  const start = context.currentTime;
-  for (let index = 0; index < 25; index += 1) {
-    const time = start + index * 0.2;
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = 'triangle';
-    oscillator.frequency.setValueAtTime(index % 2 ? 2093 : 1760, time);
-    gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.exponentialRampToValueAtTime(0.13, time + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.08);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start(time);
-    oscillator.stop(time + 0.09);
+async function prepareAlertSound(context: AudioContext, currentBuffer: AudioBuffer | null) {
+  if (currentBuffer) return currentBuffer;
+
+  try {
+    const response = await fetch(alarmSoundPath);
+    const arrayBuffer = await response.arrayBuffer();
+    return context.decodeAudioData(arrayBuffer);
+  } catch {
+    return null;
   }
+}
+
+async function playAlert(
+  context: AudioContext | null,
+  currentBuffer: AudioBuffer | null,
+  bufferPromise: Promise<AudioBuffer | null> | null,
+) {
+  if (!context) return;
+  await context.resume();
+  const buffer = currentBuffer ?? (await bufferPromise);
+  if (!buffer) return;
+
+  const source = context.createBufferSource();
+  source.buffer = buffer;
+  source.connect(context.destination);
+  source.start();
 }
