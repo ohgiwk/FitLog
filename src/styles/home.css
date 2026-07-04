@@ -290,6 +290,14 @@
   font-weight: 900;
 }
 
+.workout-start-primary {
+  background: linear-gradient(20deg, #0ea5ff 0%, #6d28d9 2%, #e11d48 34%, #ff173d 72%, #ff6b00 100%);
+  transition:
+    filter 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
 .workout-start-primary:disabled {
   background: var(--disabled-bg);
   cursor: default;
