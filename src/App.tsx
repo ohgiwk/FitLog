@@ -75,12 +75,8 @@ function AppShell() {
   const showTrainingMenuFab = screen === 'trainingMenu';
   const showPartEditFab = screen === 'partEdit';
   const showFab = showHomeFab || showExerciseManageFab || showTrainingMenuFab || showPartEditFab;
-  const homeOverlayVisible =
-    homeOverlayState.calendarBackdropState !== 'closed' || homeOverlayState.drawerState !== 'closed';
-  const homeOverlayClass =
-    homeOverlayState.drawerState !== 'closed'
-      ? homeOverlayState.drawerState
-      : homeOverlayState.calendarBackdropState;
+  const drawerOverlayVisible = homeOverlayState.drawerState !== 'closed';
+  const drawerOverlayClass = homeOverlayState.drawerState;
   let fabKey = '';
   let fabLabel = '';
   let fabAction: (() => void) | null = null;
@@ -219,7 +215,12 @@ function AppShell() {
 
   function renderScreen(targetScreen: Screen) {
     if (targetScreen === 'home') {
-      return <HomeScreen onOverlayStateChange={setHomeOverlayState} />;
+      return (
+        <HomeScreen
+          overlayState={homeOverlayState}
+          onOverlayStateChange={setHomeOverlayState}
+        />
+      );
     }
     if (targetScreen === 'select') return <SelectScreen />;
     if (targetScreen === 'exerciseEdit') return <ExerciseEditScreen />;
@@ -275,8 +276,8 @@ function AppShell() {
         </div>
       </main>
 
-      {homeOverlayVisible && (
-        <div className={`home-app-backdrop ${homeOverlayClass}`} aria-hidden="true" />
+      {drawerOverlayVisible && (
+        <div className={`home-app-backdrop ${drawerOverlayClass}`} aria-hidden="true" />
       )}
       <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">
         {toast && (

@@ -343,6 +343,21 @@
   z-index: 40;
 }
 
+.home-calendar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(0, 0, 0, 0.48);
+}
+
+.home-calendar-backdrop.open {
+  animation: home-calendar-backdrop-in 0.22s ease-out;
+}
+
+.home-calendar-backdrop.closing {
+  animation: home-calendar-backdrop-out 0.22s ease-out forwards;
+}
+
 .home-app-backdrop {
   position: fixed;
   inset: 0;
@@ -505,6 +520,7 @@
 @media (prefers-reduced-motion: reduce) {
   .home-day-fade,
   .exercise-card.removing,
+  .home-calendar-backdrop,
   .home-app-backdrop,
   .drawer-layer.open,
   .drawer-layer.closing,
