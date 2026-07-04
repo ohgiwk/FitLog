@@ -69,6 +69,7 @@ npm run format       # prettier --write
   - アイコン: `pwa-192x192.png`（any）、`pwa-512x512.png`（any maskable）
 - PWA / iOS のアイコンは `public/image.png` から生成した `favicon.png`、`apple-touch-icon.png`、`pwa-192x192.png`、`pwa-512x512.png`、`ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png` を使います。
 - スプラッシュ画像は `public/splash.png` を PWA の `apple-touch-startup-image` として参照し、iOS は `ios/App/App/Assets.xcassets/Splash.imageset/` の LaunchScreen 用画像を使います。
+- iOS ネイティブアプリは `ios/App/App/Info.plist` の `UISupportedInterfaceOrientations` でポートレート表示のみに限定します。
 - `registerType: 'prompt'`（新しい Service Worker を検出したらアプリ側で更新通知を表示し、更新ボタンで取り込む）。
 - workbox: `navigateFallback: '/FitLog/index.html'`、`globPatterns` に `js,css,html,svg,png,ico` をプリキャッシュ。
 
