@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useBackup } from './useBackup';
 import { useExerciseActions } from './useExerciseActions';
 import { useFitLogCore } from './useFitLogCore';
@@ -7,6 +8,12 @@ import { useNavigation } from './useNavigation';
 import { usePartActions } from './usePartActions';
 import { usePresetActions } from './usePresetActions';
 import { useWorkoutActions } from './useWorkoutActions';
+import {
+  cancelWorkoutReminderNotification,
+  requestWorkoutReminderPermission,
+  sendTestWorkoutReminderNotification,
+  syncWorkoutReminderNotification,
+} from '../notifications';
 import { Preset, Screen, ThemeMode, WeightUnit } from '../types';
 import { uid } from '../utils';
 
@@ -74,6 +81,56 @@ export function useFitLog() {
   function setThemeMode(themeMode: ThemeMode) {
     core.saveState((current) => ({ ...current, themeMode }));
   }
+
+  async function setWorkoutReminderEnabled(enabled: boolean) {
+    if (!enabled) {
+      await cancelWorkoutReminderNotification();
+      core.saveState((current) => ({
+        ...current,
+        notificationSettings: { ...current.notificationSettings, enabled: false },
+      }));
+      core.showToast('通知をオフにしました');
+      return;
+    }
+
+    const permission = await requestWorkoutReminderPermission();
+    if (permission !== 'granted') {
+      core.saveState((current) => ({
+        ...current,
+        notificationSettings: { ...current.notificationSettings, enabled: false },
+      }));
+      core.showToast(
+        permission === 'unsupported'
+          ? 'この環境では通知を利用できません'
+          : '通知が許可されませんでした',
+      );
+      return;
+    }
+
+    core.saveState((current) => ({
+      ...current,
+      notificationSettings: { ...current.notificationSettings, enabled: true },
+    }));
+    core.showToast('通知をオンにしました');
+  }
+
+  async function sendWorkoutReminderTestNotification() {
+    const permission = await sendTestWorkoutReminderNotification();
+    if (permission !== 'granted') {
+      core.showToast(
+        permission === 'unsupported'
+          ? 'この環境では通知を利用できません'
+          : '通知が許可されませんでした',
+      );
+      return;
+    }
+
+    core.showToast('テスト通知を送信しました');
+  }
+
+  useEffect(() => {
+    void syncWorkoutReminderNotification(core.state);
+  }, [core.state]);
 
   function openExerciseEditor(
     part: string,
@@ -264,6 +321,8 @@ export function useFitLog() {
       setEditMode: ui.setEditMode,
       setWeightUnit,
       setThemeMode,
+      setWorkoutReminderEnabled,
+      sendWorkoutReminderTestNotification,
       startPreset: presets.startPreset,
       addPart: part.addPart,
       deletePart: part.deletePart,

@@ -21,6 +21,7 @@ const screenDepth: Record<Screen, number> = {
   goalAchievements: 1,
   analysis: 1,
   settings: 1,
+  notificationSettings: 2,
   privacyPolicy: 2,
   termsOfService: 2,
   backup: 2,

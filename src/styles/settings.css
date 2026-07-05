@@ -136,6 +136,40 @@
   border-top: 1px solid var(--line);
 }
 
+.notification-settings-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.settings-toggle {
+  display: grid;
+  place-items: center;
+  min-width: 68px;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 14px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.settings-toggle.active {
+  border-color: var(--red-border-soft);
+  background: var(--red);
+  color: var(--text-on-primary);
+}
+
+.notification-settings-help {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.notification-test-button {
+  width: 100%;
+}
+
 .settings-cloud-panel {
   display: grid;
   gap: 12px;

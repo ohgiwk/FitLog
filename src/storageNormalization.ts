@@ -73,6 +73,7 @@ export function createDefaultState(): State {
     parts: buildPartsFromNames(starterExercises.map((exercise) => exercise.part)),
     weightUnit: 'kg',
     themeMode: 'dark',
+    notificationSettings: { enabled: false },
     catalogVersion: starterCatalogVersion,
   };
 }
@@ -121,6 +122,7 @@ export function normalizeState(saved: Partial<State> | null | undefined): State 
     ),
     weightUnit: normalizeWeightUnit(saved.weightUnit),
     themeMode: normalizeThemeMode(saved.themeMode),
+    notificationSettings: normalizeNotificationSettings(saved.notificationSettings),
     catalogVersion: starterCatalogVersion,
   };
 }
@@ -135,6 +137,13 @@ function normalizeWeightUnit(value: unknown): WeightUnit {
 
 function normalizeThemeMode(value: unknown): ThemeMode {
   return value === 'light' ? 'light' : 'dark';
+}
+
+function normalizeNotificationSettings(value: unknown): State['notificationSettings'] {
+  const item = recordOf(value);
+  return {
+    enabled: item?.enabled === true,
+  };
 }
 
 function normalizeSchemaVersion(value: unknown): number {

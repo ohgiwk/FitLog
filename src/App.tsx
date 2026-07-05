@@ -12,6 +12,7 @@ import { PresetEditScreen } from './screens/PresetEditScreen';
 import { PresetExerciseSelectScreen } from './screens/PresetExerciseSelectScreen';
 import { ExerciseManageScreen, SelectScreen } from './screens/SelectScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { NotificationSettingsScreen } from './screens/NotificationSettingsScreen';
 import { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from './screens/TermsOfServiceScreen';
 import { BackupScreen } from './screens/BackupScreen';
@@ -244,6 +245,7 @@ function AppShell() {
     }
     if (targetScreen === 'exerciseManage') return <ExerciseManageScreen />;
     if (targetScreen === 'settings') return <SettingsScreen />;
+    if (targetScreen === 'notificationSettings') return <NotificationSettingsScreen />;
     if (targetScreen === 'privacyPolicy') return <PrivacyPolicyScreen />;
     if (targetScreen === 'termsOfService') return <TermsOfServiceScreen />;
     if (targetScreen === 'backup') return <BackupScreen />;

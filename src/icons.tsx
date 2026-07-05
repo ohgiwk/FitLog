@@ -5,6 +5,7 @@ import {
   IconChevronDown,
   IconChevronLeft,
   IconChevronUp,
+  IconBell,
   IconDownload,
   IconGripVertical,
   IconHistory,
@@ -61,6 +62,10 @@ export function MenuIcon() {
 
 export function CalendarIcon() {
   return <IconCalendarMonth />;
+}
+
+export function NotificationIcon() {
+  return <IconBell />;
 }
 
 export function AnalysisIcon() {

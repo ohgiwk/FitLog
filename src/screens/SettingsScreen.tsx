@@ -1,4 +1,11 @@
-import { ChevronLeft, EditIcon, ExportIcon, PartsIcon, PrivacyIcon } from '../icons';
+import {
+  ChevronLeft,
+  EditIcon,
+  ExportIcon,
+  NotificationIcon,
+  PartsIcon,
+  PrivacyIcon,
+} from '../icons';
 import { ThemeMode, WeightUnit } from '../types';
 import { weightUnitLabel } from '../utils';
 import { useFitLogContext } from '../hooks/useFitLogContext';
@@ -24,6 +31,7 @@ function useSettingsScreenModel() {
     onEditExercises: () => actions.setScreen('exerciseManage'),
     onChangeWeightUnit: actions.setWeightUnit,
     onChangeThemeMode: actions.setThemeMode,
+    onOpenNotificationSettings: () => actions.setScreen('notificationSettings'),
     onOpenBackup: () => actions.setScreen('backup'),
     onOpenPrivacyPolicy: () => actions.setScreen('privacyPolicy'),
     onOpenTermsOfService: () => actions.setScreen('termsOfService'),
@@ -42,11 +50,11 @@ export function SettingsScreen() {
     onEditExercises,
     onChangeWeightUnit,
     onChangeThemeMode,
+    onOpenNotificationSettings,
     onOpenBackup,
     onOpenPrivacyPolicy,
     onOpenTermsOfService,
-  } =
-    useSettingsScreenModel();
+  } = useSettingsScreenModel();
 
   return (
     <section className="screen active settings-screen">
@@ -123,6 +131,15 @@ export function SettingsScreen() {
           <button className="settings-link-row" type="button" onClick={onOpenBackup}>
             <ExportIcon />
             <span>バックアップ</span>
+          </button>
+        </section>
+        <section className="settings-section" aria-labelledby="notification-settings-title">
+          <h2 className="settings-section-title" id="notification-settings-title">
+            通知
+          </h2>
+          <button className="settings-link-row" type="button" onClick={onOpenNotificationSettings}>
+            <NotificationIcon />
+            <span>通知設定</span>
           </button>
         </section>
         <section className="settings-section" aria-labelledby="about-app-title">

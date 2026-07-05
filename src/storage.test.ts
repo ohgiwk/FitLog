@@ -344,6 +344,27 @@ describe('normalizeState', () => {
     expect(result?.themeMode).toBe('light');
   });
 
+  it('通知設定が無い保存データは通知オフとして読み込む', () => {
+    const result = normalizeState(makeValidSaved() as unknown as Partial<State>);
+    expect(result?.notificationSettings).toEqual({ enabled: false });
+  });
+
+  it('通知設定が有効なら保持する', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      notificationSettings: { enabled: true },
+    } as unknown as Partial<State>);
+    expect(result?.notificationSettings).toEqual({ enabled: true });
+  });
+
+  it('不正な通知設定は通知オフとして読み込む', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      notificationSettings: { enabled: 'yes' },
+    } as unknown as Partial<State>);
+    expect(result?.notificationSettings).toEqual({ enabled: false });
+  });
+
   it('プリセットのスケジュールを正規化して保持する', () => {
     const result = normalizeState({
       ...makeValidSaved(),

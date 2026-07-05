@@ -12,6 +12,7 @@ export type Screen =
   | 'partEdit'
   | 'exerciseManage'
   | 'settings'
+  | 'notificationSettings'
   | 'privacyPolicy'
   | 'termsOfService'
   | 'accountManagement'
@@ -33,6 +34,10 @@ export type GripStyleType = (typeof gripStyleTypes)[number];
 export type WeightUnit = 'kg' | 'lbs';
 
 export type ThemeMode = 'dark' | 'light';
+
+export type NotificationSettings = {
+  enabled: boolean;
+};
 
 /**
  * 種目の器具カテゴリ。種目リスト内をさらに分類して表示・設定するために使う
@@ -138,6 +143,7 @@ export type State = {
   parts: PartSetting[];
   weightUnit: WeightUnit;
   themeMode: ThemeMode;
+  notificationSettings: NotificationSettings;
   catalogVersion: number;
 };
 
