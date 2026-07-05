@@ -124,7 +124,7 @@
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--new-workout-overlay-bg);
   pointer-events: none;
 }
 
@@ -133,10 +133,10 @@
   width: 88px;
   height: 88px;
   place-items: center;
-  border: 2px solid rgba(255, 255, 255, 0.72);
+  border: 2px solid var(--new-workout-overlay-icon-border);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
-  color: rgba(255, 255, 255, 0.96);
+  background: var(--new-workout-overlay-icon-bg);
+  color: var(--new-workout-overlay-icon-color);
   backdrop-filter: blur(2px);
 }
 
