@@ -1,5 +1,5 @@
 .settings-content {
-  padding: 14px 11px calc(var(--bottom-nav-total-height) + 16px);
+  padding: 14px 11px calc(var(--safe-area-bottom) + 16px);
 }
 
 .settings-section {

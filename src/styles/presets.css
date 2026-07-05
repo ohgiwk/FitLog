@@ -3,7 +3,6 @@
 }
 
 .training-menu-wrap {
-  min-height: calc(100dvh - 73px);
   background: var(--surface);
   padding-bottom: calc(var(--safe-area-bottom) + 24px);
 }

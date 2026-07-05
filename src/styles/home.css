@@ -204,7 +204,7 @@
 
 .screen.active.workout-start-ready {
   display: flex;
-  min-height: calc(100dvh - var(--bottom-nav-total-height));
+  min-height: 0;
   flex-direction: column;
 }
 

@@ -534,7 +534,7 @@
   position: fixed;
   top: 0;
   right: max(0px, (100vw - 480px) / 2);
-  bottom: var(--bottom-nav-total-height);
+  bottom: 0;
   left: max(0px, (100vw - 480px) / 2);
   z-index: 18;
   pointer-events: none;

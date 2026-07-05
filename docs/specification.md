@@ -450,6 +450,8 @@ Firebase環境変数が設定されている場合だけ、クラウドバック
 ### 6.1 アプリ外枠とナビゲーション（`App.tsx`）
 
 - `<main class="app">` 内に現在の画面を 1 つだけ描画。
+- `html` / `body` / `#root` / `.app` は `100dvh` を基準にする。`.app` と各画面は縦 flex とし、ヘッダ外の本文領域だけをスクロールさせる。
+- iOS アプリでは Capacitor Keyboard の `resize` を `none` にし、キーボード表示時に WebView / body 側をリサイズしない。
 - 画面切り替え時は `transitionDirection` に応じてプッシュ風アニメーションを付ける。進む遷移では遷移先画面が上に被さり、戻る遷移では上に被さっていた遷移元画面が右へ抜けて下の戻り先画面を見せる。端末の `prefers-reduced-motion` が有効な場合はアニメーションしない。
 - ボトムナビは設けず、ホームを画面遷移の起点にする。
 - トースト領域は `role="status"` `aria-live="polite"`。削除後の Undo など、任意の操作ボタンを表示できる。

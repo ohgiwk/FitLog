@@ -55,9 +55,7 @@
   --intensity-very-hard: #f08c00;
   --intensity-limit: #e03131;
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-  --bottom-nav-height: 0px;
-  --bottom-nav-total-height: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
-  --bottom-floating-offset: calc(var(--bottom-nav-total-height) + 16px);
+  --bottom-floating-offset: calc(var(--safe-area-bottom) + 16px);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
@@ -70,24 +68,31 @@
 }
 
 html {
-  height: 100%;
-  height: -webkit-fill-available;
+  width: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
   background: var(--bg);
+  color-scheme: dark;
 }
 
 #root {
-  height: 100%;
+  width: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
 }
 
 body {
   /**
    * 文書全体のスクロール（オーバースクロールのバウンス）を止める。
-   * body 自体はスクロールさせず、内側の `.app` をスクロール領域にすることで、
-   * 限界以上にスクロールしても sticky なヘッダが一切追従しないようにする
+   * body 自体はスクロールさせず、各画面の本文領域だけをスクロールさせる。
    */
-  height: 100%;
+  width: 100%;
+  height: 100dvh;
   min-height: 100dvh;
-  min-height: -webkit-fill-available;
+  margin: 0;
   overflow: hidden;
   overscroll-behavior: none;
   background: var(--bg);
@@ -121,21 +126,19 @@ input {
 
 .app {
   /**
-   * 実際のスクロールはこのコンテナが担当する。
-   * overscroll-behavior でバウンスとスクロール連鎖を抑え、
-   * 内側に置いた sticky ヘッダがスクロールに追従しないようにする
+   * アプリ外枠は 100dvh の flex コンテナにし、
+   * 各画面の本文領域だけをスクロールさせる。
    */
+  display: flex;
+  flex-direction: column;
   width: min(100%, 480px);
   height: 100dvh;
   min-height: 100dvh;
   margin: 0 auto;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
   overscroll-behavior: none;
   scrollbar-width: none;
   background: var(--bg);
-  padding-bottom: var(--bottom-nav-total-height);
 }
 
 .app::-webkit-scrollbar {
@@ -143,8 +146,11 @@ input {
 }
 
 .screen-transition-stage {
+  flex: 1 1 auto;
   position: relative;
-  min-height: calc(100dvh - var(--bottom-nav-total-height));
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .screen-transition-stage.covering {
@@ -152,7 +158,8 @@ input {
 }
 
 .screen-layer {
-  min-height: calc(100dvh - var(--bottom-nav-total-height));
+  height: 100%;
+  min-height: 0;
   background: var(--bg);
 }
 
@@ -183,11 +190,14 @@ input {
 
 .screen {
   display: none;
-  min-height: calc(100dvh - var(--bottom-nav-total-height));
+  height: 100%;
+  min-height: 0;
 }
 
 .screen.active {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 @keyframes screen-cover-forward {
@@ -218,7 +228,27 @@ input {
 }
 
 .content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding: 12px 11px 18px;
+}
+
+.screen.active > .analysis-content,
+.screen.active > .exercise-history-wrap,
+.screen.active > .goal-history-content,
+.screen.active > .preset-wrap,
+.screen.active > .settings-content,
+.screen.active > .training-menu-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .detail-screen .content {
