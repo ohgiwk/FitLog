@@ -20,7 +20,7 @@
   min-height: 44px;
   padding: 0 8px;
   border-right: 1px solid var(--border-strong);
-  color: var(--text-on-primary);
+  color: var(--ink);
   font-size: 16px;
   font-weight: 400;
   white-space: nowrap;
@@ -29,6 +29,7 @@
 }
 
 .part-tab.active {
+  color: var(--text-on-primary);
   font-weight: 800;
 }
 

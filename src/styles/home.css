@@ -750,8 +750,8 @@
 }
 
 .home-calendar-grid .day-btn.selected {
-  background: var(--ink);
-  color: var(--bg);
+  background: var(--calendar-selected-bg);
+  color: var(--calendar-selected-text);
 }
 
 .home-calendar-grid .day-btn.today {
@@ -761,7 +761,7 @@
 }
 
 .home-calendar-grid .day-btn.today.selected {
-  background: var(--ink);
+  background: var(--calendar-selected-bg);
   color: var(--red);
 }
 

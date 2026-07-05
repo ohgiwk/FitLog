@@ -14,6 +14,7 @@ import {
   PresetSchedule,
   SetIntensity,
   State,
+  ThemeMode,
   TrainingPlanMode,
   WeightUnit,
   WorkoutSet,
@@ -71,6 +72,7 @@ export function createDefaultState(): State {
     trainingPlans: [],
     parts: buildPartsFromNames(starterExercises.map((exercise) => exercise.part)),
     weightUnit: 'kg',
+    themeMode: 'dark',
     catalogVersion: starterCatalogVersion,
   };
 }
@@ -118,6 +120,7 @@ export function normalizeState(saved: Partial<State> | null | undefined): State 
       trainingPlans,
     ),
     weightUnit: normalizeWeightUnit(saved.weightUnit),
+    themeMode: normalizeThemeMode(saved.themeMode),
     catalogVersion: starterCatalogVersion,
   };
 }
@@ -128,6 +131,10 @@ export function parseImportedState(json: string): State | null {
 
 function normalizeWeightUnit(value: unknown): WeightUnit {
   return value === 'lbs' ? 'lbs' : 'kg';
+}
+
+function normalizeThemeMode(value: unknown): ThemeMode {
+  return value === 'light' ? 'light' : 'dark';
 }
 
 function normalizeSchemaVersion(value: unknown): number {

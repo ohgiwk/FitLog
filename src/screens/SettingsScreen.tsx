@@ -1,10 +1,14 @@
 import { ChevronLeft, EditIcon, ExportIcon, PartsIcon, PrivacyIcon } from '../icons';
-import { WeightUnit } from '../types';
+import { ThemeMode, WeightUnit } from '../types';
 import { weightUnitLabel } from '../utils';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import { appVersion } from '../version';
 
 const unitOptions: WeightUnit[] = ['kg', 'lbs'];
+const themeOptions: { value: ThemeMode; label: string }[] = [
+  { value: 'dark', label: 'ダーク' },
+  { value: 'light', label: 'ライト' },
+];
 
 /**
  * 設定画面が必要とする state・操作を Context から組み立てる view-model フック
@@ -14,10 +18,12 @@ function useSettingsScreenModel() {
 
   return {
     weightUnit: state.weightUnit,
+    themeMode: state.themeMode,
     onBack: () => actions.setScreen('home'),
     onEditParts: () => actions.setScreen('partEdit'),
     onEditExercises: () => actions.setScreen('exerciseManage'),
     onChangeWeightUnit: actions.setWeightUnit,
+    onChangeThemeMode: actions.setThemeMode,
     onOpenBackup: () => actions.setScreen('backup'),
     onOpenPrivacyPolicy: () => actions.setScreen('privacyPolicy'),
     onOpenTermsOfService: () => actions.setScreen('termsOfService'),
@@ -30,10 +36,12 @@ function useSettingsScreenModel() {
 export function SettingsScreen() {
   const {
     weightUnit,
+    themeMode,
     onBack,
     onEditParts,
     onEditExercises,
     onChangeWeightUnit,
+    onChangeThemeMode,
     onOpenBackup,
     onOpenPrivacyPolicy,
     onOpenTermsOfService,
@@ -56,6 +64,25 @@ export function SettingsScreen() {
           <h2 className="settings-section-title" id="display-settings-title">
             表示設定
           </h2>
+          <div className="settings-row">
+            <div className="settings-label">
+              <span>外観</span>
+              <strong>{themeMode === 'dark' ? 'ダークモード' : 'ライトモード'}</strong>
+            </div>
+            <div className="unit-switch theme-switch" role="group" aria-label="外観モード">
+              {themeOptions.map((theme) => (
+                <button
+                  className={`unit-switch-button ${themeMode === theme.value ? 'active' : ''}`}
+                  key={theme.value}
+                  type="button"
+                  aria-pressed={themeMode === theme.value}
+                  onClick={() => onChangeThemeMode(theme.value)}
+                >
+                  {theme.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="settings-row">
             <div className="settings-label">
               <span>単位</span>

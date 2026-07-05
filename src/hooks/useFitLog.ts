@@ -7,7 +7,7 @@ import { useNavigation } from './useNavigation';
 import { usePartActions } from './usePartActions';
 import { usePresetActions } from './usePresetActions';
 import { useWorkoutActions } from './useWorkoutActions';
-import { Preset, Screen, WeightUnit } from '../types';
+import { Preset, Screen, ThemeMode, WeightUnit } from '../types';
 import { uid } from '../utils';
 
 /**
@@ -69,6 +69,10 @@ export function useFitLog() {
 
   function setWeightUnit(weightUnit: WeightUnit) {
     core.saveState((current) => ({ ...current, weightUnit }));
+  }
+
+  function setThemeMode(themeMode: ThemeMode) {
+    core.saveState((current) => ({ ...current, themeMode }));
   }
 
   function openExerciseEditor(
@@ -259,6 +263,7 @@ export function useFitLog() {
       setScreen: nav.showScreen,
       setEditMode: ui.setEditMode,
       setWeightUnit,
+      setThemeMode,
       startPreset: presets.startPreset,
       addPart: part.addPart,
       deletePart: part.deletePart,

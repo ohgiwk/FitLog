@@ -331,6 +331,19 @@ describe('normalizeState', () => {
     expect(result?.weightUnit).toBe('lbs');
   });
 
+  it('外観設定が無い保存データはダークモードとして読み込む', () => {
+    const result = normalizeState(makeValidSaved() as unknown as Partial<State>);
+    expect(result?.themeMode).toBe('dark');
+  });
+
+  it('外観設定が light なら保持する', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      themeMode: 'light',
+    } as unknown as Partial<State>);
+    expect(result?.themeMode).toBe('light');
+  });
+
   it('プリセットのスケジュールを正規化して保持する', () => {
     const result = normalizeState({
       ...makeValidSaved(),

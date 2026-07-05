@@ -103,6 +103,10 @@ function AppShell() {
     appRef.current?.scrollTo({ top: 0 });
   }, [screen]);
 
+  useLayoutEffect(() => {
+    document.documentElement.dataset.theme = state.themeMode;
+  }, [state.themeMode]);
+
   useEffect(() => {
     if (!transitionFrom) return undefined;
     const timeoutId = window.setTimeout(actions.clearScreenTransition, 320);

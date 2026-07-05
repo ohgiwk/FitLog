@@ -32,6 +32,8 @@ export type GripStyleType = (typeof gripStyleTypes)[number];
 
 export type WeightUnit = 'kg' | 'lbs';
 
+export type ThemeMode = 'dark' | 'light';
+
 /**
  * 種目の器具カテゴリ。種目リスト内をさらに分類して表示・設定するために使う
  */
@@ -135,6 +137,7 @@ export type State = {
   trainingPlans: TrainingPlan[];
   parts: PartSetting[];
   weightUnit: WeightUnit;
+  themeMode: ThemeMode;
   catalogVersion: number;
 };
 

@@ -368,6 +368,7 @@ type PartSetting = {
 - `goalAchievements`: 空配列。
 - `workoutStartTimes` / `workoutEndTimes`: 空オブジェクト。
 - `weightUnit`: `'kg'`。
+- `themeMode`: `'dark'`。
 - `schemaVersion`: 現在の保存データバージョン。
 - `catalogVersion`: `starterCatalogVersion`（現在 `6`）。
 
@@ -391,6 +392,7 @@ type PartSetting = {
   - `TrainingPlan`: `part` 必須。`mode` は `'interval'` 以外を `'weekly'`。`weekdays` は 0〜6 の整数のみ・重複排除・ソート。`intervalDays` は正の整数（既定 1）。
   - `parts`（`normalizePartSettings`）: 保存済み設定（`name` + `color`、空名・重複・「レスト」は除外、色が無ければ既定色）を順序を保って取り込み、その後、種目・記録・実施日・計画に現れる未登録の部位を末尾へ追加してパレット色を割り当てる。旧データに `parts` が無くても、ここで既存部位から自動生成される。
   - `weightUnit`: `'lbs'` のみ lbs として採用し、それ以外・未設定は `'kg'` に丸める。
+  - `themeMode`: `'light'` のみライトモードとして採用し、それ以外・未設定は `'dark'` に丸める。
 - **初期状態の `parts`**: スターター種目の部位（胸 / 背中 / 脚 / 肩 / 腕 / 腹筋）をその順序で生成し、パレット色を循環で割り当てる。
 - `schemaVersion`: 正の整数のみ採用し、未設定・不正値は現在の保存データバージョンへ補完する。
 
@@ -618,6 +620,7 @@ Firebase環境変数が設定されている場合だけ、クラウドバック
 
 - ホーム画面のドロワメニューから遷移する。トップバーの戻るでホームへ戻る。
 - 表示設定、マスタ管理、データ管理、アプリ情報の各パネルを表示する。
+- **外観**: ダーク / ライトの切り替えスイッチを表示する。切り替えた外観は `state.themeMode` に保存され、アプリ全体の配色に反映される。
 - **単位**: kg / Lbs の切り替えスイッチを表示する。
   - 切り替えた単位は `state.weightUnit` に保存され、重量入力欄、ホームのセット行、種目別履歴の重量・RM・負荷量表示に反映される。
   - 既存記録の保存値は kg のまま維持し、lbs 表示時のみ換算する。
