@@ -217,7 +217,6 @@ function AppShell() {
     if (targetScreen === 'home') {
       return (
         <HomeScreen
-          overlayState={homeOverlayState}
           onOverlayStateChange={setHomeOverlayState}
         />
       );

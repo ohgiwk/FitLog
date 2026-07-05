@@ -105,6 +105,11 @@ export function useHomeCalendar(selectedDate: string, onSelectDate: (date: strin
     setMode((current) => (current === 'week' ? 'month' : 'week'));
   }
 
+  function closeMonth() {
+    resetDrag();
+    setMode('week');
+  }
+
   function jumpToToday() {
     const date = localDate(new Date());
     onSelectDate(date);
@@ -202,6 +207,7 @@ export function useHomeCalendar(selectedDate: string, onSelectDate: (date: strin
     animating,
     selectDate,
     toggleMode,
+    closeMonth,
     jumpToToday,
     startSwipe,
     startHandleSwipe,

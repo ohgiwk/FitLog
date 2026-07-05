@@ -161,114 +161,129 @@ export function HomeCalendar({
       </aside>
     </div>
   ) : null;
+  const backdropLayer =
+    backdropState !== 'closed' ? (
+      <button
+        className={`home-calendar-backdrop ${backdropState}`}
+        type="button"
+        aria-label="カレンダーを閉じる"
+        onClick={calendar.closeMonth}
+      />
+    ) : null;
 
   return (
-    <header
-      className={`home-calendar-shell ${calendar.mode} ${backdropVisible ? 'backdrop-visible' : ''}`}
-    >
-      <div className="home-calendar-head">
-        <button
-          className="home-menu-btn"
-          type="button"
-          aria-label="メニューを開く"
-          aria-expanded={drawerVisible}
-          onClick={openDrawer}
-        >
-          <MenuIcon />
-        </button>
-        <button className="home-calendar-title" type="button" onClick={calendar.toggleMode}>
-          <span>{calendar.monthLabel}</span>
-        </button>
-        <button
-          className="home-today-btn"
-          type="button"
-          onClick={calendar.jumpToToday}
-          aria-label="今日の日付へ移動"
-        >
-          今日
-        </button>
-      </div>
-      {drawerLayer && typeof document !== 'undefined' && createPortal(drawerLayer, document.body)}
-      <div className="home-calendar-body">
-        <div className="home-calendar-reserved" aria-hidden="true">
-          <div className="home-calendar-grid">
-            {weekdayLabels.map((day) => (
-              <div className="weekday" key={day}>
-                {day}
-              </div>
-            ))}
-            {weekdayLabels.map((day) => (
-              <div className="day-cell" key={day} />
-            ))}
-          </div>
-          <span className="calendar-drag-handle" />
-        </div>
-        <div className="home-calendar-panel">
-          <div
-            className="home-calendar-viewport"
-            onPointerDown={calendar.startSwipe}
-            onPointerMove={calendar.moveSwipe}
-            onPointerUp={calendar.finishSwipe}
-            onPointerCancel={calendar.cancelSwipe}
+    <>
+      {backdropLayer}
+      <header
+        className={`home-calendar-shell ${calendar.mode} ${backdropVisible ? 'backdrop-visible' : ''}`}
+      >
+        <div className="home-calendar-head">
+          <button
+            className="home-menu-btn"
+            type="button"
+            aria-label="メニューを開く"
+            aria-expanded={drawerVisible}
+            onClick={openDrawer}
           >
-            <div
-              className={`home-calendar-track ${calendar.animating ? 'animating' : ''}`}
-              style={{ transform: `translateX(${calendar.dragOffset}px)` }}
-              onTransitionEnd={calendar.finishTransition}
-            >
-              {calendar.pages.map((page) => (
-                <div className="home-calendar-page" key={page.key}>
-                  <div className="home-calendar-grid">
-                    {weekdayLabels.map((day) => (
-                      <div className="weekday" key={day}>
-                        {day}
-                      </div>
-                    ))}
-                    {page.days.map((cell) => {
-                      const trained = trainedDates.has(cell.date);
-                      const selected = cell.date === selectedDate;
-                      const isToday = cell.date === today;
-                      return (
-                        <div className={`day-cell ${cell.inMonth ? '' : 'other'}`} key={cell.date}>
-                          {cell.inMonth ? (
-                            <button
-                              className={`day-btn ${trained ? 'trained' : ''} ${
-                                isToday ? 'today' : ''
-                              } ${selected ? 'selected' : ''}`}
-                              type="button"
-                              onPointerDown={(event) => event.stopPropagation()}
-                              onPointerUp={(event) => event.stopPropagation()}
-                              onTouchEnd={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                calendar.selectDate(cell.date);
-                              }}
-                              onClick={() => calendar.selectDate(cell.date)}
-                            >
-                              {cell.day}
-                            </button>
-                          ) : (
-                            <span aria-hidden="true" />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+            <MenuIcon />
+          </button>
+          <button className="home-calendar-title" type="button" onClick={calendar.toggleMode}>
+            <span>{calendar.monthLabel}</span>
+          </button>
+          <button
+            className="home-today-btn"
+            type="button"
+            onClick={calendar.jumpToToday}
+            aria-label="今日の日付へ移動"
+          >
+            今日
+          </button>
+        </div>
+        {drawerLayer && typeof document !== 'undefined' && createPortal(drawerLayer, document.body)}
+        <div className="home-calendar-body">
+          <div className="home-calendar-reserved" aria-hidden="true">
+            <div className="home-calendar-grid">
+              {weekdayLabels.map((day) => (
+                <div className="weekday" key={day}>
+                  {day}
                 </div>
               ))}
+              {weekdayLabels.map((day) => (
+                <div className="day-cell" key={day} />
+              ))}
             </div>
+            <span className="calendar-drag-handle" />
           </div>
-          <button
-            className="calendar-drag-handle"
-            type="button"
-            aria-label="カレンダーの週表示と月表示を切り替え"
-            onClick={calendar.toggleMode}
-            onPointerDown={calendar.startHandleSwipe}
-            onPointerUp={calendar.finishHandleSwipe}
-            onPointerCancel={calendar.cancelHandleSwipe}
-          />
+          <div className="home-calendar-panel">
+            <div
+              className="home-calendar-viewport"
+              onPointerDown={calendar.startSwipe}
+              onPointerMove={calendar.moveSwipe}
+              onPointerUp={calendar.finishSwipe}
+              onPointerCancel={calendar.cancelSwipe}
+            >
+              <div
+                className={`home-calendar-track ${calendar.animating ? 'animating' : ''}`}
+                style={{ transform: `translateX(${calendar.dragOffset}px)` }}
+                onTransitionEnd={calendar.finishTransition}
+              >
+                {calendar.pages.map((page) => (
+                  <div className="home-calendar-page" key={page.key}>
+                    <div className="home-calendar-grid">
+                      {weekdayLabels.map((day) => (
+                        <div className="weekday" key={day}>
+                          {day}
+                        </div>
+                      ))}
+                      {page.days.map((cell) => {
+                        const trained = trainedDates.has(cell.date);
+                        const selected = cell.date === selectedDate;
+                        const isToday = cell.date === today;
+                        return (
+                          <div
+                            className={`day-cell ${cell.inMonth ? '' : 'other'}`}
+                            key={cell.date}
+                          >
+                            {cell.inMonth ? (
+                              <button
+                                className={`day-btn ${trained ? 'trained' : ''} ${
+                                  isToday ? 'today' : ''
+                                } ${selected ? 'selected' : ''}`}
+                                type="button"
+                                onPointerDown={(event) => event.stopPropagation()}
+                                onPointerUp={(event) => event.stopPropagation()}
+                                onTouchEnd={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  calendar.selectDate(cell.date);
+                                }}
+                                onClick={() => calendar.selectDate(cell.date)}
+                              >
+                                {cell.day}
+                              </button>
+                            ) : (
+                              <span aria-hidden="true" />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button
+              className="calendar-drag-handle"
+              type="button"
+              aria-label="カレンダーの週表示と月表示を切り替え"
+              onClick={calendar.toggleMode}
+              onPointerDown={calendar.startHandleSwipe}
+              onPointerUp={calendar.finishHandleSwipe}
+              onPointerCancel={calendar.cancelHandleSwipe}
+            />
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   );
 }

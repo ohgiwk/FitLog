@@ -77,11 +77,10 @@ function useHomeScreenModel() {
  * ホーム画面。選択日のトレーニング一覧・集計・プリセット開始・カレンダーを表示する
  */
 type HomeScreenProps = {
-  overlayState: HomeCalendarOverlayState;
   onOverlayStateChange: (state: HomeCalendarOverlayState) => void;
 };
 
-export function HomeScreen({ overlayState, onOverlayStateChange }: HomeScreenProps) {
+export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
   const {
     selectedDate,
     workouts,
@@ -244,12 +243,6 @@ export function HomeScreen({ overlayState, onOverlayStateChange }: HomeScreenPro
         onOverlayStateChange={onOverlayStateChange}
         cloud={cloud}
       />
-      {overlayState.calendarBackdropState !== 'closed' && (
-        <div
-          className={`home-calendar-backdrop ${overlayState.calendarBackdropState}`}
-          aria-hidden="true"
-        />
-      )}
       {!selectedWorkouts.length && !workoutEndTime && (
         <div className="workout-start-area home-day-fade" key={`start-${selectedDate}`}>
           <section className="workout-start-panel" aria-labelledby="workout-menu-start-title">
