@@ -522,11 +522,13 @@
   .exercise-card.removing,
   .home-calendar-backdrop,
   .home-app-backdrop,
+  .home-calendar-panel,
   .drawer-layer.open,
   .drawer-layer.closing,
   .home-drawer.open,
   .home-drawer.closing {
     animation: none;
+    transition: none;
   }
 }
 
@@ -653,9 +655,19 @@
   position: absolute;
   top: 0;
   width: 100%;
+  max-height: 112px;
+  overflow: hidden;
   border-bottom: 1px solid var(--border-medium);
   background: var(--panel);
   box-shadow: 0 4px 16px var(--shadow-soft);
+  transition:
+    max-height 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.24s ease;
+  will-change: max-height;
+}
+
+.home-calendar-shell.month .home-calendar-panel {
+  max-height: 390px;
 }
 
 .home-calendar-viewport {
