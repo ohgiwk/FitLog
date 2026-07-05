@@ -15,6 +15,9 @@
   --surface-float: rgba(27, 31, 39, 0.96);
   --calendar-selected-bg: var(--ink);
   --calendar-selected-text: var(--bg);
+  --workout-start-panel-bg: var(--surface-subtle);
+  --workout-start-panel-border: transparent;
+  --workout-start-panel-shadow: none;
   --text-on-primary: #fff;
   --text-secondary: #b7bdc8;
   --text-secondary-strong: #d6dae2;
@@ -76,6 +79,9 @@
   --surface-float: rgba(255, 255, 255, 0.96);
   --calendar-selected-bg: #dfe4ec;
   --calendar-selected-text: #343b47;
+  --workout-start-panel-bg: #fff;
+  --workout-start-panel-border: #cfd7e5;
+  --workout-start-panel-shadow: 0 0px 16px rgba(25, 33, 45, 0.16);
   --text-secondary: #4f5b6d;
   --text-secondary-strong: #252b36;
   --text-tertiary: #6b7482;

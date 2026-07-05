@@ -228,9 +228,11 @@
   gap: 18px;
   width: calc(100% - 32px);
   transform: translateY(-60px);
+  border: 1px solid var(--workout-start-panel-border);
   border-radius: 12px;
   padding: 22px 18px;
-  background: var(--surface-subtle);
+  background: var(--workout-start-panel-bg);
+  box-shadow: var(--workout-start-panel-shadow);
   text-align: center;
 }
 
@@ -659,7 +661,7 @@
   overflow: hidden;
   border-bottom: 1px solid var(--border-medium);
   background: var(--panel);
-  box-shadow: 0 4px 16px var(--shadow-soft);
+  box-shadow: 0 14px 20px -18px var(--shadow-soft);
   transition:
     max-height 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 0.24s ease;
