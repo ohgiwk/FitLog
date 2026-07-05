@@ -13,6 +13,11 @@ import {
 import { formatWeight, weightUnitLabel } from '../utils';
 
 type AnalysisPage = 'menu' | 'growth' | 'volume' | 'bests' | 'counts';
+type AnalysisPageTransition = {
+  direction: 'forward' | 'back';
+  from: AnalysisPage;
+  to: AnalysisPage;
+};
 
 /**
  * 保存済みの記録を成長グラフと実施回数で表示する分析画面
@@ -20,6 +25,7 @@ type AnalysisPage = 'menu' | 'growth' | 'volume' | 'bests' | 'counts';
 export function AnalysisScreen() {
   const { state, partColors, analysisTargetExerciseId, actions } = useFitLogContext();
   const [activePage, setActivePage] = useState<AnalysisPage>('menu');
+  const [pageTransition, setPageTransition] = useState<AnalysisPageTransition | null>(null);
   const [activeView, setActiveView] = useState<'exercise' | 'part'>('exercise');
   const [selectedPart, setSelectedPart] = useState('');
   const [selectedExerciseId, setSelectedExerciseId] = useState('');
@@ -85,96 +91,155 @@ export function AnalysisScreen() {
     if (!analysisTargetExerciseId) return;
     const target = growthSeries.find((series) => series.exerciseId === analysisTargetExerciseId);
     if (!target) return;
+    setPageTransition(null);
     setActivePage('growth');
     setSelectedPart(target.part);
     setSelectedExerciseId(target.exerciseId);
   }, [analysisTargetExerciseId, growthSeries]);
 
+  function showAnalysisPage(nextPage: AnalysisPage) {
+    if (nextPage === activePage) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setPageTransition(null);
+      setActivePage(nextPage);
+      return;
+    }
+    setPageTransition({
+      direction: nextPage === 'menu' ? 'back' : 'forward',
+      from: activePage,
+      to: nextPage,
+    });
+    setActivePage(nextPage);
+  }
+
+  function handlePageBack(page: AnalysisPage) {
+    if (page === 'menu') {
+      actions.setScreen('home');
+      return;
+    }
+    showAnalysisPage('menu');
+  }
+
+  function renderPage(page: AnalysisPage) {
+    if (page === 'menu') {
+      return (
+        <div className="analysis-page-list" aria-label="分析メニュー">
+          <button type="button" onClick={() => showAnalysisPage('growth')}>
+            <span>
+              <strong>成長グラフ</strong>
+              <small>種目ごとの重量・回数の伸びを確認</small>
+            </span>
+          </button>
+          <button type="button" onClick={() => showAnalysisPage('volume')}>
+            <span>
+              <strong>総ボリューム</strong>
+              <small>週ごとの合計負荷量を比較</small>
+            </span>
+          </button>
+          <button type="button" onClick={() => showAnalysisPage('bests')}>
+            <span>
+              <strong>自己ベスト</strong>
+              <small>最大重量・1RMなどの記録を一覧</small>
+            </span>
+          </button>
+          <button type="button" onClick={() => showAnalysisPage('counts')}>
+            <span>
+              <strong>実施回数</strong>
+              <small>種目別・部位別の頻度を確認</small>
+            </span>
+          </button>
+        </div>
+      );
+    }
+
+    if (page === 'growth') {
+      return (
+        <GrowthGraphView
+          partColors={partColors}
+          parts={growthParts}
+          selectedExerciseId={selectedExerciseId}
+          selectedPart={selectedPart}
+          selectedSeries={selectedSeries}
+          seriesList={selectedPartSeries}
+          weightUnit={state.weightUnit}
+          onSelectExercise={setSelectedExerciseId}
+          onSelectPart={setSelectedPart}
+        />
+      );
+    }
+
+    if (page === 'volume') {
+      return <VolumeView series={weeklyVolumeSeries} weightUnit={state.weightUnit} />;
+    }
+
+    if (page === 'bests') {
+      return <BestRecordsView records={bestRecords} weightUnit={state.weightUnit} />;
+    }
+
+    return (
+      <CountView
+        activeView={activeView}
+        exerciseCounts={exerciseCounts}
+        hasData={hasData}
+        maxCount={maxCount}
+        partColors={partColors}
+        partCounts={partCounts}
+        pieGradient={pieGradient}
+        totalCount={totalCount}
+        onChangeView={setActiveView}
+      />
+    );
+  }
+
+  function renderAnalysisFrame(page: AnalysisPage) {
+    const isMenuFrame = page === 'menu';
+    return (
+      <>
+        <header className="topbar">
+          <div className="bar-row">
+            <button
+              className="bar-btn"
+              type="button"
+              aria-label={isMenuFrame ? '戻る' : '分析メニューへ戻る'}
+              onClick={() => handlePageBack(page)}
+            >
+              <ChevronLeft />
+            </button>
+            <div className="bar-title">分析</div>
+            <span />
+          </div>
+        </header>
+        <div className="analysis-content">{renderPage(page)}</div>
+      </>
+    );
+  }
+
   return (
     <section className="screen active analysis-screen">
-      <header className="topbar">
-        <div className="bar-row">
-          <button
-            className="bar-btn"
-            type="button"
-            aria-label="戻る"
-            onClick={() => actions.setScreen('home')}
+      <div className={`analysis-page-stage ${pageTransition ? 'transitioning' : ''}`}>
+        {pageTransition ? (
+          <div
+            className={`analysis-page-panel previous ${pageTransition.direction}`}
+            aria-hidden="true"
+            onAnimationEnd={(event) => {
+              if (event.currentTarget !== event.target) return;
+              setPageTransition(null);
+            }}
           >
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">分析</div>
-          <span />
-        </div>
-      </header>
-      <div className="analysis-content">
-        {activePage === 'menu' ? (
-          <div className="analysis-page-list" aria-label="分析メニュー">
-            <button type="button" onClick={() => setActivePage('growth')}>
-              <span>
-                <strong>成長グラフ</strong>
-                <small>種目ごとの重量・回数の伸びを確認</small>
-              </span>
-            </button>
-            <button type="button" onClick={() => setActivePage('volume')}>
-              <span>
-                <strong>総ボリューム</strong>
-                <small>週ごとの合計負荷量を比較</small>
-              </span>
-            </button>
-            <button type="button" onClick={() => setActivePage('bests')}>
-              <span>
-                <strong>自己ベスト</strong>
-                <small>最大重量・1RMなどの記録を一覧</small>
-              </span>
-            </button>
-            <button type="button" onClick={() => setActivePage('counts')}>
-              <span>
-                <strong>実施回数</strong>
-                <small>種目別・部位別の頻度を確認</small>
-              </span>
-            </button>
+            {renderAnalysisFrame(pageTransition.from)}
           </div>
-        ) : (
-          <>
-            <button
-              className="analysis-back-link"
-              type="button"
-              onClick={() => setActivePage('menu')}
-            >
-              分析メニューへ
-            </button>
-
-            {activePage === 'growth' ? (
-              <GrowthGraphView
-                partColors={partColors}
-                parts={growthParts}
-                selectedExerciseId={selectedExerciseId}
-                selectedPart={selectedPart}
-                selectedSeries={selectedSeries}
-                seriesList={selectedPartSeries}
-                weightUnit={state.weightUnit}
-                onSelectExercise={setSelectedExerciseId}
-                onSelectPart={setSelectedPart}
-              />
-            ) : activePage === 'volume' ? (
-              <VolumeView series={weeklyVolumeSeries} weightUnit={state.weightUnit} />
-            ) : activePage === 'bests' ? (
-              <BestRecordsView records={bestRecords} weightUnit={state.weightUnit} />
-            ) : (
-              <CountView
-                activeView={activeView}
-                exerciseCounts={exerciseCounts}
-                hasData={hasData}
-                maxCount={maxCount}
-                partColors={partColors}
-                partCounts={partCounts}
-                pieGradient={pieGradient}
-                totalCount={totalCount}
-                onChangeView={setActiveView}
-              />
-            )}
-          </>
-        )}
+        ) : null}
+        <div
+          className={`analysis-page-panel current ${
+            pageTransition ? pageTransition.direction : ''
+          }`}
+          onAnimationEnd={(event) => {
+            if (event.currentTarget !== event.target) return;
+            setPageTransition(null);
+          }}
+        >
+          {renderAnalysisFrame(activePage)}
+        </div>
       </div>
     </section>
   );

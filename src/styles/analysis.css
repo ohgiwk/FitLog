@@ -1,8 +1,59 @@
 .analysis-content {
   display: grid;
   align-content: start;
+  flex: 1 1 auto;
   gap: 18px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 18px 14px 28px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.analysis-page-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.analysis-page-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  background: var(--bg);
+}
+
+.analysis-page-panel.previous {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.analysis-page-panel.current {
+  position: relative;
+  z-index: 2;
+}
+
+.analysis-page-panel.current.forward {
+  animation: analysis-page-cover-forward 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  box-shadow: -10px 0 24px var(--shadow-soft);
+  will-change: transform;
+}
+
+.analysis-page-panel.current.back {
+  z-index: 1;
+}
+
+.analysis-page-panel.previous.back {
+  z-index: 3;
+  animation: analysis-page-uncover-back 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  box-shadow: -10px 0 24px var(--shadow-soft);
+  will-change: transform;
 }
 
 .analysis-page-list {
@@ -59,18 +110,6 @@
   white-space: nowrap;
 }
 
-.analysis-back-link {
-  justify-self: start;
-  min-height: 34px;
-  border: 1px solid var(--border-medium);
-  border-radius: 999px;
-  padding: 0 13px;
-  background: var(--surface-subtle);
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 900;
-}
-
 .analysis-view-switch {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -115,6 +154,33 @@
   color: var(--red);
   font-size: 22px;
   white-space: nowrap;
+}
+
+@keyframes analysis-page-cover-forward {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes analysis-page-uncover-back {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analysis-page-panel.current.forward,
+  .analysis-page-panel.previous.back {
+    animation: none;
+  }
 }
 
 .exercise-chart {
