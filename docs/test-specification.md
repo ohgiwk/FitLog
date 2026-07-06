@@ -8,8 +8,11 @@
 | --- | --- |
 | `npm test` | Vitest の全テストを 1 回実行する |
 | `npm run test:watch` | Vitest を watch モードで実行する |
+| `npm run test:e2e` | Playwright で主要導線の E2E テストを実行する |
+| `npm run test:e2e:ui` | Playwright の UI モードで E2E テストを実行する |
 
 テスト設定は [`vitest.config.ts`](../vitest.config.ts) にあります。`vite.config.ts` の PWA プラグインを読み込まない独立設定で、`localStorage` を使うテストのために `jsdom` 環境を使います。対象ファイルは `src/**/*.test.ts` と `src/**/*.test.tsx` です。画面操作テストでは React Testing Library と user-event を使います。
+E2E テスト設定は [`playwright.config.ts`](../playwright.config.ts) にあり、Vite の開発サーバーを `http://127.0.0.1:5174/FitLog/` で起動して、狭いスマホ幅の Chromium で確認します。対象ファイルは `e2e/**/*.spec.ts` です。
 
 ## テスト範囲の全体像
 
@@ -22,6 +25,7 @@
 | [`src/components/ConfirmDialog.test.tsx`](../src/components/ConfirmDialog.test.tsx) | `ConfirmDialog` | 背景クリック、Escape、ダイアログ内クリック、ARIA 属性 |
 | [`src/screens/DetailScreen.test.tsx`](../src/screens/DetailScreen.test.tsx) | `DetailScreen` のセット入力 | 入力中文字列の保持、空入力の `null` 保存、lbs 入力の kg 保存 |
 | [`src/hooks/useFitLogCore.test.tsx`](../src/hooks/useFitLogCore.test.tsx) | `useFitLogCore` の toast | 表示中 toast のキューイングと順次表示 |
+| [`e2e/home.spec.ts`](../e2e/home.spec.ts) | ホーム起点の主要導線 | 起動、種目開始、セット入力、リロード後の永続化、狭幅でのカレンダー・ドロワー・FAB、設定のバックアップ導線 |
 
 ## `src/storage.test.ts`
 
@@ -144,11 +148,33 @@
 - Detail 画面の入力欄は、編集中の文字列を一時保持しつつ、保存値は `number | null` に変換する。
 - 表示中の toast を新しい toast で上書きせず、キューに積んで順番に表示する。
 
+## E2E テスト
+
+### 対象
+
+- [`e2e/home.spec.ts`](../e2e/home.spec.ts)
+- [`playwright.config.ts`](../playwright.config.ts)
+
+### テスト観点
+
+| グループ | 代表ケース | 目的 |
+| --- | --- | --- |
+| 起動 | `/FitLog/` を開き、ホームの開始パネル・メニュー・今日ボタンを確認する | アプリが起動直後からホームとして使えることを保証する |
+| 記録開始と永続化 | 種目選択からベンチプレスを開始し、1セット目へ重量・回数を入力してリロードする | 実ブラウザで入力導線と `localStorage` 保存がつながっていることを保証する |
+| 狭幅操作 | 390px 幅でカレンダー月表示、ドロワー、ホーム FAB を操作する | モバイル幅の主要オーバーレイと浮動ボタンがタップできることを保証する |
+| 設定・バックアップ | ドロワーから設定へ進み、データ管理のバックアップ画面を開く | ローカルバックアップとクラウドバックアップ導線が表示できることを保証する |
+
+### 重点的に守っている挙動
+
+- E2E はテストごとに `localStorage` を消し、初期状態から開始する。
+- 入力後は `localStorage` に保存されたことを待ってからリロードし、保存デバウンスによる不安定さを避ける。
+- 実通信を伴う Firebase 操作は行わず、バックアップ画面の導線表示までを確認する。
+
 ## 現時点で自動テストが薄い領域
 
 | 領域 | 状態 |
 | --- | --- |
-| React コンポーネントの DOM 操作 | 共通ダイアログと Detail の主要入力は確認済み。Home の複数ダイアログ、ドロワ、FAB はまだ薄い |
+| React コンポーネントの DOM 操作 | 共通ダイアログと Detail の主要入力は確認済み。Home の基本導線、ドロワ、FAB は E2E で主要操作を確認済み。細かな確認ダイアログはまだ薄い |
 | PWA / Service Worker | `npm run build` で生成までは確認するが、キャッシュ更新挙動は自動テスト対象外 |
 | Firebase クラウドバックアップ | provider や環境変数に依存する実通信は自動テスト対象外 |
 | 通知・音・ブラウザ権限 | ローカル通知、Audio、権限 UI は自動テスト対象外 |

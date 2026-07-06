@@ -85,6 +85,8 @@ npm run cap:open:ios # Xcode で ios プロジェクトを開く
 npm run preview      # ビルド成果物のプレビュー
 npm test             # vitest run
 npm run test:watch   # vitest watch
+npm run test:e2e     # Playwright E2E
+npm run test:e2e:ui  # Playwright UI モード
 ```
 
 ## iOS アプリ化
