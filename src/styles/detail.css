@@ -248,6 +248,102 @@
   cursor: default;
 }
 
+.previous-record-panel {
+  display: grid;
+  gap: 1px;
+}
+
+.history-card.previous-record-card {
+  margin: 0 0 15px;
+  border: 0;
+  border-radius: 0;
+}
+
+.previous-record-card .history-card-head {
+  justify-content: center;
+  min-height: 26px;
+  border-left: 0;
+  padding: 0 2px 6px;
+  background: transparent;
+}
+
+.previous-record-card .history-card-date {
+  color: var(--text-secondary);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.previous-record-card .history-set-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.previous-record-card .history-set-table th {
+  height: 24px;
+  border-top: 1px solid var(--line);
+  padding: 0 3px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.previous-record-card .history-set-table td {
+  height: 34px;
+  padding: 0 3px;
+  font-size: 13px;
+}
+
+.previous-record-card .history-set-table .history-num {
+  width: 36px;
+}
+
+.previous-record-card .history-set-table .history-weight {
+  width: 82px;
+}
+
+.previous-record-card .history-set-table .history-reps {
+  width: 58px;
+}
+
+.previous-record-card .history-set-table .history-rm,
+.previous-record-card .history-set-table .history-assist {
+  font-size: 12px;
+}
+
+.previous-record-card .history-set-table small {
+  font-size: 10px;
+}
+
+.previous-record-card .history-set-table .intensity-face {
+  width: 24px;
+  height: 24px;
+}
+
+.previous-record-copy {
+  justify-self: center;
+  min-height: 34px;
+  border: 1px solid var(--red-border-soft);
+  border-radius: 999px;
+  padding: 0 14px;
+  background: var(--surface-muted);
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.previous-record-copy:active {
+  background: var(--red-soft);
+}
+
+.previous-record-empty {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
 .detail-table {
   overflow: hidden;
   margin: 0 14px 18px;

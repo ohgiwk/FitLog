@@ -24,7 +24,7 @@ import {
 import { IntensityIcon } from '../components/IntensityIcon';
 import { RestTimer, restTimerStartEvent } from '../components/RestTimer';
 import { useFitLogContext } from '../hooks/useFitLogContext';
-import { GripStyleType, GripType, SetIntensity } from '../types';
+import { GripStyleType, GripType, SetIntensity, WeightUnit, Workout } from '../types';
 
 /**
  * 種目詳細画面が必要とする state・操作を Context から組み立てる view-model フック
@@ -34,9 +34,13 @@ function useDetailScreenModel() {
   const exercise = currentWorkout
     ? state.exercises.find((item) => item.id === currentWorkout.exerciseId)
     : undefined;
+  const previousWorkout = currentWorkout
+    ? findPreviousWorkout(state.workouts, currentWorkout)
+    : undefined;
 
   return {
     workout: currentWorkout,
+    previousWorkout,
     exercise,
     weightUnit: state.weightUnit,
     restTimerSettings: state.restTimerSettings,
@@ -52,8 +56,20 @@ function useDetailScreenModel() {
     onUpdateWorkoutGripStyle: actions.updateWorkoutGripStyle,
     onDeleteSet: actions.deleteSet,
     onAddSet: actions.addSet,
+    onCopyWorkoutSetValues: actions.copyWorkoutSetValues,
     onUpdateExerciseGoal: actions.updateExerciseGoal,
   };
+}
+
+function findPreviousWorkout(workouts: Workout[], currentWorkout: Workout) {
+  return workouts
+    .filter(
+      (workout) =>
+        workout.exerciseId === currentWorkout.exerciseId &&
+        workout.id !== currentWorkout.id &&
+        workout.date < currentWorkout.date,
+    )
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
 }
 
 function ExerciseGoalEditor({
@@ -261,6 +277,109 @@ function WorkoutGripEditor({
   );
 }
 
+function PreviousWorkoutRecord({
+  workout,
+  weightUnit,
+  canCopy,
+  onCopy,
+}: {
+  workout?: Workout;
+  weightUnit: WeightUnit;
+  canCopy: boolean;
+  onCopy: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const unit = workout ? measurementUnit(workout.measurementType) : '回';
+  const isReps = workout ? isRepsMeasurement(workout.measurementType) : true;
+
+  return (
+    <section
+      className={`workout-grip-editor previous-record${open ? ' open' : ''}`}
+      aria-label="前回記録"
+    >
+      <button
+        className="workout-grip-toggle"
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>前回記録</span>
+        {open ? <ChevronUp /> : <ChevronDown />}
+      </button>
+      {open && (
+        <div className="previous-record-panel">
+          {workout ? (
+            <>
+              <article className="history-card previous-record-card">
+                <header className="history-card-head">
+                  <div className="history-card-date">{workout.date.replaceAll('-', '/')}</div>
+                </header>
+                <table
+                  className="history-set-table previous-record-table"
+                  aria-label="前回記録のセット一覧"
+                >
+                  <thead>
+                    <tr>
+                      <th>セット</th>
+                      <th>重さ</th>
+                      <th>{unit === '秒' ? '秒数' : '回数'}</th>
+                      <th>RM</th>
+                      <th>強度</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workout.sets.map((set, index) => (
+                      <tr key={set.id}>
+                        <td className="history-num">{index + 1}</td>
+                        <td className="history-weight">
+                          {set.weight === null ? (
+                            '-'
+                          ) : (
+                            <>
+                              {formatWeight(set.weight, weightUnit)}
+                              <small> {weightUnitLabel(weightUnit)}</small>
+                            </>
+                          )}
+                        </td>
+                        <td className="history-reps">
+                          {set.recordValue ?? '-'}
+                          {set.recordValue === null ? '' : <small> {unit}</small>}
+                        </td>
+                        <td className="history-rm">
+                          {isReps && number(set.weight) > 0 && number(set.recordValue) > 0
+                            ? `${formatWeight(
+                                calcRm(number(set.weight), number(set.recordValue)),
+                                weightUnit,
+                              )} ${weightUnitLabel(weightUnit)}`
+                            : '-'}
+                        </td>
+                        <td
+                          className={`history-assist${
+                            set.intensity ? ` intensity-${set.intensity}` : ''
+                          }`}
+                        >
+                          <IntensityIcon intensity={set.intensity} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </article>
+              {canCopy && (
+                <button className="previous-record-copy" type="button" onClick={onCopy}>
+                  前回記録をコピー
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="previous-record-empty">前回記録はありません</p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 const setDeleteActionWidth = 72;
 
 function SwipeableSetRow({
@@ -398,6 +517,7 @@ function SwipeableSetRow({
 export function DetailScreen() {
   const {
     workout,
+    previousWorkout,
     exercise,
     weightUnit,
     restTimerSettings,
@@ -413,12 +533,14 @@ export function DetailScreen() {
     onUpdateWorkoutGripStyle,
     onDeleteSet,
     onAddSet,
+    onCopyWorkoutSetValues,
     onUpdateExerciseGoal,
   } = useDetailScreenModel();
   const [openDeleteSetId, setOpenDeleteSetId] = useState<string | null>(null);
   const [weightInputs, setWeightInputs] = useState<Record<string, string>>({});
   const [recordInputs, setRecordInputs] = useState<Record<string, string>>({});
   if (!workout) return null;
+  const currentWorkout = workout;
   const isReps = isRepsMeasurement(workout.measurementType);
   const unit = measurementUnit(workout.measurementType);
   function weightInputValue(setId: string, value: number | null) {
@@ -462,6 +584,20 @@ export function DetailScreen() {
       return next;
     });
   }
+  function copyPreviousWorkoutSets() {
+    if (!previousWorkout || readOnly) return;
+    const nextWeightInputs: Record<string, string> = {};
+    const nextRecordInputs: Record<string, string> = {};
+    previousWorkout.sets.forEach((previousSet, index) => {
+      const currentSet = currentWorkout.sets[index];
+      if (!currentSet) return;
+      nextWeightInputs[currentSet.id] = formatStoredWeightInput(previousSet.weight, weightUnit);
+      nextRecordInputs[currentSet.id] = previousSet.recordValue === null ? '' : String(previousSet.recordValue);
+    });
+    onCopyWorkoutSetValues(currentWorkout.id, previousWorkout.sets);
+    setWeightInputs((current) => ({ ...current, ...nextWeightInputs }));
+    setRecordInputs((current) => ({ ...current, ...nextRecordInputs }));
+  }
   return (
     <section className="screen active">
       <header className="topbar">
@@ -486,12 +622,11 @@ export function DetailScreen() {
               readOnly={readOnly}
               onSave={onUpdateExerciseGoal}
             />
-            <WorkoutGripEditor
-              workout={workout}
-              exercise={exercise}
-              readOnly={readOnly}
-              onUpdateGrip={onUpdateWorkoutGrip}
-              onUpdateGripStyle={onUpdateWorkoutGripStyle}
+            <PreviousWorkoutRecord
+              workout={previousWorkout}
+              weightUnit={weightUnit}
+              canCopy={!readOnly}
+              onCopy={copyPreviousWorkoutSets}
             />
           </>
         )}
@@ -607,6 +742,15 @@ export function DetailScreen() {
             </button>
           )}
         </div>
+        {exercise && (
+          <WorkoutGripEditor
+            workout={workout}
+            exercise={exercise}
+            readOnly={readOnly}
+            onUpdateGrip={onUpdateWorkoutGrip}
+            onUpdateGripStyle={onUpdateWorkoutGripStyle}
+          />
+        )}
         <label className="workout-note">
           <span>メモ</span>
           <textarea

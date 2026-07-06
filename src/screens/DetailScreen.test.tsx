@@ -50,16 +50,20 @@ function renderDetailScreen({
   updateSet = vi.fn(),
   updateSetAchievement = vi.fn(),
   resetSetAchievement = vi.fn(),
+  copyWorkoutSetValues = vi.fn(),
   weightUnit = 'kg',
   currentWorkout = workout,
+  workouts,
   restTimerAutoStart = true,
   restTimerDefaultSeconds = 60,
 }: {
   updateSet?: ReturnType<typeof vi.fn>;
   updateSetAchievement?: ReturnType<typeof vi.fn>;
   resetSetAchievement?: ReturnType<typeof vi.fn>;
+  copyWorkoutSetValues?: ReturnType<typeof vi.fn>;
   weightUnit?: State['weightUnit'];
   currentWorkout?: Workout;
+  workouts?: Workout[];
   restTimerAutoStart?: boolean;
   restTimerDefaultSeconds?: number;
 }) {
@@ -68,7 +72,7 @@ function renderDetailScreen({
     state: {
       ...state,
       weightUnit,
-      workouts: [currentWorkout],
+      workouts: workouts ?? [currentWorkout],
       restTimerSettings: {
         autoStartOnIntensity: restTimerAutoStart,
         defaultSeconds: restTimerDefaultSeconds,
@@ -85,6 +89,7 @@ function renderDetailScreen({
       updateWorkoutGripStyle: vi.fn(),
       deleteSet: vi.fn(),
       addSet: vi.fn(),
+      copyWorkoutSetValues,
       updateExerciseGoal: vi.fn(),
     },
   } as unknown as FitLogContextValue;
@@ -172,6 +177,70 @@ describe('DetailScreen set inputs', () => {
     fireEvent.click(within(container).getByRole('button', { name: '1セット目の達成判定を戻す' }));
 
     expect(resetSetAchievement).toHaveBeenCalledWith('s1');
+  });
+
+  it('前回記録を開くと最新の前回セットを表で表示する', () => {
+    const previousWorkout: Workout = {
+      ...workout,
+      id: 'w0',
+      date: '2026-07-01',
+      sets: [{ id: 's0', weight: 45, recordValue: 12 }],
+    };
+    const { container } = renderDetailScreen({
+      workouts: [previousWorkout, workout],
+    });
+
+    expect(within(container).queryByRole('table', { name: '前回記録のセット一覧' })).toBeNull();
+    fireEvent.click(within(container).getByRole('button', { name: /前回記録/ }));
+
+    const table = within(container).getByRole('table', { name: '前回記録のセット一覧' });
+    expect(within(container).getByText('2026/07/01')).toBeTruthy();
+    expect(within(table).getByText((_, element) => element?.textContent === '45.0 kg')).toBeTruthy();
+    expect(within(table).getByText((_, element) => element?.textContent === '12 回')).toBeTruthy();
+  });
+
+  it('コピーボタンで前回記録の重量と回数を今回セットに挿入する', () => {
+    const copyWorkoutSetValues = vi.fn();
+    const previousWorkout: Workout = {
+      ...workout,
+      id: 'w0',
+      date: '2026-07-01',
+      sets: [{ id: 's0', weight: 45, recordValue: 12 }],
+    };
+    const { container } = renderDetailScreen({
+      copyWorkoutSetValues,
+      workouts: [previousWorkout, workout],
+    });
+
+    fireEvent.click(within(container).getByRole('button', { name: /前回記録/ }));
+    fireEvent.click(within(container).getByRole('button', { name: '前回記録をコピー' }));
+
+    expect(copyWorkoutSetValues).toHaveBeenCalledWith('w1', previousWorkout.sets);
+    const [weightInput, recordInput] = detailNumberInputs(container);
+    expect(weightInput.value).toBe('45');
+    expect(recordInput.value).toBe('12');
+  });
+
+  it('前回記録のセット数が多い場合もまとめてコピーする', () => {
+    const copyWorkoutSetValues = vi.fn();
+    const previousWorkout: Workout = {
+      ...workout,
+      id: 'w0',
+      date: '2026-07-01',
+      sets: [
+        { id: 'p1', weight: 45, recordValue: 12 },
+        { id: 'p2', weight: 40, recordValue: 10 },
+      ],
+    };
+    const { container } = renderDetailScreen({
+      copyWorkoutSetValues,
+      workouts: [previousWorkout, workout],
+    });
+
+    fireEvent.click(within(container).getByRole('button', { name: /前回記録/ }));
+    fireEvent.click(within(container).getByRole('button', { name: '前回記録をコピー' }));
+
+    expect(copyWorkoutSetValues).toHaveBeenCalledWith('w1', previousWorkout.sets);
   });
 
   it('強度アイコンを押すとレストタイマー開始イベントを送る', () => {

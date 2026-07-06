@@ -294,6 +294,7 @@ export function useFitLog() {
       addExerciseToPart: exercise.addExerciseToPart,
       addExerciseToToday: workout.addExerciseToToday,
       addSet: workout.addSet,
+      copyWorkoutSetValues: workout.copyWorkoutSetValues,
       reorderPartExercises: exercise.reorderPartExercises,
       createPresetDraft,
       createPresetDraftForStart,

@@ -157,6 +157,33 @@ export function useWorkoutActions({
   }
 
   /**
+   * 前回記録の重量・回数を今回の同じセット番号へコピーする
+   */
+  function copyWorkoutSetValues(workoutId: string, sourceSets: Workout['sets']) {
+    const target = state.workouts.find((workout) => workout.id === workoutId);
+    if (!target || isWorkoutDayEnded(target.date)) return;
+    saveState((prev) => {
+      const workoutIndex = prev.workouts.findIndex((workout) => workout.id === workoutId);
+      const workout = prev.workouts[workoutIndex];
+      if (!workout || prev.workoutEndTimes[workout.date]) return prev;
+      const sets = [...workout.sets];
+      sourceSets.forEach((sourceSet, index) => {
+        const targetSet = sets[index] ?? newSet();
+        sets[index] = {
+          ...targetSet,
+          weight: sourceSet.weight,
+          recordValue: sourceSet.recordValue,
+        };
+      });
+      const workouts = [...prev.workouts];
+      workouts[workoutIndex] = { ...workout, sets };
+      return { ...prev, workouts };
+    });
+    setCurrentWorkoutId(workoutId);
+    showScreen('detail');
+  }
+
+  /**
    * セットの重量・回数(秒数)を更新する
    */
   function updateSet(setId: string, field: 'weight' | 'recordValue', value: number | null) {
@@ -414,6 +441,7 @@ export function useWorkoutActions({
     resumeWorkoutDay,
     addExerciseToToday,
     addSet,
+    copyWorkoutSetValues,
     updateSet,
     updateSetAchievement,
     resetSetAchievement,
