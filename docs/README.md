@@ -16,6 +16,7 @@ FitLog の仕様・設計ドキュメントの入口です。
 | ドキュメント | 内容 |
 | --- | --- |
 | [`specification.md`](./specification.md) | 実装に基づく詳細仕様（型・永続化・画面・ロジック・機能） |
+| [`test-specification.md`](./test-specification.md) | 自動テストの対象・観点・未カバー範囲 |
 | [`firebase-backup.md`](./firebase-backup.md) | Firebase クラウドバックアップの構成・運用メモ |
 | [`store-release.md`](./store-release.md) | iOS App Store / Google Play 公開に向けた準備メモ |
 | [`improvements.md`](./improvements.md) | 今後の改善候補（備忘録） |
