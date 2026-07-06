@@ -151,15 +151,6 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
   }
 
   /**
-   * キーボード操作(Enter/Space)で種目の詳細画面を開く
-   */
-  function openDetailFromKey(event: KeyboardEvent<HTMLElement>, workoutId: string) {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    onOpenDetail(workoutId);
-  }
-
-  /**
    * 削除を要求する。未記録の種目は確認なしで削除する
    */
   function requestDelete(event: MouseEvent<HTMLButtonElement>, workout: Workout) {
@@ -224,6 +215,12 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
   function confirmFinishWorkout() {
     setFinishConfirmationOpen(false);
     finishWorkout(true);
+  }
+
+  function closeDialogFromKey(event: KeyboardEvent<HTMLDivElement>, onClose: () => void) {
+    if (event.key !== 'Escape') return;
+    event.stopPropagation();
+    onClose();
   }
 
   return (
@@ -301,15 +298,14 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
           <article
             className={`exercise-card ${removingWorkoutId === workout.id ? 'removing' : ''}`}
             key={workout.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => {
-              if (removingWorkoutId !== workout.id) onOpenDetail(workout.id);
-            }}
-            onKeyDown={(event) => {
-              if (removingWorkoutId !== workout.id) openDetailFromKey(event, workout.id);
-            }}
           >
+            <button
+              className="exercise-card-open"
+              type="button"
+              aria-label={`${workout.name}の詳細を開く`}
+              disabled={removingWorkoutId === workout.id}
+              onClick={() => onOpenDetail(workout.id)}
+            />
             <header
               className="exercise-head"
               style={{ borderLeftColor: partColors.get(workout.part) }}
@@ -317,16 +313,6 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
               <h2>
                 {workout.part} - {workout.name}
               </h2>
-              {!workoutEndTime && (
-                <button
-                  className="delete-workout"
-                  type="button"
-                  aria-label={`${workout.name}を削除`}
-                  onClick={(event) => requestDelete(event, workout)}
-                >
-                  <TrashIcon />
-                </button>
-              )}
             </header>
             <div className="exercise-body">
               <table className="set-table">
@@ -358,6 +344,16 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
                 </div>
               )}
             </div>
+            {!workoutEndTime && (
+              <button
+                className="delete-workout"
+                type="button"
+                aria-label={`${workout.name}を削除`}
+                onClick={(event) => requestDelete(event, workout)}
+              >
+                <TrashIcon />
+              </button>
+            )}
           </article>
         ))}
         {workoutStartTime && !workoutEndTime && !!selectedWorkouts.length && (
@@ -385,12 +381,19 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
         )}
       </div>
       {deleteTarget && (
-        <div className="dialog-backdrop" role="presentation">
+        <div
+          className="dialog-backdrop"
+          role="presentation"
+          onClick={() => setDeleteTarget(null)}
+        >
           <div
             className="confirm-dialog"
             role="dialog"
             aria-modal="true"
             aria-labelledby="workout-delete-title"
+            tabIndex={-1}
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => closeDialogFromKey(event, () => setDeleteTarget(null))}
           >
             <div className="confirm-title" id="workout-delete-title">
               記録を削除しますか？
@@ -410,12 +413,19 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
         </div>
       )}
       {finishConfirmationOpen && (
-        <div className="dialog-backdrop" role="presentation">
+        <div
+          className="dialog-backdrop"
+          role="presentation"
+          onClick={() => setFinishConfirmationOpen(false)}
+        >
           <div
             className="confirm-dialog"
             role="dialog"
             aria-modal="true"
             aria-labelledby="workout-finish-confirm-title"
+            tabIndex={-1}
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => closeDialogFromKey(event, () => setFinishConfirmationOpen(false))}
           >
             <div className="confirm-title" id="workout-finish-confirm-title">
               トレーニングを終了しますか？
@@ -441,12 +451,19 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
         </div>
       )}
       {workoutSummary && (
-        <div className="dialog-backdrop" role="presentation">
+        <div
+          className="dialog-backdrop"
+          role="presentation"
+          onClick={() => setWorkoutSummary(null)}
+        >
           <div
             className="confirm-dialog workout-summary-dialog"
             role="dialog"
             aria-modal="true"
             aria-labelledby="workout-summary-title"
+            tabIndex={-1}
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => closeDialogFromKey(event, () => setWorkoutSummary(null))}
           >
             <div className="confirm-title" id="workout-summary-title">
               お疲れ様でした！

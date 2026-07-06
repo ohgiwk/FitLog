@@ -10,6 +10,7 @@ import {
   formatWeightForStorageInput,
   findExerciseGoalAchievementSet,
   isExerciseGoalAchieved,
+  isMeaningfulSet,
   formatWeight,
   groupExercises,
   intensityOptions,
@@ -197,9 +198,24 @@ describe('isUnstartedWorkout', () => {
     expect(isUnstartedWorkout(makeWorkout(sets))).toBe(false);
   });
 
-  it('セット数が5でなければ未開始ではない', () => {
+  it('セット数が5以外でも記録がなければ未開始とみなす', () => {
     const sets = Array.from({ length: 4 }, () => newSet());
-    expect(isUnstartedWorkout(makeWorkout(sets))).toBe(false);
+    expect(isUnstartedWorkout(makeWorkout(sets))).toBe(true);
+  });
+
+  it('強度・メモ・握りがあれば未開始ではない', () => {
+    expect(isUnstartedWorkout(makeWorkout([{ ...newSet(), intensity: 3 }]))).toBe(false);
+    expect(isUnstartedWorkout({ ...makeWorkout([newSet()]), note: 'フォーム確認' })).toBe(false);
+    expect(isUnstartedWorkout({ ...makeWorkout([newSet()]), grip: 'normal' })).toBe(false);
+  });
+});
+
+describe('isMeaningfulSet', () => {
+  it('重量・回数・強度のいずれかがあれば意味のあるセットとみなす', () => {
+    expect(isMeaningfulSet(newSet())).toBe(false);
+    expect(isMeaningfulSet({ ...newSet(), weight: 20 })).toBe(true);
+    expect(isMeaningfulSet({ ...newSet(), recordValue: 12 })).toBe(true);
+    expect(isMeaningfulSet({ ...newSet(), intensity: 4 })).toBe(true);
   });
 });
 

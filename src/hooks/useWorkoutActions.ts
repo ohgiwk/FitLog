@@ -154,13 +154,20 @@ export function useWorkoutActions({
   function updateSet(setId: string, field: 'weight' | 'recordValue', value: string) {
     const target = state.workouts.find((workout) => workout.sets.some((set) => set.id === setId));
     if (!target || isWorkoutDayEnded(target.date)) return;
-    saveState((prev) => ({
-      ...prev,
-      workouts: prev.workouts.map((workout) => ({
-        ...workout,
-        sets: workout.sets.map((set) => (set.id === setId ? { ...set, [field]: value } : set)),
-      })),
-    }));
+    saveState((prev) => {
+      const workoutIndex = prev.workouts.findIndex((workout) =>
+        workout.sets.some((set) => set.id === setId),
+      );
+      const workout = prev.workouts[workoutIndex];
+      if (!workout || prev.workoutEndTimes[workout.date]) return prev;
+      const setIndex = workout.sets.findIndex((set) => set.id === setId);
+      if (setIndex === -1) return prev;
+      const sets = [...workout.sets];
+      sets[setIndex] = { ...sets[setIndex], [field]: value };
+      const workouts = [...prev.workouts];
+      workouts[workoutIndex] = { ...workout, sets };
+      return { ...prev, workouts };
+    });
   }
 
   /**
@@ -183,21 +190,27 @@ export function useWorkoutActions({
   function updateSetIntensity(setId: string, intensity?: SetIntensity) {
     const target = state.workouts.find((workout) => workout.sets.some((set) => set.id === setId));
     if (!target || isWorkoutDayEnded(target.date)) return;
-    saveState((prev) => ({
-      ...prev,
-      workouts: prev.workouts.map((workout) => ({
-        ...workout,
-        sets: workout.sets.map((set) => {
-          if (set.id !== setId) return set;
-          if (!intensity) {
-            const nextSet = { ...set };
-            delete nextSet.intensity;
-            return nextSet;
-          }
-          return { ...set, intensity };
-        }),
-      })),
-    }));
+    saveState((prev) => {
+      const workoutIndex = prev.workouts.findIndex((workout) =>
+        workout.sets.some((set) => set.id === setId),
+      );
+      const workout = prev.workouts[workoutIndex];
+      if (!workout || prev.workoutEndTimes[workout.date]) return prev;
+      const setIndex = workout.sets.findIndex((set) => set.id === setId);
+      if (setIndex === -1) return prev;
+      const currentSet = workout.sets[setIndex];
+      const nextSet = { ...currentSet };
+      if (intensity) {
+        nextSet.intensity = intensity;
+      } else {
+        delete nextSet.intensity;
+      }
+      const sets = [...workout.sets];
+      sets[setIndex] = nextSet;
+      const workouts = [...prev.workouts];
+      workouts[workoutIndex] = { ...workout, sets };
+      return { ...prev, workouts };
+    });
   }
 
   /**

@@ -143,6 +143,13 @@ export function isRecordedSet(set: WorkoutSet) {
 }
 
 /**
+ * 重量・回数以外も含めて、記録として意味のあるセットか判定する
+ */
+export function isMeaningfulSet(set: WorkoutSet) {
+  return isRecordedSet(set) || typeof set.intensity === 'number';
+}
+
+/**
  * HH:mm 形式の開始・終了時刻から経過分数を求める
  */
 export function calculateWorkoutDurationMinutes(startTime: string, endTime: string) {
@@ -215,8 +222,8 @@ export function isUnstartedWorkout(workout: Workout) {
   return (
     !workout.grip &&
     !workout.gripStyle &&
-    workout.sets.length === 5 &&
-    workout.sets.every((set) => number(set.weight) === 0 && number(set.recordValue) === 0)
+    workout.note.trim() === '' &&
+    workout.sets.every((set) => !isMeaningfulSet(set))
   );
 }
 

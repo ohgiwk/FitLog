@@ -115,5 +115,15 @@ export function useExerciseReorder({
     setLayout(null);
   }
 
-  return { listRef, draggingId, itemsFor, onPointerDown, onPointerMove, onPointerUp };
+  function moveItem(id: string, direction: -1 | 1) {
+    const current = activeLayout;
+    const index = current.findIndex((item) => item.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= current.length) return;
+    const next = [...current];
+    [next[index], next[target]] = [next[target], next[index]];
+    onCommit(next);
+  }
+
+  return { listRef, draggingId, itemsFor, moveItem, onPointerDown, onPointerMove, onPointerUp };
 }

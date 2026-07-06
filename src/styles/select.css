@@ -102,7 +102,7 @@
 
 .exercise-option.edit-row {
   display: grid;
-  grid-template-columns: 40px 1fr 42px 42px;
+  grid-template-columns: 40px 1fr 32px 32px 42px 42px;
   align-items: center;
   gap: 8px;
   user-select: none;
@@ -146,6 +146,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.move-exercise {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: var(--text-secondary);
+}
+
+.move-exercise svg {
+  width: 18px;
+  height: 18px;
 }
 
 .edit-exercise {

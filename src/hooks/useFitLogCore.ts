@@ -188,14 +188,14 @@ export function useFitLogCore() {
   /**
    * 直前の state を受け取って新しい state を返す更新関数
    */
-  function saveState(updater: (draft: State) => State) {
+  const saveState = useCallback((updater: (draft: State) => State) => {
     setState((prev) => stampState(updater(prev)));
-  }
+  }, []);
 
   /**
    * 現在の state を localStorage へ即時保存する
    */
-  function flushState() {
+  const flushState = useCallback(() => {
     persistState({
       state: stateRef.current,
       lastKnownStoredUpdatedAt,
@@ -203,7 +203,7 @@ export function useFitLogCore() {
       onConflict: notifyStorageConflict,
       onError: notifySaveError,
     });
-  }
+  }, [notifySaveError, notifyStorageConflict]);
 
   /**
    * 画面下部に短いメッセージを表示する
@@ -216,11 +216,11 @@ export function useFitLogCore() {
     setToast(null);
   }, []);
 
-  function replaceState(nextState: State) {
+  const replaceState = useCallback((nextState: State) => {
     setState(stampState(nextState));
     hasExternalStorageConflict.current = false;
     lastKnownStoredUpdatedAt.current = null;
-  }
+  }, []);
 
   return { state, setState: replaceState, saveState, flushState, toast, showToast, clearToast };
 }
