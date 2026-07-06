@@ -62,6 +62,7 @@ function buildPartsFromNames(names: string[]): PartSetting[] {
 export function createDefaultState(): State {
   return {
     schemaVersion: stateSchemaVersion,
+    updatedAt: new Date(0).toISOString(),
     exercises: starterExercises,
     goalAchievements: [],
     workouts: [],
@@ -71,6 +72,7 @@ export function createDefaultState(): State {
     trainingDays: [],
     trainingPlans: [],
     parts: buildPartsFromNames(starterExercises.map((exercise) => exercise.part)),
+    hiddenParts: [],
     weightUnit: 'kg',
     themeMode: 'dark',
     notificationSettings: { enabled: false },
@@ -105,6 +107,7 @@ export function normalizeState(saved: Partial<State> | null | undefined): State 
   const trainingPlans = normalizeTrainingPlans(saved.trainingPlans);
   return {
     schemaVersion: normalizeSchemaVersion(saved.schemaVersion),
+    updatedAt: normalizeUpdatedAt(saved.updatedAt),
     exercises: mergedExercises,
     goalAchievements: normalizeGoalAchievements(saved.goalAchievements),
     workouts,
@@ -120,6 +123,7 @@ export function normalizeState(saved: Partial<State> | null | undefined): State 
       trainingDays,
       trainingPlans,
     ),
+    hiddenParts: normalizeHiddenParts(saved.hiddenParts),
     weightUnit: normalizeWeightUnit(saved.weightUnit),
     themeMode: normalizeThemeMode(saved.themeMode),
     notificationSettings: normalizeNotificationSettings(saved.notificationSettings),
@@ -150,6 +154,24 @@ function normalizeSchemaVersion(value: unknown): number {
   return typeof value === 'number' && Number.isInteger(value) && value > 0
     ? value
     : stateSchemaVersion;
+}
+
+function normalizeUpdatedAt(value: unknown): string {
+  if (typeof value !== 'string') return new Date(0).toISOString();
+  const time = Date.parse(value);
+  return Number.isFinite(time) ? new Date(time).toISOString() : new Date(0).toISOString();
+}
+
+function normalizeHiddenParts(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const hiddenParts: string[] = [];
+  value.forEach((item) => {
+    if (typeof item !== 'string') return;
+    const name = item.trim();
+    if (!name || name === REST_PART || hiddenParts.includes(name)) return;
+    hiddenParts.push(name);
+  });
+  return hiddenParts;
 }
 
 function normalizeGoalAchievements(value: unknown): ExerciseGoalAchievement[] {

@@ -83,6 +83,20 @@ describe('normalizeState', () => {
     expect(result?.schemaVersion).toBe(stateSchemaVersion);
   });
 
+  it('updatedAt が無い旧データには既定日時を補完する', () => {
+    const result = normalizeState(makeValidSaved() as unknown as Partial<State>);
+    expect(result?.updatedAt).toBe('1970-01-01T00:00:00.000Z');
+  });
+
+  it('非表示部位を trim と重複排除で保持する', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      hiddenParts: [' 胸 ', 'レスト', '', '胸', '背中'],
+    } as unknown as Partial<State>);
+
+    expect(result?.hiddenParts).toEqual(['胸', '背中']);
+  });
+
   it('reps を recordValue へ移行する', () => {
     const saved = {
       exercises: [{ id: 'e1', part: '胸', name: 'ベンチ', measurementType: 'reps' }],

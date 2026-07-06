@@ -3,6 +3,7 @@ import {
   buildExerciseCounts,
   buildExerciseGrowthSeries,
   buildExerciseBestRecords,
+  buildOrderedParts,
   buildPartCounts,
   buildWeeklyVolumeSeries,
   buildVisibleHistory,
@@ -91,6 +92,21 @@ describe('history selectors', () => {
     expect(scheduledPresetsForDate('2026-06-23', presets).map((preset) => preset.id)).toEqual([
       'preset-2',
     ]);
+  });
+});
+
+describe('part selectors', () => {
+  it('非表示部位は過去記録や予定に残っていても表示部位へ復活させない', () => {
+    const result = buildOrderedParts(
+      [{ name: '胸', color: '#111111' }],
+      [],
+      [{ ...workout, part: '背中' }],
+      [{ date: '2026-06-21', parts: ['背中'] }],
+      [{ ...plans[0], id: 'p-hidden', part: '背中' }],
+      ['背中'],
+    );
+
+    expect(result.map((part) => part.name)).toEqual(['胸']);
   });
 });
 

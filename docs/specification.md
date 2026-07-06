@@ -348,6 +348,8 @@ type PartSetting = {
 - `state` 変化のたびに **400ms デバウンス**（`SAVE_DEBOUNCE_MS`）でまとめて書き込む。
 - **初回マウント時の保存はスキップ**（読み込んだ内容を書き戻すだけのため）。
 - `visibilitychange` で非表示になった瞬間、および `pagehide` 時に、デバウンス待ちの内容を即時 flush する（`stateRef` で最新 state を参照）。
+- 保存データには `updatedAt` を持たせ、保存前に `localStorage` 側の `updatedAt` と照合する。別タブ・別ウィンドウで更新済みの場合は保存を止め、「別のタブで更新されました。再読み込みしてから続けてください」を表示する。
+- `storage` イベントで別タブの更新を検知し、古い state からの無警告上書きを防ぐ。
 - 書き込みは `try/catch` で保護し、失敗時は「保存に失敗しました。空き容量を確認してください」をトースト表示。
 - 通常トーストは表示後 **1800ms**、Undo などの操作つきトーストは **5000ms** で自動的に消える。
 
@@ -373,6 +375,8 @@ type PartSetting = {
 - `themeMode`: `'dark'`。
 - `notificationSettings`: `{ enabled: false }`。
 - `schemaVersion`: 現在の保存データバージョン。
+- `updatedAt`: 保存競合判定用の更新日時。
+- `hiddenParts`: 空配列。
 - `catalogVersion`: `starterCatalogVersion`（現在 `6`）。
 
 ### 5.5 正規化・移行（`normalizeState`）
@@ -394,6 +398,7 @@ type PartSetting = {
   - `TrainingDay`: 同一日付をマージし、`parts` を trim + 重複排除。旧フィールド `part`（単数）からも取り込む。
   - `TrainingPlan`: `part` 必須。`mode` は `'interval'` 以外を `'weekly'`。`weekdays` は 0〜6 の整数のみ・重複排除・ソート。`intervalDays` は正の整数（既定 1）。
   - `parts`（`normalizePartSettings`）: 保存済み設定（`name` + `color`、空名・重複・「レスト」は除外、色が無ければ既定色）を順序を保って取り込み、その後、種目・記録・実施日・計画に現れる未登録の部位を末尾へ追加してパレット色を割り当てる。旧データに `parts` が無くても、ここで既存部位から自動生成される。
+  - `hiddenParts`: 部位編集で非表示にした部位名。空名・重複・「レスト」は除外する。履歴や実施日・計画に同名が残っていても、表示部位一覧には復活させない。
   - `weightUnit`: `'lbs'` のみ lbs として採用し、それ以外・未設定は `'kg'` に丸める。
   - `themeMode`: `'light'` のみライトモードとして採用し、それ以外・未設定は `'dark'` に丸める。
   - `notificationSettings`: `enabled: true` のみ通知オンとして採用し、未設定・不正値は通知オフに丸める。
@@ -405,7 +410,9 @@ type PartSetting = {
 - **エクスポート**: 現在の `state` を整形 JSON（2 スペース）にし、`smithnote-backup-<selectedDate>.json` としてダウンロード。完了トースト表示。
 - **インポート**: 選択ファイルを `parseImportedState`（= `JSON.parse` + `normalizeState`）で正規化。
   - 正規化に失敗（`null`）→「インポートできるデータが見つかりません」。
-  - 成功 → `setState` で全置き換え。`currentWorkoutId` を解除、選択プリセットを先頭に、編集対象を解除、選択日を本日へ。「データをインポートしました」。
+  - 成功 → すぐには置き換えず、ファイル名と種目・記録・メニュー・目標達成記録の件数差分を確認ダイアログに表示する。
+  - 確定 → 置き換え前の現在データを `smithnote-before-local-import-<日付>.json` として退避し、`setState` で全置き換え。`currentWorkoutId` を解除、選択プリセットを先頭に、選択日を本日へ。「データをインポートしました」を表示し、トーストの「元に戻す」で直前 state へ戻せる。
+  - キャンセル → 読み込んだ候補だけを破棄し、現在データは変更しない。
   - 例外時 →「JSONの読み込みに失敗しました」。
 
 ### 5.7 クラウドバックアップ / 復元
@@ -794,12 +801,12 @@ weight === 0 または reps === 0 → '0.0'
 
 ### 8.4 部位の編集（`usePartActions`）
 
-- いずれの操作も、`buildOrderedParts` で作る表示順つきの完全な部位一覧を `state.parts` へ書き戻す（明示設定＋データ由来を統合し、以降は明示管理になる）。
+- いずれの操作も、`buildOrderedParts` で作る表示順つきの部位一覧を `state.parts` へ書き戻す（明示設定＋データ由来を統合し、`hiddenParts` は表示対象から除外する）。
 - `addPart(name)`: 末尾に追加。空・重複はトースト。色はパレットを順番に割り当てる。
-- `deletePart(name)`: その部位の種目が残っていれば不可（トースト）。可能なら `parts` から除外し、その部位の `trainingPlans` も削除。トーストの「元に戻す」で部位設定と分割計画を復元できる。
+- `deletePart(name)`: その部位の種目が残っていれば不可（トースト）。可能なら `parts` から除外し、`hiddenParts` へ追加して履歴・実施日由来の復活を止め、その部位の `trainingPlans` も削除。トーストの「元に戻す」で部位設定・非表示状態・分割計画を復元できる。
 - `movePart(name, direction)`: 表示順を 1 つ前後に移動。
 - `setPartColor(name, color)`: 表示色を変更。
-- 関連セレクタ（`fitLogSelectors`）: `buildOrderedParts`（明示設定＋データ由来の部位を統合し表示順で返す。「レスト」は除外）、`buildPartColorMap`（部位名→色）。`addExerciseToPart` で新規部位を作る場合も `state.parts` に追記される。
+- 関連セレクタ（`fitLogSelectors`）: `buildOrderedParts`（明示設定＋データ由来の部位を統合し表示順で返す。「レスト」と `hiddenParts` は除外）、`buildPartColorMap`（部位名→色）。`addExerciseToPart` で新規部位を作る場合は `state.parts` に追記し、同名の非表示状態を解除する。
 
 ### 8.5 レストタイマー（`RestTimer`）
 

@@ -51,7 +51,12 @@ export function useExerciseActions({ state, saveState, showToast }: ExerciseActi
       const parts = prev.parts.some((item) => item.name === trimmedPart)
         ? prev.parts
         : [...prev.parts, { name: trimmedPart, color: paletteColorAt(prev.parts.length) }];
-      return { ...prev, parts, exercises: [exercise, ...prev.exercises] };
+      return {
+        ...prev,
+        parts,
+        hiddenParts: prev.hiddenParts.filter((part) => part !== trimmedPart),
+        exercises: [exercise, ...prev.exercises],
+      };
     });
     showToast(`${trimmedName}を追加しました`);
     return true;
@@ -86,6 +91,7 @@ export function useExerciseActions({ state, saveState, showToast }: ExerciseActi
       return {
         ...prev,
         parts,
+        hiddenParts: prev.hiddenParts.filter((part) => part !== trimmedPart),
         exercises: prev.exercises.map((exercise) =>
           exercise.id === exerciseId
             ? {

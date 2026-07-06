@@ -132,6 +132,7 @@ export type PartSetting = {
 
 export type State = {
   schemaVersion: number;
+  updatedAt: string;
   exercises: Exercise[];
   goalAchievements: ExerciseGoalAchievement[];
   workouts: Workout[];
@@ -141,6 +142,7 @@ export type State = {
   trainingDays: TrainingDay[];
   trainingPlans: TrainingPlan[];
   parts: PartSetting[];
+  hiddenParts: string[];
   weightUnit: WeightUnit;
   themeMode: ThemeMode;
   notificationSettings: NotificationSettings;

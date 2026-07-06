@@ -18,6 +18,7 @@ function orderedPartsOf(state: State): PartSetting[] {
     state.workouts,
     state.trainingDays,
     state.trainingPlans,
+    state.hiddenParts,
   );
 }
 
@@ -37,7 +38,11 @@ export function usePartActions({ state, saveState, showToast }: PartActionsDeps)
     }
     saveState((prev) => {
       const parts = orderedPartsOf(prev);
-      return { ...prev, parts: [...parts, { name: trimmed, color: paletteColorAt(parts.length) }] };
+      return {
+        ...prev,
+        parts: [...parts, { name: trimmed, color: paletteColorAt(parts.length) }],
+        hiddenParts: prev.hiddenParts.filter((part) => part !== trimmed),
+      };
     });
     showToast('部位を追加しました');
   }
@@ -58,6 +63,7 @@ export function usePartActions({ state, saveState, showToast }: PartActionsDeps)
     saveState((prev) => ({
       ...prev,
       parts: orderedPartsOf(prev).filter((part) => part.name !== name),
+      hiddenParts: prev.hiddenParts.includes(name) ? prev.hiddenParts : [...prev.hiddenParts, name],
       trainingPlans: prev.trainingPlans.filter((plan) => plan.part !== name),
     }));
     showToast('部位を削除しました', {
@@ -75,6 +81,7 @@ export function usePartActions({ state, saveState, showToast }: PartActionsDeps)
           return {
             ...prev,
             parts,
+            hiddenParts: prev.hiddenParts.filter((part) => part !== name),
             trainingPlans: [
               ...prev.trainingPlans,
               ...deletedPlans.filter((plan) => !existingPlanIds.has(plan.id)),

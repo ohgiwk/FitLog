@@ -3,6 +3,9 @@ import { ChevronLeft, ExportIcon, ImportIcon, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 
 type CloudBackupItem = ReturnType<typeof useFitLogContext>['actions']['cloud']['backups'][number];
+type ImportSummary = NonNullable<
+  ReturnType<typeof useFitLogContext>['actions']['pendingImport']
+>['currentSummary'];
 
 /**
  * FormData から文字列の値だけを取り出す
@@ -24,12 +27,41 @@ function formatBackupDate(value: string) {
   }).format(new Date(value));
 }
 
+function ImportSummaryRows({
+  current,
+  incoming,
+}: {
+  current: ImportSummary;
+  incoming: ImportSummary;
+}) {
+  const rows = [
+    ['種目', current.exercises, incoming.exercises],
+    ['記録', current.workouts, incoming.workouts],
+    ['メニュー', current.presets, incoming.presets],
+    ['目標達成', current.goalAchievements, incoming.goalAchievements],
+  ];
+
+  return (
+    <dl className="settings-import-summary">
+      {rows.map(([label, currentCount, incomingCount]) => (
+        <div className="settings-import-summary-row" key={label}>
+          <dt>{label}</dt>
+          <dd>
+            {currentCount}件 → {incomingCount}件
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 /**
  * ローカルとクラウドのバックアップ操作をまとめて扱う画面
  */
 export function BackupScreen() {
   const { actions } = useFitLogContext();
   const cloud = actions.cloud;
+  const pendingImport = actions.pendingImport;
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const [restoreTarget, setRestoreTarget] = useState<CloudBackupItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CloudBackupItem | null>(null);
@@ -308,6 +340,46 @@ export function BackupScreen() {
                 復元
               </button>
             </form>
+          </div>
+        </div>
+      )}
+      {pendingImport && (
+        <div className="dialog-backdrop" role="presentation">
+          <div
+            className="confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="local-import-title"
+          >
+            <div className="confirm-title" id="local-import-title">
+              記録を読み込みますか？
+            </div>
+            <p>
+              {pendingImport.fileName}
+              の内容で現在の端末データを置き換えます。読み込み前に現在のデータはJSONとして退避されます。
+            </p>
+            <ImportSummaryRows
+              current={pendingImport.currentSummary}
+              incoming={pendingImport.incomingSummary}
+            />
+            <div className="confirm-actions">
+              <button
+                className="small-outline"
+                type="button"
+                disabled={cloudPending}
+                onClick={actions.cancelImportState}
+              >
+                キャンセル
+              </button>
+              <button
+                className="danger-button"
+                type="button"
+                disabled={cloudPending}
+                onClick={actions.confirmImportState}
+              >
+                読み込む
+              </button>
+            </div>
           </div>
         </div>
       )}

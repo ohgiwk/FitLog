@@ -260,6 +260,34 @@
   gap: 8px;
 }
 
+.settings-import-summary {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--surface-soft);
+}
+
+.settings-import-summary-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.settings-import-summary-row dt,
+.settings-import-summary-row dd {
+  margin: 0;
+}
+
+.settings-import-summary-row dd {
+  color: var(--ink);
+}
+
 .settings-version {
   padding: 18px 4px 0;
   color: var(--text-muted-light);

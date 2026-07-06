@@ -24,8 +24,16 @@ export function useFitLogSelectors(state: State, selectedDate: string) {
         state.workouts,
         state.trainingDays,
         state.trainingPlans,
+        state.hiddenParts,
       ),
-    [state.parts, state.exercises, state.workouts, state.trainingDays, state.trainingPlans],
+    [
+      state.parts,
+      state.exercises,
+      state.workouts,
+      state.trainingDays,
+      state.trainingPlans,
+      state.hiddenParts,
+    ],
   );
   /**
    * 部位名から表示色を引けるマップ

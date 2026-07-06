@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { MutableRefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { loadState, storeKey } from '../storage';
 import { State } from '../types';
 
@@ -18,9 +18,50 @@ const SAVE_DEBOUNCE_MS = 400;
  * state を localStorage へ保存する。
  * 容量超過やプライベートモードなどで失敗した場合は onError を呼ぶ
  */
-function persistState(state: State, onError: () => void) {
+function stampState(state: State): State {
+  return { ...state, updatedAt: new Date().toISOString() };
+}
+
+function readStoredUpdatedAt() {
   try {
+    const raw = localStorage.getItem(storeKey);
+    if (!raw || raw === 'null') return null;
+    const parsed = JSON.parse(raw) as Partial<State> | null;
+    return typeof parsed?.updatedAt === 'string' ? parsed.updatedAt : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistState({
+  state,
+  lastKnownStoredUpdatedAt,
+  hasExternalStorageConflict,
+  onConflict,
+  onError,
+}: {
+  state: State;
+  lastKnownStoredUpdatedAt: MutableRefObject<string | null>;
+  hasExternalStorageConflict: MutableRefObject<boolean>;
+  onConflict: () => void;
+  onError: () => void;
+}) {
+  try {
+    const storedUpdatedAt = readStoredUpdatedAt();
+    if (
+      hasExternalStorageConflict.current ||
+      (storedUpdatedAt &&
+        lastKnownStoredUpdatedAt.current &&
+        storedUpdatedAt !== lastKnownStoredUpdatedAt.current &&
+        storedUpdatedAt !== state.updatedAt)
+    ) {
+      hasExternalStorageConflict.current = true;
+      onConflict();
+      return;
+    }
     localStorage.setItem(storeKey, JSON.stringify(state));
+    lastKnownStoredUpdatedAt.current = state.updatedAt;
+    hasExternalStorageConflict.current = false;
   } catch {
     onError();
   }
@@ -41,6 +82,8 @@ export function useFitLogCore() {
    */
   const stateRef = useRef(state);
   stateRef.current = state;
+  const lastKnownStoredUpdatedAt = useRef<string | null>(loadResult.state.updatedAt);
+  const hasExternalStorageConflict = useRef(false);
   /**
    * 初回マウント時は読み込んだ内容をそのまま書き戻すだけなので保存をスキップする
    */
@@ -51,6 +94,10 @@ export function useFitLogCore() {
    */
   const notifySaveError = useCallback(() => {
     setToast({ message: '保存に失敗しました。空き容量を確認してください' });
+  }, []);
+
+  const notifyStorageConflict = useCallback(() => {
+    setToast({ message: '別のタブで更新されました。再読み込みしてから続けてください' });
   }, []);
 
   /**
@@ -72,10 +119,16 @@ export function useFitLogCore() {
       return;
     }
     const timer = window.setTimeout(() => {
-      persistState(state, notifySaveError);
+      persistState({
+        state,
+        lastKnownStoredUpdatedAt,
+        hasExternalStorageConflict,
+        onConflict: notifyStorageConflict,
+        onError: notifySaveError,
+      });
     }, SAVE_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [notifySaveError, state]);
+  }, [notifySaveError, notifyStorageConflict, state]);
 
   /**
    * アプリが非表示・終了に向かう瞬間に、デバウンス待ちの内容を取りこぼさず保存する
@@ -83,17 +136,45 @@ export function useFitLogCore() {
   useEffect(() => {
     const flush = () => {
       if (document.visibilityState === 'hidden') {
-        persistState(stateRef.current, notifySaveError);
+        persistState({
+          state: stateRef.current,
+          lastKnownStoredUpdatedAt,
+          hasExternalStorageConflict,
+          onConflict: notifyStorageConflict,
+          onError: notifySaveError,
+        });
       }
     };
-    const flushNow = () => persistState(stateRef.current, notifySaveError);
+    const flushNow = () =>
+      persistState({
+        state: stateRef.current,
+        lastKnownStoredUpdatedAt,
+        hasExternalStorageConflict,
+        onConflict: notifyStorageConflict,
+        onError: notifySaveError,
+      });
     document.addEventListener('visibilitychange', flush);
     window.addEventListener('pagehide', flushNow);
     return () => {
       document.removeEventListener('visibilitychange', flush);
       window.removeEventListener('pagehide', flushNow);
     };
-  }, [notifySaveError]);
+  }, [notifySaveError, notifyStorageConflict]);
+
+  /**
+   * 別タブ・別ウィンドウの保存を検知し、古い state での無警告上書きを止める
+   */
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== storeKey) return;
+      const storedUpdatedAt = readStoredUpdatedAt();
+      if (!storedUpdatedAt || storedUpdatedAt === lastKnownStoredUpdatedAt.current) return;
+      hasExternalStorageConflict.current = true;
+      notifyStorageConflict();
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [notifyStorageConflict]);
 
   /**
    * トースト表示後、一定時間で自動的に消す
@@ -108,14 +189,20 @@ export function useFitLogCore() {
    * 直前の state を受け取って新しい state を返す更新関数
    */
   function saveState(updater: (draft: State) => State) {
-    setState((prev) => updater(prev));
+    setState((prev) => stampState(updater(prev)));
   }
 
   /**
    * 現在の state を localStorage へ即時保存する
    */
   function flushState() {
-    persistState(stateRef.current, notifySaveError);
+    persistState({
+      state: stateRef.current,
+      lastKnownStoredUpdatedAt,
+      hasExternalStorageConflict,
+      onConflict: notifyStorageConflict,
+      onError: notifySaveError,
+    });
   }
 
   /**
@@ -129,5 +216,11 @@ export function useFitLogCore() {
     setToast(null);
   }, []);
 
-  return { state, setState, saveState, flushState, toast, showToast, clearToast };
+  function replaceState(nextState: State) {
+    setState(stampState(nextState));
+    hasExternalStorageConflict.current = false;
+    lastKnownStoredUpdatedAt.current = null;
+  }
+
+  return { state, setState: replaceState, saveState, flushState, toast, showToast, clearToast };
 }

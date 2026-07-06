@@ -25,11 +25,25 @@ type BackupDeps = {
   state: State;
   setState: (state: State) => void;
   flushState: () => void;
-  showToast: (message: string) => void;
+  showToast: (message: string, action?: { actionLabel?: string; onAction?: () => void }) => void;
   selectedDate: string;
   setSelectedDate: (date: string) => void;
   setCurrentWorkoutId: (workoutId: string | null) => void;
   setCurrentPresetId: (presetId: string | null) => void;
+};
+
+export type ImportSummary = {
+  exercises: number;
+  workouts: number;
+  presets: number;
+  goalAchievements: number;
+};
+
+export type PendingImport = {
+  fileName: string;
+  state: State;
+  currentSummary: ImportSummary;
+  incomingSummary: ImportSummary;
 };
 
 /**
@@ -49,6 +63,19 @@ export function useBackup({
   const [cloudUserEmail, setCloudUserEmail] = useState<string | null>(null);
   const [cloudBackups, setCloudBackups] = useState<CloudBackup[]>([]);
   const [cloudLoading, setCloudLoading] = useState(false);
+  const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
+
+  /**
+   * インポート確認で表示する件数を作る
+   */
+  function summarizeImportState(data: State): ImportSummary {
+    return {
+      exercises: data.exercises.length,
+      workouts: data.workouts.length,
+      presets: data.presets.length,
+      goalAchievements: data.goalAchievements.length,
+    };
+  }
 
   /**
    * 現在の state を JSON ファイルとしてダウンロードする
@@ -75,20 +102,54 @@ export function useBackup({
   }
 
   /**
-   * JSON ファイルを読み込んで正規化し、state を置き換える
+   * JSON ファイルを読み込んで正規化し、確定前の確認対象として保持する
    */
   async function importState(file: File) {
     try {
       const normalized = parseImportedState(await file.text());
       if (!normalized) return showToast('インポートできるデータが見つかりません');
-      setState(normalized);
-      setCurrentWorkoutId(null);
-      setCurrentPresetId(normalized.presets[0]?.id || null);
-      setSelectedDate(localDate(new Date()));
-      showToast('データをインポートしました');
+      setPendingImport({
+        fileName: file.name || 'backup.json',
+        state: normalized,
+        currentSummary: summarizeImportState(state),
+        incomingSummary: summarizeImportState(normalized),
+      });
     } catch {
       showToast('JSONの読み込みに失敗しました');
     }
+  }
+
+  /**
+   * 確認済みのインポートデータで state を置き換える。
+   * 置き換え前のデータは JSON と Undo の両方で戻せるようにする
+   */
+  function confirmImportState() {
+    if (!pendingImport) return;
+    const previousState = state;
+    const nextState = pendingImport.state;
+    downloadStateBackup(previousState, `smithnote-before-local-import-${localDate(new Date())}.json`);
+    setState(nextState);
+    setCurrentWorkoutId(null);
+    setCurrentPresetId(nextState.presets[0]?.id || null);
+    setSelectedDate(localDate(new Date()));
+    setPendingImport(null);
+    showToast('データをインポートしました', {
+      actionLabel: '元に戻す',
+      onAction: () => {
+        setState(previousState);
+        setCurrentWorkoutId(null);
+        setCurrentPresetId(previousState.presets[0]?.id || null);
+        setSelectedDate(localDate(new Date()));
+        showToast('インポート前のデータに戻しました');
+      },
+    });
+  }
+
+  /**
+   * 読み込んだインポート候補を破棄する
+   */
+  function cancelImportState() {
+    setPendingImport(null);
   }
 
   /**
@@ -356,6 +417,9 @@ export function useBackup({
   return {
     exportState,
     importState,
+    pendingImport,
+    confirmImportState,
+    cancelImportState,
     cloud: {
       enabled: cloudEnabled,
       userEmail: cloudUserEmail,

@@ -322,12 +322,14 @@ export function buildOrderedParts(
   workouts: Workout[],
   trainingDays: State['trainingDays'],
   trainingPlans: State['trainingPlans'],
+  hiddenParts: string[] = [],
 ): PartSetting[] {
   const result: PartSetting[] = [];
   const seen = new Set<string>();
+  const hidden = new Set(hiddenParts.map((part) => part.trim()).filter(Boolean));
   parts.forEach((part) => {
     const name = part.name.trim();
-    if (!name || name === REST_PART || seen.has(name)) return;
+    if (!name || name === REST_PART || hidden.has(name) || seen.has(name)) return;
     seen.add(name);
     result.push({ name, color: part.color || defaultPartColor });
   });
@@ -335,7 +337,9 @@ export function buildOrderedParts(
   const implicit: string[] = [];
   const collect = (value: string) => {
     const name = value.trim();
-    if (!name || name === REST_PART || seen.has(name) || implicit.includes(name)) return;
+    if (!name || name === REST_PART || hidden.has(name) || seen.has(name) || implicit.includes(name)) {
+      return;
+    }
     implicit.push(name);
   };
   exercises.forEach((exercise) => collect(exercise.part));
