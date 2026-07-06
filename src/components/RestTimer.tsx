@@ -182,10 +182,11 @@ export function RestTimer({ defaultSeconds }: { defaultSeconds: number }) {
             >
               {timerSelectOptions(selectedSeconds).map((seconds) => (
                 <option key={seconds} value={seconds}>
-                  {seconds}秒
+                  {seconds}
                 </option>
               ))}
             </select>
+            <span>秒</span>
             <button type="button" onClick={toggleTimer}>
               START
             </button>

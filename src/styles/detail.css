@@ -558,10 +558,10 @@
   left: calc(12px + max(0px, (100vw - 480px) / 2));
   z-index: 20;
   display: grid;
-  grid-template-columns: auto 72px auto;
+  grid-template-columns: auto 72px auto auto;
   align-items: center;
   gap: 6px;
-  width: 196px;
+  width: 212px;
   border: 1px solid var(--border-faint);
   border-radius: 10px;
   padding: 8px;
