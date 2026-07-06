@@ -114,7 +114,7 @@ describe('isExerciseGoalAchieved', () => {
 
   it('未入力の値は 0 の目標でも達成扱いにしない', () => {
     expect(
-      isExerciseGoalAchieved([{ id: 's1', weight: '', recordValue: 30 }], {
+      isExerciseGoalAchieved([{ id: 's1', weight: null, recordValue: 30 }], {
         weight: 0,
         recordValue: 30,
       }),
@@ -156,16 +156,16 @@ describe('formatWeight', () => {
 
 describe('formatWeightForStorageInput', () => {
   it('kg 入力は入力中の文字列を保つ', () => {
-    expect(formatStoredWeightInput('60.', 'kg')).toBe('60.');
-    expect(formatWeightForStorageInput('60.', 'kg')).toBe('60.');
+    expect(formatStoredWeightInput(60, 'kg')).toBe('60');
+    expect(formatWeightForStorageInput('60.', 'kg')).toBe(60);
   });
 
   it('lbs 入力を kg 保存値へ換算する', () => {
-    expect(formatWeightForStorageInput('220.462', 'lbs')).toBe('100');
+    expect(formatWeightForStorageInput('220.462', 'lbs')).toBe(100);
   });
 
   it('空入力は空文字のまま扱う', () => {
-    expect(formatWeightForStorageInput('', 'lbs')).toBe('');
+    expect(formatWeightForStorageInput('', 'lbs')).toBeNull();
   });
 });
 
@@ -322,8 +322,8 @@ describe('groupExercises', () => {
 describe('newSet', () => {
   it('空のセットを作る', () => {
     const set = newSet();
-    expect(set.weight).toBe('');
-    expect(set.recordValue).toBe('');
+    expect(set.weight).toBeNull();
+    expect(set.recordValue).toBeNull();
     expect(typeof set.id).toBe('string');
     expect(set.id.length).toBeGreaterThan(0);
   });

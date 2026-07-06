@@ -74,8 +74,8 @@ export type Exercise = {
 
 export type WorkoutSet = {
   id: string;
-  weight: string | number;
-  recordValue: string | number;
+  weight: number | null;
+  recordValue: number | null;
   intensity?: SetIntensity;
 };
 

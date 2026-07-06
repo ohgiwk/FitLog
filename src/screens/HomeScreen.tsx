@@ -1,4 +1,4 @@
-import { KeyboardEvent, MouseEvent, useEffect, useRef, useState } from 'react';
+import { MouseEvent, useEffect, useRef, useState } from 'react';
 import { PlusIcon, TrashIcon } from '../icons';
 import { Workout } from '../types';
 import {
@@ -9,6 +9,7 @@ import {
   isUnstartedWorkout,
 } from '../utils';
 import { HomeSetRow } from '../components/HomeSetRow';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import { HomeCalendar, type HomeCalendarOverlayState } from '../components/HomeCalendar';
 
@@ -217,12 +218,6 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
     finishWorkout(true);
   }
 
-  function closeDialogFromKey(event: KeyboardEvent<HTMLDivElement>, onClose: () => void) {
-    if (event.key !== 'Escape') return;
-    event.stopPropagation();
-    onClose();
-  }
-
   return (
     <section
       className={`screen active detail-screen ${
@@ -381,120 +376,82 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
         )}
       </div>
       {deleteTarget && (
-        <div
-          className="dialog-backdrop"
-          role="presentation"
-          onClick={() => setDeleteTarget(null)}
+        <ConfirmDialog
+          title="記録を削除しますか？"
+          labelledBy="workout-delete-title"
+          onClose={() => setDeleteTarget(null)}
         >
-          <div
-            className="confirm-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="workout-delete-title"
-            tabIndex={-1}
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => closeDialogFromKey(event, () => setDeleteTarget(null))}
-          >
-            <div className="confirm-title" id="workout-delete-title">
-              記録を削除しますか？
-            </div>
-            <p>
-              {deleteTarget.part} - {deleteTarget.name} の記録をこの日から削除します。
-            </p>
-            <div className="confirm-actions">
-              <button className="small-outline" type="button" onClick={() => setDeleteTarget(null)}>
-                キャンセル
-              </button>
-              <button className="danger-button" type="button" onClick={confirmDelete}>
-                削除
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {finishConfirmationOpen && (
-        <div
-          className="dialog-backdrop"
-          role="presentation"
-          onClick={() => setFinishConfirmationOpen(false)}
-        >
-          <div
-            className="confirm-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="workout-finish-confirm-title"
-            tabIndex={-1}
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => closeDialogFromKey(event, () => setFinishConfirmationOpen(false))}
-          >
-            <div className="confirm-title" id="workout-finish-confirm-title">
-              トレーニングを終了しますか？
-            </div>
-            <p>
-              未開始の種目が
-              {selectedWorkouts.filter(isUnstartedWorkout).length}
-              種目あります。このまま終了しても記録には含まれません。
-            </p>
-            <div className="confirm-actions">
-              <button
-                className="small-outline"
-                type="button"
-                onClick={() => setFinishConfirmationOpen(false)}
-              >
-                キャンセル
-              </button>
-              <button className="danger-button" type="button" onClick={confirmFinishWorkout}>
-                終了する
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {workoutSummary && (
-        <div
-          className="dialog-backdrop"
-          role="presentation"
-          onClick={() => setWorkoutSummary(null)}
-        >
-          <div
-            className="confirm-dialog workout-summary-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="workout-summary-title"
-            tabIndex={-1}
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => closeDialogFromKey(event, () => setWorkoutSummary(null))}
-          >
-            <div className="confirm-title" id="workout-summary-title">
-              お疲れ様でした！
-            </div>
-            <div className="workout-summary-stats">
-              <div>
-                <span>開始時間</span>
-                <strong>{workoutSummary.startTime}</strong>
-              </div>
-              <div>
-                <span>終了時間</span>
-                <strong>{workoutSummary.endTime}</strong>
-              </div>
-              <div>
-                <span>トレーニング時間</span>
-                <strong>{workoutSummary.duration}</strong>
-              </div>
-              <div>
-                <span>実施した種目数</span>
-                <strong>{workoutSummary.exerciseCount}種目</strong>
-              </div>
-              <div>
-                <span>合計セット数</span>
-                <strong>{workoutSummary.setCount}セット</strong>
-              </div>
-            </div>
-            <button className="primary" type="button" onClick={() => setWorkoutSummary(null)}>
-              閉じる
+          <p>
+            {deleteTarget.part} - {deleteTarget.name} の記録をこの日から削除します。
+          </p>
+          <div className="confirm-actions">
+            <button className="small-outline" type="button" onClick={() => setDeleteTarget(null)}>
+              キャンセル
+            </button>
+            <button className="danger-button" type="button" onClick={confirmDelete}>
+              削除
             </button>
           </div>
-        </div>
+        </ConfirmDialog>
+      )}
+      {finishConfirmationOpen && (
+        <ConfirmDialog
+          title="トレーニングを終了しますか？"
+          labelledBy="workout-finish-confirm-title"
+          onClose={() => setFinishConfirmationOpen(false)}
+        >
+          <p>
+            未開始の種目が
+            {selectedWorkouts.filter(isUnstartedWorkout).length}
+            種目あります。このまま終了しても記録には含まれません。
+          </p>
+          <div className="confirm-actions">
+            <button
+              className="small-outline"
+              type="button"
+              onClick={() => setFinishConfirmationOpen(false)}
+            >
+              キャンセル
+            </button>
+            <button className="danger-button" type="button" onClick={confirmFinishWorkout}>
+              終了する
+            </button>
+          </div>
+        </ConfirmDialog>
+      )}
+      {workoutSummary && (
+        <ConfirmDialog
+          title="お疲れ様でした！"
+          labelledBy="workout-summary-title"
+          className="workout-summary-dialog"
+          onClose={() => setWorkoutSummary(null)}
+        >
+          <div className="workout-summary-stats">
+            <div>
+              <span>開始時間</span>
+              <strong>{workoutSummary.startTime}</strong>
+            </div>
+            <div>
+              <span>終了時間</span>
+              <strong>{workoutSummary.endTime}</strong>
+            </div>
+            <div>
+              <span>トレーニング時間</span>
+              <strong>{workoutSummary.duration}</strong>
+            </div>
+            <div>
+              <span>実施した種目数</span>
+              <strong>{workoutSummary.exerciseCount}種目</strong>
+            </div>
+            <div>
+              <span>合計セット数</span>
+              <strong>{workoutSummary.setCount}セット</strong>
+            </div>
+          </div>
+          <button className="primary" type="button" onClick={() => setWorkoutSummary(null)}>
+            閉じる
+          </button>
+        </ConfirmDialog>
       )}
     </section>
   );

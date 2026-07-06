@@ -263,8 +263,8 @@ type Exercise = {
 
 type WorkoutSet = {
   id: string;
-  weight: string | number;      // 重量（保存値は kg）。入力中は文字列、計算時に数値化
-  recordValue: string | number; // 回数 or 秒数
+  weight: number | null;        // 重量（保存値は kg）。未入力は null
+  recordValue: number | null;   // 回数 or 秒数。未入力は null
   intensity?: SetIntensity;     // 主観強度（任意）
 };
 
@@ -351,7 +351,7 @@ type PartSetting = {
 - 保存データには `updatedAt` を持たせ、保存前に `localStorage` 側の `updatedAt` と照合する。別タブ・別ウィンドウで更新済みの場合は保存を止め、「別のタブで更新されました。再読み込みしてから続けてください」を表示する。
 - `storage` イベントで別タブの更新を検知し、古い state からの無警告上書きを防ぐ。
 - 書き込みは `try/catch` で保護し、失敗時は「保存に失敗しました。空き容量を確認してください」をトースト表示。
-- 通常トーストは表示後 **1800ms**、Undo などの操作つきトーストは **5000ms** で自動的に消える。
+- 通常トーストは表示後 **1800ms**、Undo などの操作つきトーストは **5000ms** で自動的に消える。表示中に次のトーストが発火した場合はキューへ積み、順番に表示する。
 
 ### 5.3 読み込み（`loadState` → `LoadResult`）
 
@@ -388,13 +388,14 @@ type PartSetting = {
 - **握り方候補の初期化**: `catalogVersion` が 5 未満のデータは、全種目の「握り方」を4候補すべて有効にして移行する。移行後は種目編集で個別に変更できる。
 - **既定プリセット補完**: 名前が一致しない既定プリセットを末尾に追加（`mergeDefaultPresets`）。
 - **プリセットスケジュール**: `weekly` / `interval` の形式、曜日（0〜6）、1 日以上の間隔を正規化。不正なスケジュールは未設定として扱う。
+- **保存データ migration**: `schemaVersion` ごとの migration 関数を順番に適用してから現行形式を正規化する。現在の `stateSchemaVersion` は `2`。
 - 各フィールドの正規化方針:
   - `Exercise`: `id` / `part` / `name` がすべて文字列でなければ除外。`measurementType` は `'seconds'` 以外を `'reps'` に丸める。`category` は 5 種のいずれかに丸め、未設定・不正値のときは初期種目マスタに同名があればそのカテゴリを、なければ `'free'` を使う。`availableGrips` はノーマル・リバース・パラレル・オルタネイト、`availableGripStyles` はサムアラウンド・サムレス・サムアップ・フックのみを重複排除して保持し、未設定の旧データは各候補を全て有効にする。`goal` は重量が 0 以上、回数・秒数が 1 以上の有限数である場合だけ保持し、不正値・未設定は目標なしとして扱う。
   - `ExerciseGoalAchievement`: ID・種目 ID・種目名・日付が文字列で、達成重量と目標重量が 0 以上、達成回数・秒数と目標回数・秒数が 1 以上の有限数である場合だけ保持する。未設定の旧データは空配列として扱う。
   - `Workout`: `id` / `exerciseId` / `date` / `name` / `part` が文字列でなければ除外。`grip` は4種類の握りの向き、`gripStyle` は4種類の握り方のみ採用する。`note` は文字列のみ採用し、未設定・不正値は `''`。
   - `workoutStartTimes`: オブジェクトのみ採用。値が `HH:mm` 形式のものだけを日付キーごとに保持する。
   - `workoutEndTimes`: オブジェクトのみ採用。値が `HH:mm` 形式のものだけを日付キーごとに保持する。
-  - `WorkoutSet`: `id` が文字列でなければ除外。`weight` / `recordValue` は文字列・数値以外を `''` に。`recordValue` は旧フィールド `reps` からも引き継ぐ。`intensity` は 1〜5 のみ採用する。旧セットメモ `note` と旧セット単位のグリップ値はセットには取り込まない。
+  - `WorkoutSet`: `id` が文字列でなければ除外。`weight` / `recordValue` は有限数へ正規化し、空文字・未設定・不正値は `null` にする。`recordValue` は旧フィールド `reps` からも引き継ぐ。`intensity` は 1〜5 のみ採用する。旧セットメモ `note` と旧セット単位のグリップ値はセットには取り込まない。
   - `TrainingDay`: 同一日付をマージし、`parts` を trim + 重複排除。旧フィールド `part`（単数）からも取り込む。
   - `TrainingPlan`: `part` 必須。`mode` は `'interval'` 以外を `'weekly'`。`weekdays` は 0〜6 の整数のみ・重複排除・ソート。`intervalDays` は正の整数（既定 1）。
   - `parts`（`normalizePartSettings`）: 保存済み設定（`name` + `color`、空名・重複・「レスト」は除外、色が無ければ既定色）を順序を保って取り込み、その後、種目・記録・実施日・計画に現れる未登録の部位を末尾へ追加してパレット色を割り当てる。旧データに `parts` が無くても、ここで既存部位から自動生成される。
@@ -403,7 +404,7 @@ type PartSetting = {
   - `themeMode`: `'light'` のみライトモードとして採用し、それ以外・未設定は `'dark'` に丸める。
   - `notificationSettings`: `enabled: true` のみ通知オンとして採用し、未設定・不正値は通知オフに丸める。
 - **初期状態の `parts`**: スターター種目の部位（胸 / 背中 / 脚 / 肩 / 腕 / 腹筋）をその順序で生成し、パレット色を循環で割り当てる。
-- `schemaVersion`: 正の整数のみ採用し、未設定・不正値は現在の保存データバージョンへ補完する。
+- `schemaVersion`: 読み込み時は正の整数を migration 判定に使い、正規化後は現在の保存データバージョンへ更新する。
 
 ### 5.6 エクスポート / インポート（`useBackup`）
 
@@ -509,6 +510,7 @@ Firebase環境変数が設定されている場合だけ、クラウドバック
   - 一覧が空で未終了のときは、種目一覧の代わりに開始パネルを表示する。
 - **FAB（＋）**: 未終了かつ種目追加済みの日だけ表示し、追加の種目選択画面へ進む。トレーニング終了ボタン付近では一時的にフェードアウトし、下の操作を妨げない。
 - **削除確認ダイアログ**: 記録ありの種目を削除しようとすると確認ダイアログを表示。未開始ワークアウトは確認なしで即削除。削除後はトーストの「元に戻す」から直前の削除を復元できる。
+- **共通ダイアログ**: ホームの確認・結果表示は `ConfirmDialog` を使い、背景クリックと Escape で閉じられる。
 - **ドロワーメニュー**: トレーニングメニュー、目標達成記録、分析、設定へ遷移する。下部にはクラウドバックアップのログイン状態を表示し、ログイン中はメールアドレスとログアウトボタンを表示する。
 
 ### 6.3 種目選択（`SelectScreen`）
@@ -718,8 +720,8 @@ weight === 0 または reps === 0 → '0.0'
 - `number(value)`: `Number(value) || 0`。
 - `isBlank(value)`: trim して空文字なら true。
 - `formatWeight(value, unit)`: 保存値 kg を指定単位へ換算し、小数 1 桁で表示する。`unit` 省略時は `kg`。
-- `formatStoredWeightInput(value, unit)`: 詳細画面の重量入力欄用に、保存値 kg を設定単位へ換算する。
-- `formatWeightForStorageInput(value, unit)`: 詳細画面の入力値を kg 保存値へ戻す。
+- `formatStoredWeightInput(value, unit)`: 詳細画面の重量入力欄用に、保存値 kg を設定単位へ換算する。保存値は `number | null`。
+- `formatWeightForStorageInput(value, unit)`: 詳細画面の入力値を kg の `number | null` 保存値へ戻す。入力途中の文字列は詳細画面ローカル state に保持し、保存 state へは混ぜない。
 - `isExerciseGoalAchieved(sets, goal)`: 同じ入力済みセットの重量と回数・秒数が、目標の両方に到達していれば true。
 - `findExerciseGoalAchievementSet(sets, goal)`: 目標の両方を満たす最初の入力済みセットを返し、達成記録の保存に使用する。
 - `weightUnitLabel(unit)`: `kg` / `Lbs` の表示ラベルを返す。
@@ -735,6 +737,8 @@ weight === 0 または reps === 0 → '0.0'
 
 ### 7.5 最終実施ラベル（`buildPartRecentLabels`）
 
+- `buildWorkoutSummaryIndex` で記録済みワークアウトを 1 回走査し、種目別回数、部位別回数、部位ごとの最終実施日をまとめて作る。
+- `buildExerciseCounts` / `buildPartCounts` / `buildPartRecentLabels` はこの集計結果を利用する。
 - 部位ごとに、選択日以前で記録のある最新ワークアウトを探す。
 - 無ければ `履歴なし`。当日なら `今日`、それ以外は `N日前`（経過日数を四捨五入、負値は 0 に丸め）。
 

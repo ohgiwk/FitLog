@@ -1,6 +1,6 @@
 import { Exercise, PartSetting, Preset, State, Workout } from '../types';
 import { defaultPartColor } from '../data/partColors';
-import { calcRm, isBlank, isRecordedSet, newSet, number, parseDate, uid } from '../utils';
+import { calcRm, isRecordedSet, newSet, number, parseDate, uid } from '../utils';
 
 /**
  * トレーニング日などで使う特別な部位。並びや色管理の対象外にする
@@ -18,6 +18,53 @@ export type PartCount = {
   part: string;
   count: number;
 };
+
+export type WorkoutSummaryIndex = {
+  exerciseCounts: ExerciseCount[];
+  partCounts: PartCount[];
+  latestWorkoutDateByPart: Map<string, string>;
+};
+
+export function buildWorkoutSummaryIndex(workouts: Workout[]): WorkoutSummaryIndex {
+  const exerciseCounts = new Map<string, ExerciseCount>();
+  const partCounts = new Map<string, number>();
+  const latestWorkoutDateByPart = new Map<string, string>();
+
+  workouts.forEach((workout) => {
+    if (!workout.sets.some(isRecordedSet)) return;
+    const key = workout.exerciseId || workout.name;
+    const currentExercise = exerciseCounts.get(key);
+    if (currentExercise) {
+      currentExercise.count += 1;
+      currentExercise.part = workout.part;
+      currentExercise.name = workout.name;
+    } else {
+      exerciseCounts.set(key, {
+        exerciseId: key,
+        part: workout.part,
+        name: workout.name,
+        count: 1,
+      });
+    }
+
+    const part = workout.part.trim();
+    if (part && part !== REST_PART) {
+      partCounts.set(part, (partCounts.get(part) ?? 0) + 1);
+      const latestDate = latestWorkoutDateByPart.get(part);
+      if (!latestDate || workout.date > latestDate) latestWorkoutDateByPart.set(part, workout.date);
+    }
+  });
+
+  return {
+    exerciseCounts: [...exerciseCounts.values()].sort(
+      (a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ja'),
+    ),
+    partCounts: [...partCounts.entries()]
+      .map(([part, count]) => ({ part, count }))
+      .sort((a, b) => b.count - a.count || a.part.localeCompare(b.part, 'ja')),
+    latestWorkoutDateByPart,
+  };
+}
 
 export type ExerciseGrowthMetric = 'rm' | 'reps' | 'seconds';
 
@@ -60,47 +107,14 @@ export type ExerciseBestRecord = {
  * 記録済みセットを持つワークアウトを種目別に集計する
  */
 export function buildExerciseCounts(workouts: Workout[]): ExerciseCount[] {
-  const counts = new Map<string, ExerciseCount>();
-
-  workouts.forEach((workout) => {
-    if (!workout.sets.some(isRecordedSet)) return;
-    const key = workout.exerciseId || workout.name;
-    const current = counts.get(key);
-    if (current) {
-      current.count += 1;
-      current.part = workout.part;
-      current.name = workout.name;
-      return;
-    }
-    counts.set(key, {
-      exerciseId: key,
-      part: workout.part,
-      name: workout.name,
-      count: 1,
-    });
-  });
-
-  return [...counts.values()].sort(
-    (a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ja'),
-  );
+  return buildWorkoutSummaryIndex(workouts).exerciseCounts;
 }
 
 /**
  * 記録済みセットを持つワークアウトを部位別に集計する
  */
 export function buildPartCounts(workouts: Workout[]): PartCount[] {
-  const counts = new Map<string, number>();
-
-  workouts.forEach((workout) => {
-    if (!workout.sets.some(isRecordedSet)) return;
-    const part = workout.part.trim();
-    if (!part || part === REST_PART) return;
-    counts.set(part, (counts.get(part) ?? 0) + 1);
-  });
-
-  return [...counts.entries()]
-    .map(([part, count]) => ({ part, count }))
-    .sort((a, b) => b.count - a.count || a.part.localeCompare(b.part, 'ja'));
+  return buildWorkoutSummaryIndex(workouts).partCounts;
 }
 
 /**
@@ -459,25 +473,24 @@ export function buildPartRecentLabels(
 ) {
   const selectedTime = parseDate(selectedDate).getTime();
   const labels = new Map<string, string>();
+  const latestWorkoutDateByPart = buildWorkoutSummaryIndex(
+    workouts.filter((workout) => workout.date <= selectedDate),
+  ).latestWorkoutDateByPart;
   groupedExercises.forEach((exercises, part) => {
-    const exerciseIds = new Set(exercises.map((exercise) => exercise.id));
-    const latest = workouts
-      .filter(
-        (workout) =>
-          exerciseIds.has(workout.exerciseId) &&
-          workout.date <= selectedDate &&
-          workout.sets.some((set) => !isBlank(set.weight) || !isBlank(set.recordValue)),
-      )
-      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    const exerciseParts = new Set(exercises.map((exercise) => exercise.part));
+    const latestDate = [...exerciseParts]
+      .map((exercisePart) => latestWorkoutDateByPart.get(exercisePart))
+      .filter((date): date is string => Boolean(date))
+      .sort((a, b) => b.localeCompare(a))[0];
 
-    if (!latest) {
+    if (!latestDate) {
       labels.set(part, '履歴なし');
       return;
     }
 
     const daysAgo = Math.max(
       0,
-      Math.round((selectedTime - parseDate(latest.date).getTime()) / 86400000),
+      Math.round((selectedTime - parseDate(latestDate).getTime()) / 86400000),
     );
     labels.set(part, daysAgo === 0 ? '今日' : `${daysAgo}日前`);
   });

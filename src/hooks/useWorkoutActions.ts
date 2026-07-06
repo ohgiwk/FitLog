@@ -151,7 +151,7 @@ export function useWorkoutActions({
   /**
    * セットの重量・回数(秒数)を更新する
    */
-  function updateSet(setId: string, field: 'weight' | 'recordValue', value: string) {
+  function updateSet(setId: string, field: 'weight' | 'recordValue', value: number | null) {
     const target = state.workouts.find((workout) => workout.sets.some((set) => set.id === setId));
     if (!target || isWorkoutDayEnded(target.date)) return;
     saveState((prev) => {

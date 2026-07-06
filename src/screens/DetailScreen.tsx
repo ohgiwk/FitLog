@@ -409,9 +409,37 @@ export function DetailScreen() {
     onUpdateExerciseGoal,
   } = useDetailScreenModel();
   const [openDeleteSetId, setOpenDeleteSetId] = useState<string | null>(null);
+  const [weightInputs, setWeightInputs] = useState<Record<string, string>>({});
+  const [recordInputs, setRecordInputs] = useState<Record<string, string>>({});
   if (!workout) return null;
   const isReps = isRepsMeasurement(workout.measurementType);
   const unit = measurementUnit(workout.measurementType);
+  function weightInputValue(setId: string, value: number | null) {
+    return weightInputs[setId] ?? formatStoredWeightInput(value, weightUnit);
+  }
+  function recordInputValue(setId: string, value: number | null) {
+    return recordInputs[setId] ?? (value ?? '');
+  }
+  function updateWeightInput(setId: string, value: string) {
+    setWeightInputs((current) => ({ ...current, [setId]: value }));
+    onUpdateSet(setId, 'weight', formatWeightForStorageInput(value, weightUnit));
+  }
+  function updateRecordInput(setId: string, value: string) {
+    setRecordInputs((current) => ({ ...current, [setId]: value }));
+    onUpdateSet(setId, 'recordValue', value.trim() === '' ? null : Number(value));
+  }
+  function releaseInput(setId: string) {
+    setWeightInputs((current) => {
+      const next = { ...current };
+      delete next[setId];
+      return next;
+    });
+    setRecordInputs((current) => {
+      const next = { ...current };
+      delete next[setId];
+      return next;
+    });
+  }
   return (
     <section className="screen active">
       <header className="topbar">
@@ -466,14 +494,9 @@ export function DetailScreen() {
                   min="0"
                   inputMode="decimal"
                   readOnly={readOnly}
-                  value={formatStoredWeightInput(set.weight, weightUnit)}
-                  onChange={(event) =>
-                    onUpdateSet(
-                      set.id,
-                      'weight',
-                      formatWeightForStorageInput(event.target.value, weightUnit),
-                    )
-                  }
+                  value={weightInputValue(set.id, set.weight)}
+                  onBlur={() => releaseInput(set.id)}
+                  onChange={(event) => updateWeightInput(set.id, event.target.value)}
                 />
                 <span className="unit">{weightUnitLabel(weightUnit)}</span>
               </label>
@@ -484,8 +507,9 @@ export function DetailScreen() {
                   min="0"
                   inputMode="numeric"
                   readOnly={readOnly}
-                  value={set.recordValue}
-                  onChange={(event) => onUpdateSet(set.id, 'recordValue', event.target.value)}
+                  value={recordInputValue(set.id, set.recordValue)}
+                  onBlur={() => releaseInput(set.id)}
+                  onChange={(event) => updateRecordInput(set.id, event.target.value)}
                 />
                 <span className="unit">{unit}</span>
               </label>

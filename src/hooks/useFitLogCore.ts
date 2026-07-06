@@ -3,6 +3,7 @@ import { loadState, storeKey } from '../storage';
 import { State } from '../types';
 
 export type ToastState = {
+  id?: string;
   message: string;
   actionLabel?: string;
   onAction?: () => void;
@@ -77,6 +78,7 @@ export function useFitLogCore() {
   const [loadResult] = useState(loadState);
   const [state, setState] = useState<State>(loadResult.state);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const toastQueueRef = useRef<ToastState[]>([]);
   /**
    * 即時保存(flush)で常に最新の state を参照するための保持用 ref
    */
@@ -90,15 +92,33 @@ export function useFitLogCore() {
   const isFirstSaveRef = useRef(true);
 
   /**
+   * 画面下部に短いメッセージを表示する。表示中ならキューへ積む
+   */
+  const showToast = useCallback((message: string, action?: Omit<ToastState, 'message'>) => {
+    const nextToast = {
+      id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
+      message,
+      ...action,
+    };
+    setToast((current) => {
+      if (current) {
+        toastQueueRef.current = [...toastQueueRef.current, nextToast];
+        return current;
+      }
+      return nextToast;
+    });
+  }, []);
+
+  /**
    * 保存に失敗したことをトーストで知らせる
    */
   const notifySaveError = useCallback(() => {
-    setToast({ message: '保存に失敗しました。空き容量を確認してください' });
-  }, []);
+    showToast('保存に失敗しました。空き容量を確認してください');
+  }, [showToast]);
 
   const notifyStorageConflict = useCallback(() => {
-    setToast({ message: '別のタブで更新されました。再読み込みしてから続けてください' });
-  }, []);
+    showToast('別のタブで更新されました。再読み込みしてから続けてください');
+  }, [showToast]);
 
   /**
    * 壊れた保存データから初期化へ復帰した場合に、その旨をトーストで知らせる。
@@ -106,9 +126,9 @@ export function useFitLogCore() {
    */
   useEffect(() => {
     if (loadResult.recoveredFromCorruption) {
-      setToast({ message: '保存データを読み込めませんでした。旧データは退避済みです' });
+      showToast('保存データを読み込めませんでした。旧データは退避済みです');
     }
-  }, [loadResult.recoveredFromCorruption]);
+  }, [loadResult.recoveredFromCorruption, showToast]);
 
   /**
    * state が変わるたびに、一定時間後へまとめて localStorage に保存する
@@ -181,7 +201,9 @@ export function useFitLogCore() {
    */
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(() => setToast(null), toast.onAction ? 5000 : 1800);
+    const timer = window.setTimeout(() => {
+      setToast(toastQueueRef.current.shift() ?? null);
+    }, toast.onAction ? 5000 : 1800);
     return () => window.clearTimeout(timer);
   }, [toast]);
 
@@ -205,15 +227,8 @@ export function useFitLogCore() {
     });
   }, [notifySaveError, notifyStorageConflict]);
 
-  /**
-   * 画面下部に短いメッセージを表示する
-   */
-  const showToast = useCallback((message: string, action?: Omit<ToastState, 'message'>) => {
-    setToast({ message, ...action });
-  }, []);
-
   const clearToast = useCallback(() => {
-    setToast(null);
+    setToast(toastQueueRef.current.shift() ?? null);
   }, []);
 
   const replaceState = useCallback((nextState: State) => {

@@ -22,7 +22,7 @@ import {
 import { defaultExerciseCategory, uid } from './utils';
 
 const REST_PART = 'レスト';
-export const stateSchemaVersion = 1;
+export const stateSchemaVersion = 2;
 const defaultPresets: Preset[] = [
   { id: 'preset-chest-day', name: '胸の日', exerciseIds: [] },
   { id: 'preset-back-day', name: '背中の日', exerciseIds: [] },
@@ -80,10 +80,30 @@ export function createDefaultState(): State {
   };
 }
 
+type SavedStateShape = Partial<State> & Record<string, unknown>;
+
+function migrateState(saved: SavedStateShape): SavedStateShape {
+  const sourceVersion = normalizeSchemaVersion(saved.schemaVersion);
+  return stateMigrations
+    .filter((migration) => sourceVersion < migration.version)
+    .reduce((current, migration) => migration.up(current), saved);
+}
+
+const stateMigrations: {
+  version: number;
+  up: (state: SavedStateShape) => SavedStateShape;
+}[] = [
+  {
+    version: 2,
+    up: (state) => state,
+  },
+];
+
 export function normalizeState(saved: Partial<State> | null | undefined): State | null {
   if (!saved?.exercises || !saved?.workouts) return null;
-  const catalogVersion = typeof saved.catalogVersion === 'number' ? saved.catalogVersion : 1;
-  const normalizedExercises = normalizeExercises(saved.exercises);
+  const migrated = migrateState(saved);
+  const catalogVersion = typeof migrated.catalogVersion === 'number' ? migrated.catalogVersion : 1;
+  const normalizedExercises = normalizeExercises(migrated.exercises);
   const exercises =
     catalogVersion < 4
       ? normalizedExercises.map((exercise) => ({
@@ -102,31 +122,31 @@ export function normalizeState(saved: Partial<State> | null | undefined): State 
     catalogVersion < starterCatalogVersion
       ? mergeStarterExercises(exercisesWithGripStyles)
       : exercisesWithGripStyles;
-  const workouts = normalizeWorkouts(saved.workouts);
-  const trainingDays = normalizeTrainingDays(saved.trainingDays);
-  const trainingPlans = normalizeTrainingPlans(saved.trainingPlans);
+  const workouts = normalizeWorkouts(migrated.workouts);
+  const trainingDays = normalizeTrainingDays(migrated.trainingDays);
+  const trainingPlans = normalizeTrainingPlans(migrated.trainingPlans);
   return {
-    schemaVersion: normalizeSchemaVersion(saved.schemaVersion),
-    updatedAt: normalizeUpdatedAt(saved.updatedAt),
+    schemaVersion: stateSchemaVersion,
+    updatedAt: normalizeUpdatedAt(migrated.updatedAt),
     exercises: mergedExercises,
-    goalAchievements: normalizeGoalAchievements(saved.goalAchievements),
+    goalAchievements: normalizeGoalAchievements(migrated.goalAchievements),
     workouts,
-    workoutStartTimes: normalizeWorkoutTimes(saved.workoutStartTimes),
-    workoutEndTimes: normalizeWorkoutTimes(saved.workoutEndTimes),
-    presets: normalizePresets(saved.presets),
+    workoutStartTimes: normalizeWorkoutTimes(migrated.workoutStartTimes),
+    workoutEndTimes: normalizeWorkoutTimes(migrated.workoutEndTimes),
+    presets: normalizePresets(migrated.presets),
     trainingDays,
     trainingPlans,
     parts: normalizePartSettings(
-      saved.parts,
+      migrated.parts,
       mergedExercises,
       workouts,
       trainingDays,
       trainingPlans,
     ),
-    hiddenParts: normalizeHiddenParts(saved.hiddenParts),
-    weightUnit: normalizeWeightUnit(saved.weightUnit),
-    themeMode: normalizeThemeMode(saved.themeMode),
-    notificationSettings: normalizeNotificationSettings(saved.notificationSettings),
+    hiddenParts: normalizeHiddenParts(migrated.hiddenParts),
+    weightUnit: normalizeWeightUnit(migrated.weightUnit),
+    themeMode: normalizeThemeMode(migrated.themeMode),
+    notificationSettings: normalizeNotificationSettings(migrated.notificationSettings),
     catalogVersion: starterCatalogVersion,
   };
 }
@@ -479,8 +499,11 @@ function normalizeSets(value: unknown): WorkoutSet[] {
   });
 }
 
-function normalizeSetValue(value: unknown) {
-  return typeof value === 'string' || typeof value === 'number' ? value : '';
+function normalizeSetValue(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string' && value.trim() === '') return null;
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
 }
 
 function normalizeMeasurementType(value: unknown): MeasurementType {

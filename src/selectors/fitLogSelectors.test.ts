@@ -141,7 +141,7 @@ describe('analysis selectors', () => {
         ...workout,
         id: 'w5',
         date: '2026-06-23',
-        sets: [{ id: 's5', weight: '', recordValue: '' }],
+        sets: [{ id: 's5', weight: null, recordValue: null }],
       },
     ]);
 
@@ -177,8 +177,8 @@ describe('analysis selectors', () => {
         part: '体幹',
         measurementType: 'seconds',
         sets: [
-          { id: 's4', weight: '', recordValue: 45 },
-          { id: 's5', weight: '', recordValue: 60 },
+          { id: 's4', weight: null, recordValue: 45 },
+          { id: 's5', weight: null, recordValue: 60 },
         ],
       },
       {
@@ -189,7 +189,7 @@ describe('analysis selectors', () => {
         name: 'プランク',
         part: '体幹',
         measurementType: 'seconds',
-        sets: [{ id: 's6', weight: '', recordValue: 90 }],
+        sets: [{ id: 's6', weight: null, recordValue: 90 }],
       },
     ]);
 
@@ -252,7 +252,7 @@ describe('analysis selectors', () => {
         name: 'プランク',
         part: '体幹',
         measurementType: 'seconds',
-        sets: [{ id: 's4', weight: '', recordValue: 60 }],
+        sets: [{ id: 's4', weight: null, recordValue: 60 }],
       },
     ]);
 
@@ -286,7 +286,7 @@ describe('analysis selectors', () => {
         ...workout,
         id: 'w2',
         date: '2026-06-19',
-        sets: [{ id: 's2', weight: '', recordValue: 8 }],
+        sets: [{ id: 's2', weight: null, recordValue: 8 }],
       },
       {
         ...workout,
@@ -302,7 +302,7 @@ describe('analysis selectors', () => {
         exerciseId: 'e3',
         name: '懸垂',
         part: '背中',
-        sets: [{ id: 's4', weight: '', recordValue: '' }],
+        sets: [{ id: 's4', weight: null, recordValue: null }],
       },
     ]);
 
@@ -336,7 +336,7 @@ describe('analysis selectors', () => {
         exerciseId: 'e4',
         name: '懸垂',
         part: '背中',
-        sets: [{ id: 's4', weight: '', recordValue: '' }],
+        sets: [{ id: 's4', weight: null, recordValue: null }],
       },
     ]);
 

@@ -85,7 +85,7 @@ export function compactCalendarCells(year: number, month: number): CalendarCell[
 export const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
 
 export function newSet(): WorkoutSet {
-  return { id: uid(), weight: '', recordValue: '' };
+  return { id: uid(), weight: null, recordValue: null };
 }
 
 export const intensityOptions: { value: SetIntensity; label: string }[] = [
@@ -105,12 +105,12 @@ export function weightUnitLabel(unit: WeightUnit) {
   return unit === 'lbs' ? 'Lbs' : 'kg';
 }
 
-export function convertWeightFromKg(value: string | number, unit: WeightUnit) {
+export function convertWeightFromKg(value: string | number | null, unit: WeightUnit) {
   const weight = number(value);
   return unit === 'lbs' ? weight * 2.20462 : weight;
 }
 
-export function convertWeightToKg(value: string | number, unit: WeightUnit) {
+export function convertWeightToKg(value: string | number | null, unit: WeightUnit) {
   const weight = number(value);
   return unit === 'lbs' ? weight / 2.20462 : weight;
 }
@@ -127,11 +127,11 @@ export function isRepsMeasurement(measurementType: MeasurementType) {
   return measurementType === 'reps';
 }
 
-export function number(value: string | number) {
+export function number(value: string | number | null | undefined) {
   return Number(value) || 0;
 }
 
-export function isBlank(value: string | number) {
+export function isBlank(value: string | number | null | undefined) {
   return String(value ?? '').trim() === '';
 }
 
@@ -199,23 +199,26 @@ export function findExerciseGoalAchievementSet(sets: WorkoutSet[], goal: Exercis
   );
 }
 
-export function formatWeight(value: string | number, unit: WeightUnit = 'kg') {
+export function formatWeight(value: string | number | null, unit: WeightUnit = 'kg') {
   return convertWeightFromKg(value, unit).toFixed(1);
 }
 
-export function formatStoredWeightInput(value: string | number, unit: WeightUnit) {
+export function formatStoredWeightInput(value: number | null, unit: WeightUnit) {
   if (isBlank(value)) return '';
   if (unit === 'kg') return String(value);
   return formatWeight(value, unit);
 }
 
-export function formatWeightForStorageInput(value: string, unit: WeightUnit) {
-  if (value.trim() === '') return '';
-  if (unit === 'kg') return value;
+export function formatWeightForStorageInput(value: string, unit: WeightUnit): number | null {
+  if (value.trim() === '') return null;
+  if (unit === 'kg') {
+    const stored = Number(value);
+    return Number.isFinite(stored) ? stored : null;
+  }
   const converted = convertWeightToKg(value, unit);
-  if (!Number.isFinite(converted)) return '';
-  if (converted === 0) return '0';
-  return Number(converted.toFixed(4)).toString();
+  if (!Number.isFinite(converted)) return null;
+  if (converted === 0) return 0;
+  return Number(converted.toFixed(4));
 }
 
 export function isUnstartedWorkout(workout: Workout) {
