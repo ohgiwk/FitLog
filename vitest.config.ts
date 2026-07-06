@@ -13,7 +13,7 @@ export default defineConfig({
         url: 'http://localhost/FitLog/',
       },
     },
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     setupFiles: ['src/test/setup.ts'],
   },
 });

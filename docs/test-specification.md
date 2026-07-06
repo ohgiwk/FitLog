@@ -9,7 +9,7 @@
 | `npm test` | Vitest の全テストを 1 回実行する |
 | `npm run test:watch` | Vitest を watch モードで実行する |
 
-テスト設定は [`vitest.config.ts`](../vitest.config.ts) にあります。`vite.config.ts` の PWA プラグインを読み込まない独立設定で、`localStorage` を使うテストのために `jsdom` 環境を使います。対象ファイルは `src/**/*.test.ts` です。
+テスト設定は [`vitest.config.ts`](../vitest.config.ts) にあります。`vite.config.ts` の PWA プラグインを読み込まない独立設定で、`localStorage` を使うテストのために `jsdom` 環境を使います。対象ファイルは `src/**/*.test.ts` と `src/**/*.test.tsx` です。画面操作テストでは React Testing Library と user-event を使います。
 
 ## テスト範囲の全体像
 
@@ -19,6 +19,9 @@
 | [`src/utils.test.ts`](../src/utils.test.ts) | `src/utils.ts` の計算・整形・判定ヘルパー | 1RM、重量変換、目標達成判定、未開始判定、日付・カレンダー、トレーニング時間、部位グループ化 |
 | [`src/selectors/fitLogSelectors.test.ts`](../src/selectors/fitLogSelectors.test.ts) | 履歴・予定・分析用 selector | 表示履歴、予定判定、表示部位、週別ボリューム、自己ベスト、成長推移、種目別/部位別回数 |
 | [`src/hooks/useExerciseReorder.test.ts`](../src/hooks/useExerciseReorder.test.ts) | 種目並び替えヘルパー | 並び順差分の判定、ドラッグ挿入位置の計算 |
+| [`src/components/ConfirmDialog.test.tsx`](../src/components/ConfirmDialog.test.tsx) | `ConfirmDialog` | 背景クリック、Escape、ダイアログ内クリック、ARIA 属性 |
+| [`src/screens/DetailScreen.test.tsx`](../src/screens/DetailScreen.test.tsx) | `DetailScreen` のセット入力 | 入力中文字列の保持、空入力の `null` 保存、lbs 入力の kg 保存 |
+| [`src/hooks/useFitLogCore.test.tsx`](../src/hooks/useFitLogCore.test.tsx) | `useFitLogCore` の toast | 表示中 toast のキューイングと順次表示 |
 
 ## `src/storage.test.ts`
 
@@ -119,11 +122,33 @@
 - 種目 ID の順序だけでなくカテゴリも比較対象にする。
 - 挿入先が指定されない場合は、同カテゴリの末尾に挿入する。
 
+## 画面・フック操作テスト
+
+### 対象
+
+- [`src/components/ConfirmDialog.tsx`](../src/components/ConfirmDialog.tsx)
+- [`src/screens/DetailScreen.tsx`](../src/screens/DetailScreen.tsx)
+- [`src/hooks/useFitLogCore.ts`](../src/hooks/useFitLogCore.ts)
+
+### テスト観点
+
+| グループ | 代表ケース | 目的 |
+| --- | --- | --- |
+| `ConfirmDialog` | 背景クリック、Escape、ダイアログ内クリック、`aria-modal` / `aria-labelledby` | 共通確認ダイアログの閉じる操作とアクセシビリティ属性を固定する |
+| `DetailScreen` 入力 | 小数の重量入力、空の回数入力、lbs 入力 | 画面上の入力文字列と保存値の分離を固定する |
+| `useFitLogCore` toast | 1 件目表示中に 2 件目・3 件目を追加、手動 clear、自動 timer | 複数通知が順番に表示されることを固定する |
+
+### 重点的に守っている挙動
+
+- ダイアログ内の操作は背景クリックとして扱わない。
+- Detail 画面の入力欄は、編集中の文字列を一時保持しつつ、保存値は `number | null` に変換する。
+- 表示中の toast を新しい toast で上書きせず、キューに積んで順番に表示する。
+
 ## 現時点で自動テストが薄い領域
 
 | 領域 | 状態 |
 | --- | --- |
-| React コンポーネントの DOM 操作 | 主要画面のボタン操作、ダイアログ、ドロワ、フォーム入力はユニットテストでは直接確認していない |
+| React コンポーネントの DOM 操作 | 共通ダイアログと Detail の主要入力は確認済み。Home の複数ダイアログ、ドロワ、FAB はまだ薄い |
 | PWA / Service Worker | `npm run build` で生成までは確認するが、キャッシュ更新挙動は自動テスト対象外 |
 | Firebase クラウドバックアップ | provider や環境変数に依存する実通信は自動テスト対象外 |
 | 通知・音・ブラウザ権限 | ローカル通知、Audio、権限 UI は自動テスト対象外 |
