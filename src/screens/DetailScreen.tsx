@@ -619,7 +619,7 @@ export function DetailScreen() {
           />
         </label>
       </div>
-      {!readOnly && <RestTimer />}
+      {!readOnly && <RestTimer defaultSeconds={restTimerSettings.defaultSeconds} />}
     </section>
   );
 }

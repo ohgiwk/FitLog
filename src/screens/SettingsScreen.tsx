@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   ChevronLeft,
   EditIcon,
@@ -6,7 +7,7 @@ import {
   PartsIcon,
   PrivacyIcon,
 } from '../icons';
-import { ThemeMode, WeightUnit } from '../types';
+import { defaultRestTimerSeconds, restTimerPresetSeconds, ThemeMode, WeightUnit } from '../types';
 import { weightUnitLabel } from '../utils';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import { appVersion } from '../version';
@@ -33,6 +34,7 @@ function useSettingsScreenModel() {
     onChangeWeightUnit: actions.setWeightUnit,
     onChangeThemeMode: actions.setThemeMode,
     onChangeRestTimerAutoStart: actions.setRestTimerAutoStart,
+    onChangeRestTimerDefaultSeconds: actions.setRestTimerDefaultSeconds,
     onOpenNotificationSettings: () => actions.setScreen('notificationSettings'),
     onOpenBackup: () => actions.setScreen('backup'),
     onOpenPrivacyPolicy: () => actions.setScreen('privacyPolicy'),
@@ -54,11 +56,36 @@ export function SettingsScreen() {
     onChangeWeightUnit,
     onChangeThemeMode,
     onChangeRestTimerAutoStart,
+    onChangeRestTimerDefaultSeconds,
     onOpenNotificationSettings,
     onOpenBackup,
     onOpenPrivacyPolicy,
     onOpenTermsOfService,
   } = useSettingsScreenModel();
+  const [restTimerSecondsInput, setRestTimerSecondsInput] = useState(
+    String(restTimerSettings.defaultSeconds),
+  );
+  const isRestTimerPresetSeconds = restTimerPresetSeconds.includes(
+    restTimerSettings.defaultSeconds as (typeof restTimerPresetSeconds)[number],
+  );
+  const [restTimerSecondsMode, setRestTimerSecondsMode] = useState<'preset' | 'custom'>(
+    isRestTimerPresetSeconds ? 'preset' : 'custom',
+  );
+
+  useEffect(() => {
+    setRestTimerSecondsInput(String(restTimerSettings.defaultSeconds));
+  }, [restTimerSettings.defaultSeconds]);
+
+  function updateRestTimerSecondsInput(value: string) {
+    const nextInput = value.replace(/[^\d]/g, '').slice(0, 3);
+    setRestTimerSecondsInput(nextInput);
+    if (nextInput) onChangeRestTimerDefaultSeconds(Number(nextInput));
+  }
+
+  function commitRestTimerSecondsInput() {
+    if (restTimerSecondsInput) return;
+    setRestTimerSecondsInput(String(restTimerSettings.defaultSeconds || defaultRestTimerSeconds));
+  }
 
   return (
     <section className="screen active settings-screen">
@@ -114,9 +141,14 @@ export function SettingsScreen() {
               ))}
             </div>
           </div>
+        </section>
+        <section className="settings-section" aria-labelledby="rest-timer-settings-title">
+          <h2 className="settings-section-title" id="rest-timer-settings-title">
+            レストタイマー
+          </h2>
           <div className="settings-row">
             <div className="settings-label">
-              <span>レストタイマー</span>
+              <span>自動開始</span>
               <strong>強度入力時に自動で開始</strong>
             </div>
             <div className="unit-switch" role="group" aria-label="強度入力時のレストタイマー自動開始">
@@ -136,6 +168,72 @@ export function SettingsScreen() {
               >
                 OFF
               </button>
+            </div>
+          </div>
+          <div className="settings-row rest-timer-default-row">
+            <div className="settings-label">
+              <span>デフォルト秒数</span>
+              <strong>{restTimerSettings.defaultSeconds}秒</strong>
+            </div>
+            <div className="rest-timer-default-controls">
+              <div
+                className="unit-switch rest-timer-seconds-mode"
+                role="group"
+                aria-label="デフォルト秒数の入力方法"
+              >
+                <button
+                  className={`unit-switch-button ${restTimerSecondsMode === 'preset' ? 'active' : ''}`}
+                  type="button"
+                  aria-pressed={restTimerSecondsMode === 'preset'}
+                  onClick={() => {
+                    setRestTimerSecondsMode('preset');
+                    if (!isRestTimerPresetSeconds) {
+                      onChangeRestTimerDefaultSeconds(defaultRestTimerSeconds);
+                    }
+                  }}
+                >
+                  選択
+                </button>
+                <button
+                  className={`unit-switch-button ${restTimerSecondsMode === 'custom' ? 'active' : ''}`}
+                  type="button"
+                  aria-pressed={restTimerSecondsMode === 'custom'}
+                  onClick={() => setRestTimerSecondsMode('custom')}
+                >
+                  自由
+                </button>
+              </div>
+              {restTimerSecondsMode === 'preset' ? (
+                <select
+                  aria-label="レストタイマーのデフォルト秒数を選択"
+                  value={
+                    isRestTimerPresetSeconds
+                      ? String(restTimerSettings.defaultSeconds)
+                      : String(defaultRestTimerSeconds)
+                  }
+                  onChange={(event) => onChangeRestTimerDefaultSeconds(Number(event.target.value))}
+                >
+                  {restTimerPresetSeconds.map((seconds) => (
+                    <option key={seconds} value={seconds}>
+                      {seconds}秒
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <label className="rest-timer-custom-seconds">
+                  <input
+                    aria-label="レストタイマーのデフォルト秒数を自由入力"
+                    type="number"
+                    min="1"
+                    max="999"
+                    inputMode="numeric"
+                    value={restTimerSecondsInput}
+                    onBlur={commitRestTimerSecondsInput}
+                    onChange={(event) => updateRestTimerSecondsInput(event.target.value)}
+                  />
+                  <span>秒</span>
+                </label>
+              )}
             </div>
           </div>
         </section>

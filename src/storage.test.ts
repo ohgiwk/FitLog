@@ -381,15 +381,32 @@ describe('normalizeState', () => {
 
   it('レストタイマー設定が無い保存データは強度入力時の自動開始をオンにする', () => {
     const result = normalizeState(makeValidSaved() as unknown as Partial<State>);
-    expect(result?.restTimerSettings).toEqual({ autoStartOnIntensity: true });
+    expect(result?.restTimerSettings).toEqual({
+      autoStartOnIntensity: true,
+      defaultSeconds: 60,
+    });
   });
 
   it('レストタイマーの自動開始オフ設定を保持する', () => {
     const result = normalizeState({
       ...makeValidSaved(),
-      restTimerSettings: { autoStartOnIntensity: false },
+      restTimerSettings: { autoStartOnIntensity: false, defaultSeconds: 90 },
     } as unknown as Partial<State>);
-    expect(result?.restTimerSettings).toEqual({ autoStartOnIntensity: false });
+    expect(result?.restTimerSettings).toEqual({
+      autoStartOnIntensity: false,
+      defaultSeconds: 90,
+    });
+  });
+
+  it('不正なレストタイマー秒数は60秒として読み込む', () => {
+    const result = normalizeState({
+      ...makeValidSaved(),
+      restTimerSettings: { autoStartOnIntensity: true, defaultSeconds: 'many' },
+    } as unknown as Partial<State>);
+    expect(result?.restTimerSettings).toEqual({
+      autoStartOnIntensity: true,
+      defaultSeconds: 60,
+    });
   });
 
   it('プリセットのスケジュールを正規化して保持する', () => {

@@ -41,8 +41,12 @@ export type NotificationSettings = {
   enabled: boolean;
 };
 
+export const restTimerPresetSeconds = [30, 60, 90, 120] as const;
+export const defaultRestTimerSeconds = 60;
+
 export type RestTimerSettings = {
   autoStartOnIntensity: boolean;
+  defaultSeconds: number;
 };
 
 /**

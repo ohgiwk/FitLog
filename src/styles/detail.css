@@ -558,7 +558,7 @@
   left: calc(12px + max(0px, (100vw - 480px) / 2));
   z-index: 20;
   display: grid;
-  grid-template-columns: auto 56px auto auto;
+  grid-template-columns: auto 72px auto;
   align-items: center;
   gap: 6px;
   width: 196px;
@@ -630,6 +630,19 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2.4;
+}
+
+.rest-timer select {
+  min-width: 0;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0 20px 0 8px;
+  background: var(--surface-float);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 900;
+  text-align: center;
 }
 
 .rest-timer input {

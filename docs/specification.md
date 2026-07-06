@@ -288,6 +288,7 @@ type WeightUnit = 'kg' | 'lbs';
 
 type RestTimerSettings = {
   autoStartOnIntensity: boolean;
+  defaultSeconds: number;
 };
 
 type ExerciseGoal = {
@@ -570,7 +571,7 @@ flowchart TD
 - `weightUnit`: `'kg'`。
 - `themeMode`: `'dark'`。
 - `notificationSettings`: `{ enabled: false }`。
-- `restTimerSettings`: `{ autoStartOnIntensity: true }`。
+- `restTimerSettings`: `{ autoStartOnIntensity: true, defaultSeconds: 60 }`。
 - `schemaVersion`: 現在の保存データバージョン。
 - `updatedAt`: 保存競合判定用の更新日時。
 - `hiddenParts`: 空配列。
@@ -600,7 +601,7 @@ flowchart TD
   - `weightUnit`: `'lbs'` のみ lbs として採用し、それ以外・未設定は `'kg'` に丸める。
   - `themeMode`: `'light'` のみライトモードとして採用し、それ以外・未設定は `'dark'` に丸める。
   - `notificationSettings`: `enabled: true` のみ通知オンとして採用し、未設定・不正値は通知オフに丸める。
-  - `restTimerSettings`: `autoStartOnIntensity: false` のみ自動開始オフとして採用し、未設定・不正値は自動開始オンに丸める。
+  - `restTimerSettings`: `autoStartOnIntensity: false` のみ自動開始オフとして採用し、未設定・不正値は自動開始オンに丸める。`defaultSeconds` は 1〜999 秒に丸め、未設定・不正値は 60 秒にする。
 - **初期状態の `parts`**: スターター種目の部位（胸 / 背中 / 脚 / 肩 / 腕 / 腹筋）をその順序で生成し、パレット色を循環で割り当てる。
 - `schemaVersion`: 読み込み時は正の整数を migration 判定に使い、正規化後は現在の保存データバージョンへ更新する。
 
@@ -882,12 +883,12 @@ flowchart TD
 ### 6.13 設定（`SettingsScreen`）
 
 - ホーム画面のドロワメニューから遷移する。トップバーの戻るでホームへ戻る。
-- 表示設定、マスタ管理、データ管理、通知、アプリ情報の各パネルを表示する。
+- 表示設定、レストタイマー、マスタ管理、データ管理、通知、アプリ情報の各パネルを表示する。
 - **外観**: ダーク / ライトの切り替えスイッチを表示する。切り替えた外観は `state.themeMode` に保存され、アプリ全体の配色に反映される。
 - **単位**: kg / Lbs の切り替えスイッチを表示する。
   - 切り替えた単位は `state.weightUnit` に保存され、重量入力欄、ホームのセット行、種目別履歴の重量・RM・負荷量表示に反映される。
   - 既存記録の保存値は kg のまま維持し、lbs 表示時のみ換算する。
-- **レストタイマー**: 強度入力時にレストタイマーを自動開始するかを ON / OFF で切り替える。設定は `state.restTimerSettings.autoStartOnIntensity` に保存する。
+- **レストタイマー**: 独立したパネルとして表示し、強度入力時にレストタイマーを自動開始するかを ON / OFF で切り替える。デフォルト秒数は入力方法トグルでプリセット選択と自由入力を切り替え、プリセット選択では 30 / 60 / 90 / 120 秒から選べる。設定は `state.restTimerSettings` に保存する。
 - **マスタ管理**: 「部位を編集」と「種目を編集」を表示する。
   - 部位を編集: 部位の追加・削除・並び替え・表示色変更を行う部位編集画面（`partEdit`）へ遷移する。
   - 種目を編集: 種目マスタの編集画面（`exerciseManage`）へ遷移する。
@@ -1068,7 +1069,7 @@ weight === 0 または reps === 0 → '0.0'
 
 ### 8.5 レストタイマー（`RestTimer`）
 
-- 既定 60 秒、入力は数字のみ・最大 3 桁、1〜999 にクランプ。
+- 既定は `restTimerSettings.defaultSeconds`（初期値 60 秒）。待機中の秒数はセレクトボックスで 30 / 60 / 90 / 120 秒から選択する。設定画面でプリセット外の自由入力秒数を保存した場合は、その秒数も現在値としてセレクトに表示する。秒数は 1〜999 にクランプ。
 - START で終了時刻（`Date.now() + 秒`）を保持し、250ms ごとに残り秒を再計算（時刻ベースなのでタブが非アクティブでもズレにくい）。
 - `restTimerSettings.autoStartOnIntensity` がオンの場合、詳細画面で強度アイコンを未選択から選択状態へ切り替えたときだけ現在の秒数で自動開始する。選択済みアイコンの再タップで未選択に戻すときは開始しない。実行中の場合は同じ秒数で再スタートする。
 - 実行中は画面下中央に大きな円形タイマーを下から飛び出るアニメーションで表示し、外周リングが残り時間に合わせて減少する。円の外側上部には「REST」を大きく太字で表示し、円の中央に残り秒と STOP ボタンを縦に揃える。背面には下部タブ直上からヘッダー方向へ薄く消える黒いグラデーションをフェードイン表示する。

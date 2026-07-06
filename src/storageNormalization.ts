@@ -5,6 +5,7 @@ import {
   ExerciseGoal,
   ExerciseGoalAchievement,
   GripStyleType,
+  defaultRestTimerSeconds,
   gripStyleTypes,
   GripType,
   gripTypes,
@@ -76,7 +77,10 @@ export function createDefaultState(): State {
     weightUnit: 'kg',
     themeMode: 'dark',
     notificationSettings: { enabled: false },
-    restTimerSettings: { autoStartOnIntensity: true },
+    restTimerSettings: {
+      autoStartOnIntensity: true,
+      defaultSeconds: defaultRestTimerSeconds,
+    },
     catalogVersion: starterCatalogVersion,
   };
 }
@@ -176,7 +180,12 @@ function normalizeRestTimerSettings(value: unknown): State['restTimerSettings'] 
   const item = recordOf(value);
   return {
     autoStartOnIntensity: item?.autoStartOnIntensity !== false,
+    defaultSeconds: normalizeRestTimerSeconds(item?.defaultSeconds),
   };
+}
+
+function normalizeRestTimerSeconds(value: unknown): number {
+  return Math.max(1, Math.min(999, Number(value) || defaultRestTimerSeconds));
 }
 
 function normalizeSchemaVersion(value: unknown): number {

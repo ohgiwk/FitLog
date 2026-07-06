@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { defaultRestTimerSeconds, restTimerPresetSeconds } from '../types';
 
-const defaultSeconds = 60;
 const exitAnimationMilliseconds = 420;
 const alarmSoundPath = `${import.meta.env.BASE_URL}Clock-Alarm.mp3`;
 export const restTimerStartEvent = 'fitlog:start-rest-timer';
 
-export function RestTimer() {
-  const [secondsInput, setSecondsInput] = useState(String(defaultSeconds));
-  const [remaining, setRemaining] = useState(defaultSeconds);
-  const [remainingMilliseconds, setRemainingMilliseconds] = useState(defaultSeconds * 1000);
-  const [durationMilliseconds, setDurationMilliseconds] = useState(defaultSeconds * 1000);
+export function RestTimer({ defaultSeconds }: { defaultSeconds: number }) {
+  const initialSeconds = clampSeconds(defaultSeconds);
+  const [selectedSeconds, setSelectedSeconds] = useState(initialSeconds);
+  const [remaining, setRemaining] = useState(initialSeconds);
+  const [remainingMilliseconds, setRemainingMilliseconds] = useState(initialSeconds * 1000);
+  const [durationMilliseconds, setDurationMilliseconds] = useState(initialSeconds * 1000);
   const [endTime, setEndTime] = useState<number | null>(null);
   const [showRunningTimer, setShowRunningTimer] = useState(false);
   const [timerExiting, setTimerExiting] = useState(false);
@@ -28,6 +29,13 @@ export function RestTimer() {
   useEffect(() => {
     return () => clearExitTimeout();
   }, []);
+
+  useEffect(() => {
+    if (running) return;
+    const nextSeconds = clampSeconds(defaultSeconds);
+    setSelectedSeconds(nextSeconds);
+    setRemaining(nextSeconds);
+  }, [defaultSeconds]);
 
   useEffect(() => {
     window.addEventListener(restTimerStartEvent, startTimer);
@@ -54,9 +62,9 @@ export function RestTimer() {
   }, [endTime]);
 
   function updateSeconds(value: string) {
-    const nextInput = value.replace(/[^\d]/g, '').slice(0, 3);
-    setSecondsInput(nextInput);
-    if (!running && nextInput) setRemaining(clampSeconds(nextInput));
+    const seconds = clampSeconds(value);
+    setSelectedSeconds(seconds);
+    if (!running) setRemaining(seconds);
   }
 
   function toggleTimer() {
@@ -69,7 +77,7 @@ export function RestTimer() {
   }
 
   function startTimer() {
-    const seconds = clampSeconds(secondsInput);
+    const seconds = clampSeconds(selectedSeconds);
     const context = getAudioContext(audioContextRef.current);
     audioContextRef.current = context;
     void context?.resume();
@@ -80,7 +88,7 @@ export function RestTimer() {
       });
     }
     const duration = seconds * 1000;
-    setSecondsInput(String(seconds));
+    setSelectedSeconds(seconds);
     setRemaining(seconds);
     setRemainingMilliseconds(duration);
     setDurationMilliseconds(duration);
@@ -167,16 +175,17 @@ export function RestTimer() {
         ) : (
           <>
             <TimerIcon />
-            <input
+            <select
               aria-label="タイマー秒数"
-              type="number"
-              min="1"
-              max="999"
-              inputMode="numeric"
-              value={secondsInput}
+              value={String(selectedSeconds)}
               onChange={(event) => updateSeconds(event.target.value)}
-            />
-            <span>秒</span>
+            >
+              {timerSelectOptions(selectedSeconds).map((seconds) => (
+                <option key={seconds} value={seconds}>
+                  {seconds}秒
+                </option>
+              ))}
+            </select>
             <button type="button" onClick={toggleTimer}>
               START
             </button>
@@ -199,8 +208,14 @@ function TimerIcon() {
   );
 }
 
-function clampSeconds(value: string) {
-  return Math.max(1, Math.min(999, Number(value) || defaultSeconds));
+function timerSelectOptions(selectedSeconds: number) {
+  return restTimerPresetSeconds.includes(selectedSeconds as (typeof restTimerPresetSeconds)[number])
+    ? [...restTimerPresetSeconds]
+    : [selectedSeconds, ...restTimerPresetSeconds].sort((a, b) => a - b);
+}
+
+function clampSeconds(value: string | number) {
+  return Math.max(1, Math.min(999, Number(value) || defaultRestTimerSeconds));
 }
 
 function getAudioContext(context: AudioContext | null) {

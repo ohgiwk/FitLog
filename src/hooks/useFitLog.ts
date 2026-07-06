@@ -14,7 +14,7 @@ import {
   sendTestWorkoutReminderNotification,
   syncWorkoutReminderNotification,
 } from '../notifications';
-import { Preset, Screen, ThemeMode, WeightUnit } from '../types';
+import { defaultRestTimerSeconds, Preset, Screen, ThemeMode, WeightUnit } from '../types';
 import { uid } from '../utils';
 
 /**
@@ -86,8 +86,25 @@ export function useFitLog() {
     core.saveState((current) => ({
       ...current,
       restTimerSettings: {
-        ...(current.restTimerSettings ?? { autoStartOnIntensity: true }),
+        ...(current.restTimerSettings ?? {
+          autoStartOnIntensity: true,
+          defaultSeconds: defaultRestTimerSeconds,
+        }),
         autoStartOnIntensity,
+      },
+    }));
+  }, [core]);
+
+  const setRestTimerDefaultSeconds = useCallback((defaultSeconds: number) => {
+    const seconds = Math.max(1, Math.min(999, Number(defaultSeconds) || defaultRestTimerSeconds));
+    core.saveState((current) => ({
+      ...current,
+      restTimerSettings: {
+        ...(current.restTimerSettings ?? {
+          autoStartOnIntensity: true,
+          defaultSeconds: defaultRestTimerSeconds,
+        }),
+        defaultSeconds: seconds,
       },
     }));
   }, [core]);
@@ -313,6 +330,7 @@ export function useFitLog() {
       setWeightUnit,
       setThemeMode,
       setRestTimerAutoStart,
+      setRestTimerDefaultSeconds,
       setWorkoutReminderEnabled,
       sendWorkoutReminderTestNotification,
       startPreset: presets.startPreset,
@@ -354,6 +372,7 @@ export function useFitLog() {
       savePresetDraft,
       sendWorkoutReminderTestNotification,
       setRestTimerAutoStart,
+      setRestTimerDefaultSeconds,
       setThemeMode,
       setWeightUnit,
       setWorkoutReminderEnabled,

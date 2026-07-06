@@ -42,7 +42,7 @@ const state: State = {
   weightUnit: 'kg',
   themeMode: 'dark',
   notificationSettings: { enabled: false },
-  restTimerSettings: { autoStartOnIntensity: true },
+  restTimerSettings: { autoStartOnIntensity: true, defaultSeconds: 60 },
   catalogVersion: 1,
 };
 
@@ -53,6 +53,7 @@ function renderDetailScreen({
   weightUnit = 'kg',
   currentWorkout = workout,
   restTimerAutoStart = true,
+  restTimerDefaultSeconds = 60,
 }: {
   updateSet?: ReturnType<typeof vi.fn>;
   updateSetAchievement?: ReturnType<typeof vi.fn>;
@@ -60,6 +61,7 @@ function renderDetailScreen({
   weightUnit?: State['weightUnit'];
   currentWorkout?: Workout;
   restTimerAutoStart?: boolean;
+  restTimerDefaultSeconds?: number;
 }) {
   const value = {
     currentWorkout,
@@ -67,7 +69,10 @@ function renderDetailScreen({
       ...state,
       weightUnit,
       workouts: [currentWorkout],
-      restTimerSettings: { autoStartOnIntensity: restTimerAutoStart },
+      restTimerSettings: {
+        autoStartOnIntensity: restTimerAutoStart,
+        defaultSeconds: restTimerDefaultSeconds,
+      },
     },
     actions: {
       setScreen: vi.fn(),
@@ -182,6 +187,16 @@ describe('DetailScreen set inputs', () => {
     window.removeEventListener(restTimerStartEvent, onStartRestTimer);
 
     expect(onStartRestTimer).toHaveBeenCalledTimes(1);
+  });
+
+  it('レストタイマーの秒数セレクトに設定のデフォルト秒数を反映する', () => {
+    renderDetailScreen({ restTimerDefaultSeconds: 90 });
+
+    const timerSelect = document.body.querySelector(
+      'select[aria-label="タイマー秒数"]',
+    ) as HTMLSelectElement | null;
+
+    expect(timerSelect?.value).toBe('90');
   });
 
   it('選択済みの強度アイコンを解除してもレストタイマー開始イベントを送らない', () => {
