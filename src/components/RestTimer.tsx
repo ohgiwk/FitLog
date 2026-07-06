@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 const defaultSeconds = 60;
 const exitAnimationMilliseconds = 420;
 const alarmSoundPath = `${import.meta.env.BASE_URL}Clock-Alarm.mp3`;
+export const restTimerStartEvent = 'fitlog:start-rest-timer';
 
 export function RestTimer() {
   const [secondsInput, setSecondsInput] = useState(String(defaultSeconds));
@@ -27,6 +28,11 @@ export function RestTimer() {
   useEffect(() => {
     return () => clearExitTimeout();
   }, []);
+
+  useEffect(() => {
+    window.addEventListener(restTimerStartEvent, startTimer);
+    return () => window.removeEventListener(restTimerStartEvent, startTimer);
+  });
 
   useEffect(() => {
     if (!endTime) return;
@@ -55,11 +61,14 @@ export function RestTimer() {
 
   function toggleTimer() {
     if (running) {
-      hideRunningTimer();
-      setEndTime(null);
+      stopTimer();
       return;
     }
 
+    startTimer();
+  }
+
+  function startTimer() {
     const seconds = clampSeconds(secondsInput);
     const context = getAudioContext(audioContextRef.current);
     audioContextRef.current = context;
@@ -77,6 +86,11 @@ export function RestTimer() {
     setDurationMilliseconds(duration);
     showActiveTimer();
     setEndTime(Date.now() + duration);
+  }
+
+  function stopTimer() {
+    hideRunningTimer();
+    setEndTime(null);
   }
 
   function showActiveTimer() {
@@ -103,27 +117,51 @@ export function RestTimer() {
 
   const timer = (
     <>
-      {showRunningTimer && <div className={`rest-timer-overlay ${exiting ? 'exiting' : ''}`} aria-hidden="true" />}
+      {showRunningTimer && (
+        <button
+          className={`rest-timer-overlay ${exiting ? 'exiting' : ''}`}
+          type="button"
+          aria-label="レストタイマーを停止"
+          onClick={stopTimer}
+        />
+      )}
       <div className={`rest-timer ${showRunningTimer ? 'running' : ''} ${exiting ? 'exiting' : ''}`} aria-label="レストタイマー">
         {showRunningTimer ? (
           <>
-            <svg className="rest-timer-progress" viewBox="0 0 100 100" aria-hidden="true">
-              <circle className="rest-timer-progress-track" cx="50" cy="50" r="46" />
-              <circle
-                className="rest-timer-progress-value"
-                cx="50"
-                cy="50"
-                r="46"
-                pathLength="100"
-                strokeDasharray="100"
-                strokeDashoffset={progressOffset}
-              />
+            <svg className="rest-timer-label-arc" viewBox="0 0 196 58" aria-hidden="true">
+              <defs>
+                <path id="rest-timer-label-path" d="M 36 71 A 68 68 0 0 1 160 71" />
+              </defs>
+              <text className="rest-timer-label-outline">
+                <textPath href="#rest-timer-label-path" startOffset="50%" textAnchor="middle">
+                  REST
+                </textPath>
+              </text>
+              <text className="rest-timer-label-fill">
+                <textPath href="#rest-timer-label-path" startOffset="50%" textAnchor="middle">
+                  REST
+                </textPath>
+              </text>
             </svg>
-            <div className="rest-timer-countdown">
-              <strong aria-live="polite">{remaining}</strong>
-              <button type="button" onClick={toggleTimer}>
-                STOP
-              </button>
+            <div className="rest-timer-dial">
+              <svg className="rest-timer-progress" viewBox="0 0 100 100" aria-hidden="true">
+                <circle className="rest-timer-progress-track" cx="50" cy="50" r="46" />
+                <circle
+                  className="rest-timer-progress-value"
+                  cx="50"
+                  cy="50"
+                  r="46"
+                  pathLength="100"
+                  strokeDasharray="100"
+                  strokeDashoffset={progressOffset}
+                />
+              </svg>
+              <div className="rest-timer-countdown">
+                <strong aria-live="polite">{remaining}</strong>
+                <button type="button" onClick={toggleTimer}>
+                  STOP
+                </button>
+              </div>
             </div>
           </>
         ) : (

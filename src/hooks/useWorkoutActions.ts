@@ -1,4 +1,12 @@
-import { GripStyleType, GripType, Screen, SetIntensity, State, Workout } from '../types';
+import {
+  GripStyleType,
+  GripType,
+  Screen,
+  SetAchievement,
+  SetIntensity,
+  State,
+  Workout,
+} from '../types';
 import { isUnstartedWorkout, newSet } from '../utils';
 import { createWorkout } from '../selectors/fitLogSelectors';
 
@@ -164,6 +172,66 @@ export function useWorkoutActions({
       if (setIndex === -1) return prev;
       const sets = [...workout.sets];
       sets[setIndex] = { ...sets[setIndex], [field]: value };
+      const workouts = [...prev.workouts];
+      workouts[workoutIndex] = { ...workout, sets };
+      return { ...prev, workouts };
+    });
+  }
+
+  /**
+   * セットの目標達成状態を記録し、未達なら実績入力欄を空に戻す
+   */
+  function updateSetAchievement(setId: string, achievement: SetAchievement) {
+    const target = state.workouts.find((workout) => workout.sets.some((set) => set.id === setId));
+    if (!target || isWorkoutDayEnded(target.date)) return;
+    saveState((prev) => {
+      const workoutIndex = prev.workouts.findIndex((workout) =>
+        workout.sets.some((set) => set.id === setId),
+      );
+      const workout = prev.workouts[workoutIndex];
+      if (!workout || prev.workoutEndTimes[workout.date]) return prev;
+      const setIndex = workout.sets.findIndex((set) => set.id === setId);
+      if (setIndex === -1) return prev;
+      const currentSet = workout.sets[setIndex];
+      const targetRecordValue = currentSet.targetRecordValue ?? currentSet.recordValue;
+      const nextSet = {
+        ...currentSet,
+        achievement,
+        targetRecordValue,
+        recordValue: achievement === 'missed' ? null : currentSet.recordValue,
+      };
+      const sets = [...workout.sets];
+      sets[setIndex] = nextSet;
+      const workouts = [...prev.workouts];
+      workouts[workoutIndex] = { ...workout, sets };
+      return { ...prev, workouts };
+    });
+  }
+
+  /**
+   * セットの達成判定を取り消し、判定前の目標入力へ戻す
+   */
+  function resetSetAchievement(setId: string) {
+    const target = state.workouts.find((workout) => workout.sets.some((set) => set.id === setId));
+    if (!target || isWorkoutDayEnded(target.date)) return;
+    saveState((prev) => {
+      const workoutIndex = prev.workouts.findIndex((workout) =>
+        workout.sets.some((set) => set.id === setId),
+      );
+      const workout = prev.workouts[workoutIndex];
+      if (!workout || prev.workoutEndTimes[workout.date]) return prev;
+      const setIndex = workout.sets.findIndex((set) => set.id === setId);
+      if (setIndex === -1) return prev;
+      const currentSet = workout.sets[setIndex];
+      const nextSet = {
+        ...currentSet,
+        recordValue: currentSet.targetRecordValue ?? currentSet.recordValue,
+      };
+      delete nextSet.targetRecordValue;
+      delete nextSet.achievement;
+      delete nextSet.intensity;
+      const sets = [...workout.sets];
+      sets[setIndex] = nextSet;
       const workouts = [...prev.workouts];
       workouts[workoutIndex] = { ...workout, sets };
       return { ...prev, workouts };
@@ -347,6 +415,8 @@ export function useWorkoutActions({
     addExerciseToToday,
     addSet,
     updateSet,
+    updateSetAchievement,
+    resetSetAchievement,
     updateWorkoutNote,
     updateSetIntensity,
     updateWorkoutGrip,

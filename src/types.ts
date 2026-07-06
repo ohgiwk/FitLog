@@ -23,6 +23,8 @@ export type MeasurementType = 'reps' | 'seconds';
 
 export type SetIntensity = 1 | 2 | 3 | 4 | 5;
 
+export type SetAchievement = 'achieved' | 'missed';
+
 export const gripTypes = ['normal', 'reverse', 'parallel', 'alternate'] as const;
 
 export type GripType = (typeof gripTypes)[number];
@@ -37,6 +39,10 @@ export type ThemeMode = 'dark' | 'light';
 
 export type NotificationSettings = {
   enabled: boolean;
+};
+
+export type RestTimerSettings = {
+  autoStartOnIntensity: boolean;
 };
 
 /**
@@ -76,6 +82,8 @@ export type WorkoutSet = {
   id: string;
   weight: number | null;
   recordValue: number | null;
+  targetRecordValue?: number | null;
+  achievement?: SetAchievement;
   intensity?: SetIntensity;
 };
 
@@ -146,6 +154,7 @@ export type State = {
   weightUnit: WeightUnit;
   themeMode: ThemeMode;
   notificationSettings: NotificationSettings;
+  restTimerSettings: RestTimerSettings;
   catalogVersion: number;
 };
 

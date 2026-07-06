@@ -76,6 +76,7 @@ export function createDefaultState(): State {
     weightUnit: 'kg',
     themeMode: 'dark',
     notificationSettings: { enabled: false },
+    restTimerSettings: { autoStartOnIntensity: true },
     catalogVersion: starterCatalogVersion,
   };
 }
@@ -147,6 +148,7 @@ export function normalizeState(saved: Partial<State> | null | undefined): State 
     weightUnit: normalizeWeightUnit(migrated.weightUnit),
     themeMode: normalizeThemeMode(migrated.themeMode),
     notificationSettings: normalizeNotificationSettings(migrated.notificationSettings),
+    restTimerSettings: normalizeRestTimerSettings(migrated.restTimerSettings),
     catalogVersion: starterCatalogVersion,
   };
 }
@@ -167,6 +169,13 @@ function normalizeNotificationSettings(value: unknown): State['notificationSetti
   const item = recordOf(value);
   return {
     enabled: item?.enabled === true,
+  };
+}
+
+function normalizeRestTimerSettings(value: unknown): State['restTimerSettings'] {
+  const item = recordOf(value);
+  return {
+    autoStartOnIntensity: item?.autoStartOnIntensity !== false,
   };
 }
 
@@ -493,6 +502,8 @@ function normalizeSets(value: unknown): WorkoutSet[] {
         id: item.id,
         weight: normalizeSetValue(item.weight),
         recordValue: normalizeSetValue(item.recordValue ?? item.reps),
+        targetRecordValue: normalizeSetValue(item.targetRecordValue),
+        achievement: normalizeSetAchievement(item.achievement),
         intensity: normalizeIntensity(item.intensity),
       },
     ];
@@ -508,6 +519,10 @@ function normalizeSetValue(value: unknown): number | null {
 
 function normalizeMeasurementType(value: unknown): MeasurementType {
   return value === 'seconds' ? 'seconds' : 'reps';
+}
+
+function normalizeSetAchievement(value: unknown) {
+  return value === 'achieved' || value === 'missed' ? value : undefined;
 }
 
 function normalizeGrips(value: unknown): GripType[] {

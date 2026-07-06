@@ -6,6 +6,7 @@ import {
   HistoryIcon,
   PlusIcon,
   TrashIcon,
+  UndoIcon,
 } from '../icons';
 import {
   calcRm,
@@ -21,9 +22,9 @@ import {
   weightUnitLabel,
 } from '../utils';
 import { IntensityIcon } from '../components/IntensityIcon';
-import { RestTimer } from '../components/RestTimer';
+import { RestTimer, restTimerStartEvent } from '../components/RestTimer';
 import { useFitLogContext } from '../hooks/useFitLogContext';
-import { GripStyleType, GripType } from '../types';
+import { GripStyleType, GripType, SetIntensity } from '../types';
 
 /**
  * 種目詳細画面が必要とする state・操作を Context から組み立てる view-model フック
@@ -38,10 +39,13 @@ function useDetailScreenModel() {
     workout: currentWorkout,
     exercise,
     weightUnit: state.weightUnit,
+    restTimerSettings: state.restTimerSettings,
     readOnly: Boolean(currentWorkout && state.workoutEndTimes[currentWorkout.date]),
     onBack: () => actions.setScreen('home'),
     onOpenHistory: () => actions.setScreen('exerciseHistory'),
     onUpdateSet: actions.updateSet,
+    onUpdateSetAchievement: actions.updateSetAchievement,
+    onResetSetAchievement: actions.resetSetAchievement,
     onUpdateWorkoutNote: actions.updateWorkoutNote,
     onUpdateSetIntensity: actions.updateSetIntensity,
     onUpdateWorkoutGrip: actions.updateWorkoutGrip,
@@ -396,10 +400,13 @@ export function DetailScreen() {
     workout,
     exercise,
     weightUnit,
+    restTimerSettings,
     readOnly,
     onBack,
     onOpenHistory,
     onUpdateSet,
+    onUpdateSetAchievement,
+    onResetSetAchievement,
     onUpdateWorkoutNote,
     onUpdateSetIntensity,
     onUpdateWorkoutGrip,
@@ -427,6 +434,21 @@ export function DetailScreen() {
   function updateRecordInput(setId: string, value: string) {
     setRecordInputs((current) => ({ ...current, [setId]: value }));
     onUpdateSet(setId, 'recordValue', value.trim() === '' ? null : Number(value));
+  }
+  function markSetMissed(setId: string) {
+    setRecordInputs((current) => ({ ...current, [setId]: '' }));
+    onUpdateSetAchievement(setId, 'missed');
+  }
+  function updateIntensity(
+    setId: string,
+    currentIntensity: SetIntensity | undefined,
+    nextIntensity: SetIntensity,
+  ) {
+    const nextSelected = currentIntensity !== nextIntensity;
+    onUpdateSetIntensity(setId, nextSelected ? nextIntensity : undefined);
+    if (nextSelected && restTimerSettings.autoStartOnIntensity) {
+      window.dispatchEvent(new Event(restTimerStartEvent));
+    }
   }
   function releaseInput(setId: string) {
     setWeightInputs((current) => {
@@ -512,6 +534,12 @@ export function DetailScreen() {
                   onChange={(event) => updateRecordInput(set.id, event.target.value)}
                 />
                 <span className="unit">{unit}</span>
+                {set.achievement === 'missed' && typeof set.targetRecordValue === 'number' && (
+                  <span className="target-value">
+                    目標 {set.targetRecordValue}
+                    {unit}
+                  </span>
+                )}
               </label>
               <div className="rm-value">
                 {isReps
@@ -521,26 +549,51 @@ export function DetailScreen() {
                     )} ${weightUnitLabel(weightUnit)}`
                   : '-'}
               </div>
-              <div className="intensity-picker" aria-label={`${index + 1}セット目の強度`}>
-                {intensityOptions.map((option) => (
+              {set.achievement ? (
+                <div className="intensity-picker" aria-label={`${index + 1}セット目の強度`}>
+                  {intensityOptions.map((option) => (
+                    <button
+                      className={`intensity-button intensity-button-${option.value}${set.intensity === option.value ? ' active' : ''}`}
+                      key={option.value}
+                      type="button"
+                      disabled={readOnly}
+                      aria-label={option.label}
+                      aria-pressed={set.intensity === option.value}
+                      onClick={() => updateIntensity(set.id, set.intensity, option.value)}
+                    >
+                      <IntensityIcon intensity={option.value} />
+                    </button>
+                  ))}
                   <button
-                    className={`intensity-button intensity-button-${option.value}${set.intensity === option.value ? ' active' : ''}`}
-                    key={option.value}
+                    className="intensity-reset-button"
                     type="button"
                     disabled={readOnly}
-                    aria-label={option.label}
-                    aria-pressed={set.intensity === option.value}
-                    onClick={() =>
-                      onUpdateSetIntensity(
-                        set.id,
-                        set.intensity === option.value ? undefined : option.value,
-                      )
-                    }
+                    aria-label={`${index + 1}セット目の達成判定を戻す`}
+                    onClick={() => onResetSetAchievement(set.id)}
                   >
-                    <IntensityIcon intensity={option.value} />
+                    <UndoIcon />
                   </button>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="achievement-actions" aria-label={`${index + 1}セット目の達成状態`}>
+                  <button
+                    className="achievement-button achieved"
+                    type="button"
+                    disabled={readOnly || set.recordValue === null}
+                    onClick={() => onUpdateSetAchievement(set.id, 'achieved')}
+                  >
+                    達成
+                  </button>
+                  <button
+                    className="achievement-button missed"
+                    type="button"
+                    disabled={readOnly || set.recordValue === null}
+                    onClick={() => markSetMissed(set.id)}
+                  >
+                    未達
+                  </button>
+                </div>
+              )}
             </SwipeableSetRow>
           ))}
           {!readOnly && (

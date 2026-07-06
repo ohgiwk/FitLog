@@ -26,11 +26,13 @@ function useSettingsScreenModel() {
   return {
     weightUnit: state.weightUnit,
     themeMode: state.themeMode,
+    restTimerSettings: state.restTimerSettings,
     onBack: () => actions.setScreen('home'),
     onEditParts: () => actions.setScreen('partEdit'),
     onEditExercises: () => actions.setScreen('exerciseManage'),
     onChangeWeightUnit: actions.setWeightUnit,
     onChangeThemeMode: actions.setThemeMode,
+    onChangeRestTimerAutoStart: actions.setRestTimerAutoStart,
     onOpenNotificationSettings: () => actions.setScreen('notificationSettings'),
     onOpenBackup: () => actions.setScreen('backup'),
     onOpenPrivacyPolicy: () => actions.setScreen('privacyPolicy'),
@@ -45,11 +47,13 @@ export function SettingsScreen() {
   const {
     weightUnit,
     themeMode,
+    restTimerSettings,
     onBack,
     onEditParts,
     onEditExercises,
     onChangeWeightUnit,
     onChangeThemeMode,
+    onChangeRestTimerAutoStart,
     onOpenNotificationSettings,
     onOpenBackup,
     onOpenPrivacyPolicy,
@@ -108,6 +112,30 @@ export function SettingsScreen() {
                   {weightUnitLabel(unit)}
                 </button>
               ))}
+            </div>
+          </div>
+          <div className="settings-row">
+            <div className="settings-label">
+              <span>レストタイマー</span>
+              <strong>強度入力時に自動で開始</strong>
+            </div>
+            <div className="unit-switch" role="group" aria-label="強度入力時のレストタイマー自動開始">
+              <button
+                className={`unit-switch-button ${restTimerSettings.autoStartOnIntensity ? 'active' : ''}`}
+                type="button"
+                aria-pressed={restTimerSettings.autoStartOnIntensity}
+                onClick={() => onChangeRestTimerAutoStart(true)}
+              >
+                ON
+              </button>
+              <button
+                className={`unit-switch-button ${restTimerSettings.autoStartOnIntensity ? '' : 'active'}`}
+                type="button"
+                aria-pressed={!restTimerSettings.autoStartOnIntensity}
+                onClick={() => onChangeRestTimerAutoStart(false)}
+              >
+                OFF
+              </button>
             </div>
           </div>
         </section>

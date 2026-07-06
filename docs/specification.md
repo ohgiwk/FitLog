@@ -269,6 +269,7 @@ useFitLogCore (state + 永続化 + トースト)
 | `weightUnit` | `WeightUnit` | アプリ内の重量入力・表示に使う単位（`kg` / `lbs`）。保存値は kg のまま保持する |
 | `themeMode` | `ThemeMode` | アプリの外観設定（`dark` / `light`） |
 | `notificationSettings` | `NotificationSettings` | トレーニング未記録時のローカル通知設定 |
+| `restTimerSettings` | `RestTimerSettings` | レストタイマーの挙動設定 |
 | `updatedAt` | `string` | 保存競合判定用の更新日時 |
 | `catalogVersion` | `number` | 種目マスタのカタログ版（追補判定に使用） |
 
@@ -279,10 +280,15 @@ useFitLogCore (state + 永続化 + トースト)
 ```ts
 type MeasurementType = 'reps' | 'seconds';
 type SetIntensity = 1 | 2 | 3 | 4 | 5;
+type SetAchievement = 'achieved' | 'missed';
 type ExerciseCategory = 'free' | 'machine' | 'dumbbell' | 'cable' | 'bodyweight';
 type GripType = 'normal' | 'reverse' | 'parallel' | 'alternate';
 type GripStyleType = 'thumbAround' | 'thumbLess' | 'thumbUp' | 'hook';
 type WeightUnit = 'kg' | 'lbs';
+
+type RestTimerSettings = {
+  autoStartOnIntensity: boolean;
+};
 
 type ExerciseGoal = {
   weight: number;      // 目標重量（保存値は kg）
@@ -315,7 +321,9 @@ type Exercise = {
 type WorkoutSet = {
   id: string;
   weight: number | null;        // 重量（保存値は kg）。未入力は null
-  recordValue: number | null;   // 回数 or 秒数。未入力は null
+  recordValue: number | null;   // 実績の回数 or 秒数。未入力は null
+  targetRecordValue?: number | null; // 未達時などに退避した目標回数 or 秒数
+  achievement?: SetAchievement;  // 目標に対する達成状態（達成 / 未達）
   intensity?: SetIntensity;     // 主観強度（任意）
 };
 
@@ -562,6 +570,7 @@ flowchart TD
 - `weightUnit`: `'kg'`。
 - `themeMode`: `'dark'`。
 - `notificationSettings`: `{ enabled: false }`。
+- `restTimerSettings`: `{ autoStartOnIntensity: true }`。
 - `schemaVersion`: 現在の保存データバージョン。
 - `updatedAt`: 保存競合判定用の更新日時。
 - `hiddenParts`: 空配列。
@@ -591,6 +600,7 @@ flowchart TD
   - `weightUnit`: `'lbs'` のみ lbs として採用し、それ以外・未設定は `'kg'` に丸める。
   - `themeMode`: `'light'` のみライトモードとして採用し、それ以外・未設定は `'dark'` に丸める。
   - `notificationSettings`: `enabled: true` のみ通知オンとして採用し、未設定・不正値は通知オフに丸める。
+  - `restTimerSettings`: `autoStartOnIntensity: false` のみ自動開始オフとして採用し、未設定・不正値は自動開始オンに丸める。
 - **初期状態の `parts`**: スターター種目の部位（胸 / 背中 / 脚 / 肩 / 腕 / 腹筋）をその順序で生成し、パレット色を循環で割り当てる。
 - `schemaVersion`: 読み込み時は正の整数を migration 判定に使い、正規化後は現在の保存データバージョンへ更新する。
 
@@ -791,7 +801,10 @@ flowchart TD
   - 重量は画面上では設定中の単位（kg / Lbs）を使い、`Exercise.goal.weight` には kg 換算値を保存する。
   - 回数・秒数は 1 以上、重量は 0 以上の場合に設定・更新できる。
 - **詳細記録**: 現在の目標の直下に折りたたみ式の「詳細記録」エリアを表示する。見出しを押すと開閉し、「握りの向き」と「握り方」を横並びに表示する。その日の `Workout.grip` / `Workout.gripStyle` として保存し、候補は種目マスタの `availableGrips` / `availableGripStyles` に従う。
-- **セット入力テーブル**: 各行に番号・重量入力（設定中の重量単位。`kg` は step 0.5、`lbs` は step 1）・記録入力（`回`/`秒`、step 1）・RM 表示・強度ピッカー（5 段階トグル）。
+- **セット入力テーブル**: 各行に番号・目標重量入力（設定中の重量単位。`kg` は step 0.5、`lbs` は step 1）・回数/秒数入力（判定前は目標、判定後は実績。step 1）・RM 表示・達成/未達ボタンまたは強度ピッカー（5 段階トグル）。
+  - 初期表示では強度ピッカーを出さず、「達成」「未達」ボタンを表示する。達成を押すと入力済みの目標回数/秒数を実績として保持し、未達を押すと入力済みの目標回数/秒数を `targetRecordValue` に退避して `recordValue` を空に戻す。
+  - 未達の行では、回数/秒数入力欄の下に退避した目標値を小さく表示する。
+  - 達成/未達を押した後は、同じ位置に強度ピッカーを表示する。強度ピッカー右端の戻るアイコンで達成判定を解除し、達成/未達ボタンを再表示する。
   - 編集可能な行を左へスワイプすると、右端にセット削除ボタンを表示する。右へ戻すか行をタップすると閉じる。
   - 入力欄の表示・入力単位は設定に従うが、保存する `WorkoutSet.weight` は kg に換算した値を保持する。
   - reps 種目のみ RM を表示、seconds 種目は `-`。
@@ -874,6 +887,7 @@ flowchart TD
 - **単位**: kg / Lbs の切り替えスイッチを表示する。
   - 切り替えた単位は `state.weightUnit` に保存され、重量入力欄、ホームのセット行、種目別履歴の重量・RM・負荷量表示に反映される。
   - 既存記録の保存値は kg のまま維持し、lbs 表示時のみ換算する。
+- **レストタイマー**: 強度入力時にレストタイマーを自動開始するかを ON / OFF で切り替える。設定は `state.restTimerSettings.autoStartOnIntensity` に保存する。
 - **マスタ管理**: 「部位を編集」と「種目を編集」を表示する。
   - 部位を編集: 部位の追加・削除・並び替え・表示色変更を行う部位編集画面（`partEdit`）へ遷移する。
   - 種目を編集: 種目マスタの編集画面（`exerciseManage`）へ遷移する。
@@ -1013,6 +1027,8 @@ weight === 0 または reps === 0 → '0.0'
 - `addExerciseToToday`: 選択日に同一種目があれば再利用、無ければ新規作成して詳細を開く。
 - `addSet`: 空セットを 1 つ追加し詳細を開く。
 - `updateSet`: 指定セットの `weight` / `recordValue` を更新。対象セットを含むワークアウトだけを特定し、そのワークアウトとセット配列だけを差し替える。
+- `updateSetAchievement`: 指定セットの `achievement` を保存。未達では現在の `recordValue` を `targetRecordValue` に退避し、実績入力のため `recordValue` を `null` に戻す。
+- `resetSetAchievement`: 指定セットの達成判定を解除。`targetRecordValue` があれば `recordValue` に戻し、`achievement` / `targetRecordValue` / `intensity` を削除する。
 - `updateWorkoutNote`: 指定ワークアウトの種目メモ `note` を更新。
 - `updateSetIntensity`: 強度を設定。同じ強度を再タップ、または `undefined` で強度を解除（フィールド削除）。`updateSet` と同じく対象ワークアウトだけを差し替える。
 - `updateWorkoutGrip`: 種目記録の握りの向きを設定。`undefined` で選択を解除（フィールド削除）。
@@ -1054,9 +1070,10 @@ weight === 0 または reps === 0 → '0.0'
 
 - 既定 60 秒、入力は数字のみ・最大 3 桁、1〜999 にクランプ。
 - START で終了時刻（`Date.now() + 秒`）を保持し、250ms ごとに残り秒を再計算（時刻ベースなのでタブが非アクティブでもズレにくい）。
-- 実行中は画面下中央に大きな円形タイマーを下から飛び出るアニメーションで表示し、外周リングが残り時間に合わせて減少する。中央に残り秒と STOP ボタンを縦に揃え、背面には下部タブ直上からヘッダー方向へ薄く消える黒いグラデーションをフェードイン表示する。
+- `restTimerSettings.autoStartOnIntensity` がオンの場合、詳細画面で強度アイコンを未選択から選択状態へ切り替えたときだけ現在の秒数で自動開始する。選択済みアイコンの再タップで未選択に戻すときは開始しない。実行中の場合は同じ秒数で再スタートする。
+- 実行中は画面下中央に大きな円形タイマーを下から飛び出るアニメーションで表示し、外周リングが残り時間に合わせて減少する。円の外側上部には「REST」を大きく太字で表示し、円の中央に残り秒と STOP ボタンを縦に揃える。背面には下部タブ直上からヘッダー方向へ薄く消える黒いグラデーションをフェードイン表示する。
 - 0 になると停止し、`AudioContext` で `public/Clock-Alarm.mp3` を再生する。START 時に `AudioContext` を resume して音源を先読みし、モバイルの自動再生制限に対応。
-- 実行中は STOP で中断。停止時は円形タイマーと背面グラデーションをフェードアウトして通常表示へ戻す。
+- 実行中は STOP または背面グラデーションのタップで中断。停止時は円形タイマーと背面グラデーションをフェードアウトして通常表示へ戻す。
 
 ### 8.6 強度（intensity）
 

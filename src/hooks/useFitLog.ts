@@ -82,6 +82,16 @@ export function useFitLog() {
     core.saveState((current) => ({ ...current, themeMode }));
   }, [core]);
 
+  const setRestTimerAutoStart = useCallback((autoStartOnIntensity: boolean) => {
+    core.saveState((current) => ({
+      ...current,
+      restTimerSettings: {
+        ...(current.restTimerSettings ?? { autoStartOnIntensity: true }),
+        autoStartOnIntensity,
+      },
+    }));
+  }, [core]);
+
   const setWorkoutReminderEnabled = useCallback(async (enabled: boolean) => {
     if (!enabled) {
       await cancelWorkoutReminderNotification();
@@ -302,6 +312,7 @@ export function useFitLog() {
       setEditMode: ui.setEditMode,
       setWeightUnit,
       setThemeMode,
+      setRestTimerAutoStart,
       setWorkoutReminderEnabled,
       sendWorkoutReminderTestNotification,
       startPreset: presets.startPreset,
@@ -317,6 +328,8 @@ export function useFitLog() {
       clearToast: core.clearToast,
       closeExerciseEditor,
       updateSet: workout.updateSet,
+      updateSetAchievement: workout.updateSetAchievement,
+      resetSetAchievement: workout.resetSetAchievement,
       updateWorkoutNote: workout.updateWorkoutNote,
       updateSetIntensity: workout.updateSetIntensity,
       updateWorkoutGrip: workout.updateWorkoutGrip,
@@ -340,6 +353,7 @@ export function useFitLog() {
       presets,
       savePresetDraft,
       sendWorkoutReminderTestNotification,
+      setRestTimerAutoStart,
       setThemeMode,
       setWeightUnit,
       setWorkoutReminderEnabled,

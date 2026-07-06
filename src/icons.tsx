@@ -13,6 +13,7 @@ import {
   IconMenu2,
   IconPencil,
   IconPlus,
+  IconArrowBackUp,
   IconSettings,
   IconShieldLock,
   IconTrophy,
@@ -34,6 +35,10 @@ export function ChevronLeft() {
 
 export function PlusIcon() {
   return <IconPlus />;
+}
+
+export function UndoIcon() {
+  return <IconArrowBackUp />;
 }
 
 export function TrashIcon() {
