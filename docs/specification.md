@@ -4,6 +4,21 @@
 
 対象バージョンの基準: `src/` の現行実装。
 
+## 読み方ガイド
+
+この仕様書は正本として詳細を残すため、目的に合わせて必要な章だけ読むことを前提にします。
+
+| 目的 | 読む場所 |
+| --- | --- |
+| アプリの全体像を知りたい | 1章、3章 |
+| 使っている技術や主要ファイルを確認したい | 2章 |
+| 状態管理・画面への値の流れを知りたい | 3章 |
+| 保存データの型や互換性を確認したい | 4章、5章 |
+| 画面仕様や画面遷移を確認したい | 6章 |
+| 計算ロジックや操作の詳細を確認したい | 7章、8章 |
+| UI方針・テスト観点を確認したい | 9章、10章 |
+| 初期種目の内容を確認したい | 11章 |
+
 ---
 
 ## 1. プロジェクト概要
@@ -60,18 +75,20 @@ npm run format       # prettier --write
 
 ### 2.2 ビルド設定（`vite.config.ts`）
 
-- 通常ビルドは `base: '/FitLog/'`（GitHub Pages の公開パス）。
-- `capacitor` mode のビルドは `base: './'` とし、PWA 生成を無効化します。
-- PWA manifest:
-  - `id` / `start_url` / `scope`: `/FitLog/`
-  - `display: 'standalone'`、`orientation: 'portrait'`
-  - `theme_color: '#ef2331'`、`background_color: '#0f1115'`、`lang: 'ja'`
-  - アイコン: `pwa-192x192.png`（any）、`pwa-512x512.png`（any maskable）
-- favicon は `public/logo.png` から生成した `favicon.png` を使い、二重 base パス互換用に同じ画像を `public/FitLog/favicon.png` にも置きます。PWA / iOS のアイコンは `public/image.png` から生成した `apple-touch-icon.png`、`pwa-192x192.png`、`pwa-512x512.png`、`ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png` を使います。
-- スプラッシュ画像は `public/splash.png` を PWA の `apple-touch-startup-image` として参照し、iOS は `ios/App/App/Assets.xcassets/Splash.imageset/` の LaunchScreen 用画像を使います。
-- iOS ネイティブアプリは `ios/App/App/Info.plist` の `UISupportedInterfaceOrientations` でポートレート表示のみに限定します。
-- `registerType: 'prompt'`（新しい Service Worker を検出したらアプリ側で更新通知を表示し、更新ボタンで取り込む）。
-- workbox: `navigateFallback: '/FitLog/index.html'`、`globPatterns` に `js,css,html,svg,png,ico` をプリキャッシュ。
+| 区分 | 設定 | 内容 |
+| --- | --- | --- |
+| 通常ビルド | `base: '/FitLog/'` | GitHub Pages の公開パスに合わせる |
+| Capacitor ビルド | `mode: 'capacitor'` / `base: './'` | Capacitor の WebView で読み込める相対パスにし、PWA 生成を無効化する |
+| PWA manifest | `id` / `start_url` / `scope` | いずれも `/FitLog/` |
+| PWA manifest | `display` / `orientation` | `display: 'standalone'`、`orientation: 'portrait'` |
+| PWA manifest | `theme_color` / `background_color` / `lang` | `theme_color: '#ef2331'`、`background_color: '#0f1115'`、`lang: 'ja'` |
+| PWA manifest | `icons` | `pwa-192x192.png`（any）、`pwa-512x512.png`（any maskable） |
+| favicon | `favicon.png` | `public/logo.png` から生成し、二重 base パス互換用に `public/FitLog/favicon.png` にも同じ画像を置く |
+| PWA / iOS アイコン | `apple-touch-icon.png` / `pwa-192x192.png` / `pwa-512x512.png` / `AppIcon-512@2x.png` | `public/image.png` から生成した画像を使う |
+| スプラッシュ画像 | `apple-touch-startup-image` / `Splash.imageset` | PWA は `public/splash.png` を参照し、iOS は `ios/App/App/Assets.xcassets/Splash.imageset/` の LaunchScreen 用画像を使う |
+| iOS 画面向き | `UISupportedInterfaceOrientations` | `ios/App/App/Info.plist` でポートレート表示のみに限定する |
+| Service Worker | `registerType: 'prompt'` | 新しい Service Worker を検出したらアプリ側で更新通知を表示し、更新ボタンで取り込む |
+| Workbox | `navigateFallback` / `globPatterns` | `navigateFallback: '/FitLog/index.html'`、`globPatterns` に `js,css,html,svg,png,ico` をプリキャッシュ |
 
 ### 2.3 エントリポイント（`src/main.tsx`）
 
@@ -153,6 +170,34 @@ FitLog/
 
 ### 3.1 レイヤー構成
 
+```mermaid
+flowchart TD
+  browser["Browser / PWA / iOS WebView"]
+  app["App.tsx\n画面切り替え・共通UI"]
+  provider["FitLogProvider\nFitLogContext"]
+  useFitLog["useFitLog\n統合フック"]
+  core["useFitLogCore\nState・保存・トースト"]
+  navigation["useNavigation\n画面遷移・選択日"]
+  ui["useFitLogUi\n保存しないUI状態"]
+  selectors["useFitLogSelectors\n派生値"]
+  actions["各ドメイン actions\nWorkout / Exercise / Part / TrainingMenu(Preset) / Backup"]
+  model["useXScreenModel\n画面別 view-model"]
+  screen["各 Screen component\n表示・ローカルUI状態"]
+  storage["localStorage\nfit-log-v2"]
+
+  browser --> app
+  app --> provider
+  provider --> useFitLog
+  useFitLog --> core
+  useFitLog --> navigation
+  useFitLog --> ui
+  useFitLog --> selectors
+  useFitLog --> actions
+  core <--> storage
+  provider --> model
+  model --> screen
+```
+
 ```
 useFitLogCore (state + 永続化 + トースト)
         │
@@ -182,9 +227,9 @@ useFitLogCore (state + 永続化 + トースト)
 | `useNavigation` | `hooks/useNavigation.ts` | `screen` / `transitionFrom` / `transitionDirection` / `selectedDate` / `currentWorkoutId` の管理、画面遷移、日付・月移動、離脱時の空セット掃除 |
 | `useHomeCalendar` | `hooks/useHomeCalendar.ts` | ホームの週/月カレンダー表示、スワイプ遷移、選択日の同期 |
 | `useExerciseReorder` | `hooks/useExerciseReorder.ts` | 種目のドラッグ中レイアウトとカテゴリを管理し、終了時に確定 |
-| `useFitLogUi` | `hooks/useFitLogUi.ts` | 保存しない一時 UI 状態（編集モード、部位タブ、履歴フィルタ、プリセット下書き） |
+| `useFitLogUi` | `hooks/useFitLogUi.ts` | 保存しない一時 UI 状態（編集モード、部位タブ、履歴フィルタ、トレーニングメニュー下書き） |
 | `useFitLogSelectors` | `hooks/useFitLogSelectors.ts` | `state` と `selectedDate` から派生値を `useMemo` で計算 |
-| `usePresetActions` | `hooks/usePresetActions.ts` | プリセットの選択・下書き保存・削除・一括投入 |
+| `usePresetActions` | `hooks/usePresetActions.ts` | トレーニングメニューの選択・下書き保存・削除・一括投入 |
 | `useWorkoutActions` | `hooks/useWorkoutActions.ts` | ワークアウト/セットの追加・更新・削除・並び替え・詳細を開く |
 | `useExerciseActions` | `hooks/useExerciseActions.ts` | 種目マスタの追加・計測方法変更・削除・ドラッグ並び替え |
 | `usePartActions` | `hooks/usePartActions.ts` | 部位の追加・削除・並び替え・表示色変更 |
@@ -214,16 +259,20 @@ useFitLogCore (state + 永続化 + トースト)
 | `workouts` | `Workout[]` | 日付ごとの記録（セットを含む） |
 | `workoutStartTimes` | `Record<string, string>` | 日付ごとのトレーニング開始時刻（`HH:mm`） |
 | `workoutEndTimes` | `Record<string, string>` | 日付ごとのトレーニング終了時刻（`HH:mm`） |
-| `presets` | `Preset[]` | よく使う種目のまとまりと任意のスケジュール |
+| `presets` | `Preset[]` | トレーニングメニュー（よく使う種目のまとまりと任意のスケジュール） |
 | `trainingDays` | `TrainingDay[]` | 日付ごとの実施部位（履歴の補助情報） |
 | `trainingPlans` | `TrainingPlan[]` | 旧バージョンの部位別計画（読み込み互換用。画面では使用しない） |
 | `parts` | `PartSetting[]` | 部位の表示設定（表示順は配列順、`color` に表示色 HEX）。「レスト」は対象外 |
+| `hiddenParts` | `string[]` | 部位編集で非表示にした部位名（履歴由来の自動復活を防ぐ） |
 | `weightUnit` | `WeightUnit` | アプリ内の重量入力・表示に使う単位（`kg` / `lbs`）。保存値は kg のまま保持する |
 | `themeMode` | `ThemeMode` | アプリの外観設定（`dark` / `light`） |
 | `notificationSettings` | `NotificationSettings` | トレーニング未記録時のローカル通知設定 |
+| `updatedAt` | `string` | 保存競合判定用の更新日時 |
 | `catalogVersion` | `number` | 種目マスタのカタログ版（追補判定に使用） |
 
 ### 4.2 各型
+
+ユーザー向け名称は「トレーニングメニュー」です。保存データと実装上の型名は、互換性のため `Preset` / `PresetSchedule` を使います。
 
 ```ts
 type MeasurementType = 'reps' | 'seconds';
@@ -329,13 +378,150 @@ type PartSetting = {
 - 実際の重量・回数（秒数）・強度は `WorkoutSet`、その日の種目単位の握りの向き・握り方・メモは `Workout` に保存する。
 - `Workout` は `name` / `part` / `measurementType` を記録時点のスナップショットとして保持するため、後でマスタを編集しても過去の記録表示は変わらない（種目の並び替え時のみ後述の同期がある）。
 
+### 4.4 データ構造図
+
+`State` は保存対象の全体ツリーです。画面ローカルの開閉状態や下書きなど、保存しない一時状態は `useFitLogUi` や各画面コンポーネントに置きます。
+
+```mermaid
+classDiagram
+  class State {
+    schemaVersion
+    updatedAt
+    exercises
+    workouts
+    workoutStartTimes
+    workoutEndTimes
+    presets
+    trainingDays
+    trainingPlans
+    parts
+    hiddenParts
+    goalAchievements
+    weightUnit
+    themeMode
+    notificationSettings
+    catalogVersion
+  }
+  class Exercise {
+    id
+    part
+    name
+    measurementType
+    category
+    availableGrips
+    availableGripStyles
+    goal
+  }
+  class ExerciseGoal {
+    weight
+    recordValue
+  }
+  class Workout {
+    id
+    exerciseId
+    date
+    name
+    part
+    measurementType
+    sets
+    note
+  }
+  class WorkoutSet {
+    id
+    weight
+    recordValue
+    intensity
+  }
+  class Preset {
+    id
+    name
+    exerciseIds
+    schedule
+  }
+  class PresetSchedule {
+    mode
+    weekdays
+    intervalDays
+    startDate
+  }
+  class TrainingDay {
+    date
+    parts
+  }
+  class PartSetting {
+    name
+    color
+  }
+  class ExerciseGoalAchievement {
+    exerciseId
+    exerciseName
+    date
+    weight
+    recordValue
+    goalWeight
+    goalRecordValue
+  }
+
+  State "1" --> "*" Exercise
+  State "1" --> "*" Workout
+  State "1" --> "*" Preset
+  State "1" --> "*" TrainingDay
+  State "1" --> "*" PartSetting
+  State "1" --> "*" ExerciseGoalAchievement
+  Exercise "1" --> "0..1" ExerciseGoal
+  Workout "1" --> "*" WorkoutSet
+  Workout "*" ..> "1" Exercise : exerciseId
+  Preset "*" ..> "*" Exercise : exerciseIds
+  Preset "1" --> "0..1" PresetSchedule
+```
+
 ---
 
 ## 5. データ永続化・移行
 
 実装は `src/storage.ts`、`src/storageNormalization.ts`、`hooks/useFitLogCore.ts`。
 
-### 5.1 ストレージキー
+### 5.1 読み込み・保存フロー図
+
+起動時は保存データを正規化してから `State` として使います。実行中の変更は debounce で `localStorage` へ保存し、インポートやクラウド復元では同じ正規化処理を通してから置き換えます。
+
+```mermaid
+flowchart TD
+  start["アプリ起動"]
+  read["localStorage fit-log-v2 を読む"]
+  exists{"保存データがある?"}
+  parse["JSON.parse"]
+  normalize["normalizeState"]
+  valid{"正規化に成功?"}
+  defaultState["createDefaultState"]
+  corrupt["fit-log-v2-corrupt へ退避"]
+  appState["State として起動"]
+  change["ユーザー操作で state 更新"]
+  debounce["400ms debounce"]
+  conflict{"updatedAt が競合?"}
+  save["localStorage fit-log-v2 へ保存"]
+  toast["トースト表示"]
+  import["JSONインポート / クラウド復元"]
+
+  start --> read
+  read --> exists
+  exists -- "ない" --> defaultState
+  exists -- "ある" --> parse
+  parse --> normalize
+  normalize --> valid
+  valid -- "成功" --> appState
+  valid -- "失敗" --> corrupt
+  corrupt --> defaultState
+  defaultState --> appState
+  appState --> change
+  change --> debounce
+  debounce --> conflict
+  conflict -- "なし" --> save
+  conflict -- "あり" --> toast
+  import --> normalize
+```
+
+### 5.2 ストレージキー
 
 | キー | 用途 |
 | --- | --- |
@@ -343,7 +529,7 @@ type PartSetting = {
 | `fit-log-v2-corrupt` | 読み込みに失敗した壊れたデータの退避先 |
 | `fit-log-device-id` | クラウドバックアップ時に作成元端末を識別する端末ID |
 
-### 5.2 保存戦略（`useFitLogCore`）
+### 5.3 保存戦略（`useFitLogCore`）
 
 - `state` 変化のたびに **400ms デバウンス**（`SAVE_DEBOUNCE_MS`）でまとめて書き込む。
 - **初回マウント時の保存はスキップ**（読み込んだ内容を書き戻すだけのため）。
@@ -353,7 +539,7 @@ type PartSetting = {
 - 書き込みは `try/catch` で保護し、失敗時は「保存に失敗しました。空き容量を確認してください」をトースト表示。
 - 通常トーストは表示後 **1800ms**、Undo などの操作つきトーストは **5000ms** で自動的に消える。表示中に次のトーストが発火した場合はキューへ積み、順番に表示する。
 
-### 5.3 読み込み（`loadState` → `LoadResult`）
+### 5.4 読み込み（`loadState` → `LoadResult`）
 
 `loadState()` は `{ state, recoveredFromCorruption }` を返す。
 
@@ -364,10 +550,10 @@ type PartSetting = {
    - 復旧フラグが true のときは「保存データを読み込めませんでした。旧データは退避済みです」をトースト表示。
    - 退避自体に失敗しても元データは `fit-log-v2` 側に残るため握りつぶす。
 
-### 5.4 既定状態（`createDefaultState`）
+### 5.5 既定状態（`createDefaultState`）
 
 - `exercises`: スターター種目（`data/starterExercises.ts`）。
-- `presets`: 既定プリセット 4 件（`胸の日` / `背中の日` / `脚の日` / `肩の日`、いずれも種目空）。
+- `presets`: 既定トレーニングメニュー 4 件（`胸の日` / `背中の日` / `脚の日` / `肩の日`、いずれも種目空）。
 - `workouts` / `trainingDays` / `trainingPlans`: 空配列。
 - `goalAchievements`: 空配列。
 - `workoutStartTimes` / `workoutEndTimes`: 空オブジェクト。
@@ -379,15 +565,15 @@ type PartSetting = {
 - `hiddenParts`: 空配列。
 - `catalogVersion`: `starterCatalogVersion`（現在 `6`）。
 
-### 5.5 正規化・移行（`normalizeState`）
+### 5.6 正規化・移行（`normalizeState`）
 
 - `exercises` か `workouts` が無ければ `null` を返す（＝壊れている扱い）。
 - 各配列を専用 normalize 関数で正規化し、不正要素は除外（`flatMap` で drop）。
 - **種目マスタ追補**: 保存データの `catalogVersion` が `starterCatalogVersion` 未満なら、`part::name` をキーに未収録のスターター種目だけを末尾へ追加（`mergeStarterExercises`）。正規化後は `catalogVersion` を最新へ更新。
 - **グリップ候補の初期化**: `catalogVersion` が 4 未満のデータは、全種目の「握りの向き」を4候補すべて有効にして移行する。移行後は種目編集で個別に変更できる。
 - **握り方候補の初期化**: `catalogVersion` が 5 未満のデータは、全種目の「握り方」を4候補すべて有効にして移行する。移行後は種目編集で個別に変更できる。
-- **既定プリセット補完**: 名前が一致しない既定プリセットを末尾に追加（`mergeDefaultPresets`）。
-- **プリセットスケジュール**: `weekly` / `interval` の形式、曜日（0〜6）、1 日以上の間隔を正規化。不正なスケジュールは未設定として扱う。
+- **既定トレーニングメニュー補完**: 名前が一致しない既定トレーニングメニューを末尾に追加（`mergeDefaultPresets`）。
+- **トレーニングメニュースケジュール**: `weekly` / `interval` の形式、曜日（0〜6）、1 日以上の間隔を正規化。不正なスケジュールは未設定として扱う。
 - **保存データ migration**: `schemaVersion` ごとの migration 関数を順番に適用してから現行形式を正規化する。現在の `stateSchemaVersion` は `2`。
 - 各フィールドの正規化方針:
   - `Exercise`: `id` / `part` / `name` がすべて文字列でなければ除外。`measurementType` は `'seconds'` 以外を `'reps'` に丸める。`category` は 5 種のいずれかに丸め、未設定・不正値のときは初期種目マスタに同名があればそのカテゴリを、なければ `'free'` を使う。`availableGrips` はノーマル・リバース・パラレル・オルタネイト、`availableGripStyles` はサムアラウンド・サムレス・サムアップ・フックのみを重複排除して保持し、未設定の旧データは各候補を全て有効にする。`goal` は重量が 0 以上、回数・秒数が 1 以上の有限数である場合だけ保持し、不正値・未設定は目標なしとして扱う。
@@ -406,17 +592,17 @@ type PartSetting = {
 - **初期状態の `parts`**: スターター種目の部位（胸 / 背中 / 脚 / 肩 / 腕 / 腹筋）をその順序で生成し、パレット色を循環で割り当てる。
 - `schemaVersion`: 読み込み時は正の整数を migration 判定に使い、正規化後は現在の保存データバージョンへ更新する。
 
-### 5.6 エクスポート / インポート（`useBackup`）
+### 5.7 エクスポート / インポート（`useBackup`）
 
 - **エクスポート**: 現在の `state` を整形 JSON（2 スペース）にし、`smithnote-backup-<selectedDate>.json` としてダウンロード。完了トースト表示。
 - **インポート**: 選択ファイルを `parseImportedState`（= `JSON.parse` + `normalizeState`）で正規化。
   - 正規化に失敗（`null`）→「インポートできるデータが見つかりません」。
   - 成功 → すぐには置き換えず、ファイル名と種目・記録・メニュー・目標達成記録の件数差分を確認ダイアログに表示する。
-  - 確定 → 置き換え前の現在データを `smithnote-before-local-import-<日付>.json` として退避し、`setState` で全置き換え。`currentWorkoutId` を解除、選択プリセットを先頭に、選択日を本日へ。「データをインポートしました」を表示し、トーストの「元に戻す」で直前 state へ戻せる。
+  - 確定 → 置き換え前の現在データを `smithnote-before-local-import-<日付>.json` として退避し、`setState` で全置き換え。`currentWorkoutId` を解除、選択中のトレーニングメニューを先頭に、選択日を本日へ。「データをインポートしました」を表示し、トーストの「元に戻す」で直前 state へ戻せる。
   - キャンセル → 読み込んだ候補だけを破棄し、現在データは変更しない。
   - 例外時 →「JSONの読み込みに失敗しました」。
 
-### 5.7 クラウドバックアップ / 復元
+### 5.8 クラウドバックアップ / 復元
 
 Firebase環境変数が設定されている場合だけ、クラウドバックアップ機能を有効化します。設定画面の「バックアップ」からローカルバックアップとクラウドバックアップを同じ画面で管理します。未ログイン時は同画面内に新規登録/ログインフォームを表示し、ログイン後はクラウドバックアップ一覧を表示します。
 
@@ -451,7 +637,7 @@ Firebase環境変数が設定されている場合だけ、クラウドバック
   - 復元前にアプリ内の確認ダイアログを表示します。
   - 復元前に現在のローカル `State` を `smithnote-before-cloud-restore-<date>.json` としてダウンロード退避します。
   - 選択した `state_json` を `normalizeState` へ通し、成功した場合だけローカル `State` を全置換します。
-  - 復元後は `currentWorkoutId` を解除し、選択プリセットを先頭に戻し、選択日を本日にします。
+  - 復元後は `currentWorkoutId` を解除し、選択中のトレーニングメニューを先頭に戻し、選択日を本日にします。
 
 クラウドバックアップの Firestore 構成と Rules は [`firebase-backup.md`](./firebase-backup.md) と `firestore.rules` を参照してください。
 
@@ -459,7 +645,55 @@ Firebase環境変数が設定されている場合だけ、クラウドバック
 
 ## 6. 画面仕様
 
-`Screen` 型: `'home' | 'select' | 'exerciseEdit' | 'detail' | 'exerciseHistory' | 'goalAchievements' | 'trainingMenu' | 'presetEdit' | 'presetExerciseSelect' | 'analysis' | 'partEdit' | 'exerciseManage' | 'settings' | 'privacyPolicy' | 'termsOfService' | 'backup'`。
+`Screen` 型: `'home' | 'select' | 'exerciseEdit' | 'detail' | 'exerciseHistory' | 'goalAchievements' | 'trainingMenu' | 'presetEdit' | 'presetExerciseSelect' | 'analysis' | 'partEdit' | 'exerciseManage' | 'settings' | 'notificationSettings' | 'privacyPolicy' | 'termsOfService' | 'accountManagement' | 'forgotPassword' | 'backup'`。
+
+### 6.0 画面遷移の全体像
+
+ホームを起点に、記録追加・詳細編集・履歴確認・設定系画面へ遷移します。各詳細画面の戻る操作は、原則として遷移元の一覧または設定画面へ戻ります。
+
+```mermaid
+flowchart TD
+  home["ホーム"]
+  select["種目選択"]
+  detail["種目詳細"]
+  history["種目別履歴"]
+  achievements["目標達成記録"]
+  menu["トレーニングメニュー"]
+  presetEdit["トレーニングメニュー編集"]
+  presetSelect["メニュー種目選択"]
+  analysis["分析"]
+  settings["設定"]
+  partEdit["部位の編集"]
+  exerciseManage["種目マスタ編集"]
+  exerciseEdit["種目追加 / 編集"]
+  backup["バックアップ"]
+  account["アカウント管理"]
+  forgot["パスワード再設定"]
+  notification["通知設定"]
+  privacy["プライバシーポリシー"]
+  terms["利用規約"]
+
+  home --> select
+  select --> detail
+  home --> detail
+  detail --> history
+  history --> analysis
+  home --> achievements
+  home --> menu
+  menu --> presetEdit
+  presetEdit --> presetSelect
+  home --> analysis
+  home --> settings
+  settings --> partEdit
+  settings --> exerciseManage
+  exerciseManage --> exerciseEdit
+  settings --> backup
+  backup --> account
+  backup --> forgot
+  settings --> notification
+  settings --> privacy
+  settings --> terms
+```
 
 ### 6.1 アプリ外枠とナビゲーション（`App.tsx`）
 
@@ -494,11 +728,11 @@ Firebase環境変数が設定されている場合だけ、クラウドバック
   - 日付タップでその日を選択し、下部リストを選択日の内容に切り替える。
   - 記録のある日は `trained`、本日は `today`、選択日は `selected` を付与して丸円やドットでハイライトする。
 - **開始パネル**: 種目が無く、トレーニングが未終了の日は、グレー背景の開始パネルに「トレーニングメニューから開始」と「種目を選んで開始」の2つの導線を表示する。
-  - メニュー開始ではプリセットを選択して「トレーニングメニューから開始」を押すと、押した時刻（時・分）を開始時刻として保存し、プリセットに指定された未追加の種目を一括追加する。
-  - 選択中のプリセットに種目が無い場合は、ボタンを「トレーニングメニューを作成する」に変更する。押すと対象プリセットの編集画面へ移動し、このフローでは右上の「保存」の位置に「開始」を表示する。「開始」を押すとプリセットを保存し、その内容で選択日のトレーニングを開始する。
-  - プリセット選択欄の最後には「新規作成」を表示する。選択中に「トレーニングメニューを作成する」を押すと、新規プリセットの編集画面へ移動し、「開始」で保存とトレーニング開始を同時に行う。
-  - 選択日にスケジュールされたプリセットがあれば、一覧で最初に該当するプリセットを既定選択にし、予定名を選択欄付近に表示する。
-  - プリセットがない場合も「種目を選んで開始」は利用できる。
+  - メニュー開始ではトレーニングメニューを選択して「トレーニングメニューから開始」を押すと、押した時刻（時・分）を開始時刻として保存し、選択メニューに指定された未追加の種目を一括追加する。
+  - 選択中のトレーニングメニューに種目が無い場合は、ボタンを「トレーニングメニューを作成する」に変更する。押すと対象メニューの編集画面へ移動し、このフローでは右上の「保存」の位置に「開始」を表示する。「開始」を押すとメニューを保存し、その内容で選択日のトレーニングを開始する。
+  - トレーニングメニュー選択欄の最後には「新規作成」を表示する。選択中に「トレーニングメニューを作成する」を押すと、新規メニューの編集画面へ移動し、「開始」で保存とトレーニング開始を同時に行う。
+  - 選択日にスケジュールされたトレーニングメニューがあれば、一覧で最初に該当するメニューを既定選択にし、予定名を選択欄付近に表示する。
+  - トレーニングメニューがない場合も「種目を選んで開始」は利用できる。
   - 種目選択画面へ進んだだけでは開始時刻を保存せず、最初に種目を選択した時刻を開始時刻として保存する。種目がない日に古い開始時刻だけが残っている場合は、その時刻を更新する。
 - **開始時刻**: 選択日の開始時刻は内部データ（`workoutStartTimes`）として保存するが、ホーム画面には表示しない。
 - **トレーニング終了**: 開始済みで未終了の日は、最後の種目カードの下に「トレーニングを終了」ボタンを表示する。未開始の種目が残っている場合は、対象種目数と記録に含まれないことを示す確認ダイアログを表示し、了承後に未開始種目を削除して終了する。終了時刻を `workoutEndTimes` に保存し、「お疲れ様でした！」と開始時間・終了時間（`HH時mm分`）・トレーニング時間・実施種目数・合計セット数を示すダイアログを表示する。終了済みの日は同じ位置にグレー系の「トレーニング結果を見る」ボタンと小さな「再開」ボタンを表示する。「トレーニング結果を見る」は保存済みの開始・終了時刻からダイアログを再表示し、「再開」は終了時刻を削除して編集可能な状態へ戻す。実施種目数とセット数は、重量または回数・秒数が入力されたセットを対象に集計する。
@@ -528,12 +762,12 @@ Firebase環境変数が設定されている場合だけ、クラウドバック
 - 設定画面の「部位を編集」の下にある「種目を編集」から遷移する。
 - 画面タイトルは「種目一覧を編集」とし、個別種目の追加 / 編集画面と区別する。
 - 初期表示から編集状態の種目選択画面と同じ一覧を表示する。
-- 種目選択・種目マスタ編集・プリセット種目選択は共通の種目ピッカー部品を使い、部位タブとカテゴリ別リストの表示を揃える。
+- 種目選択・種目マスタ編集・メニュー種目選択は共通の種目ピッカー部品を使い、部位タブとカテゴリ別リストの表示を揃える。
 - **編集機能**:
   - 通常モードと同じくカテゴリ小見出し付きで表示する。ドロップ先を選べるよう、種目が 0 件のカテゴリ区画も表示する。
   - 行をドラッグ（ハンドルから）で並び替え。**カテゴリをまたいでドロップすると、その種目は移動先カテゴリへ自動的に変更される**。並び替えは DOM を直接操作せず React の state で管理し（`useExerciseReorder`、ポインタ位置から挿入先カテゴリと位置を計算）、確定時に `reorderPartExercises` で対象部位の順序とカテゴリを反映する（他部位の位置は保持）。
   - キーボード操作向けに、行内の上下ボタンでも前後の種目と入れ替えられる。
-  - 行内に編集アイコン・削除ボタンを表示。削除時はプリセットからも該当 ID を除去し、トーストの「元に戻す」から種目とプリセット内の参照を復元できる。編集アイコンを押すと種目編集画面へ遷移する。
+  - 行内に編集アイコン・削除ボタンを表示。削除時はトレーニングメニューからも該当 ID を除去し、トーストの「元に戻す」から種目とメニュー内の参照を復元できる。編集アイコンを押すと種目編集画面へ遷移する。
   - 画面右下に FAB（＋）を表示。押すと選択中の部位を初期値にした種目追加画面へ遷移する。リスト末尾の行付近では一時的にフェードアウトし、編集・削除操作を妨げない。
 
 ### 6.5 種目追加 / 編集（`ExerciseEditScreen`）
@@ -594,9 +828,9 @@ Firebase環境変数が設定されている場合だけ、クラウドバック
 - ホームのドロワメニュー先頭の「トレーニングメニュー」から遷移する。トップバーの戻るでホームへ戻る。
 - 画面右下の FAB（＋）で新規メニューを作成して編集画面へ遷移する。リスト末尾の行付近では一時的にフェードアウトし、編集・削除操作を妨げない。
 - メニューごとに選択中の種目数と現在の設定（設定なし / 曜日 / 開始日から N 日ごと）を表示する。
-- 行のタップまたは編集ボタンでプリセット編集画面へ遷移し、削除ボタンから確認後に削除できる。削除後はトーストの「元に戻す」から復元できる。
+- 行のタップまたは編集ボタンでトレーニングメニュー編集画面へ遷移し、削除ボタンから確認後に削除できる。削除後はトーストの「元に戻す」から復元できる。
 
-### 6.10 プリセット編集（`PresetEditScreen`）
+### 6.10 トレーニングメニュー編集（`PresetEditScreen`）
 
 - トレーニングメニュー画面から追加・編集で遷移する。編集内容は保存対象外の下書きとして保持する。
 - ヘッダ右の「保存」で名称・スケジュール・選択種目をまとめて確定し、トレーニングメニュー画面へ戻る。ホームの空メニュー開始フローから開いた場合だけ、同じ位置に「開始」を表示し、保存後にホームへ戻って選択日のトレーニングを開始する。戻る操作では下書きを破棄する。
@@ -605,7 +839,7 @@ Firebase環境変数が設定されている場合だけ、クラウドバック
 - スケジュールと「種目の選択」を独立したカードとして余白を空けて表示する。
 - スケジュールは「設定なし / 曜日 / 何日ごと」から選ぶ。曜日では複数曜日、何日ごとでは間隔と開始日を保存する。
 - 「種目の選択」ヘッダ右の＋ボタンで専用画面へ遷移する。通常の種目選択画面と同じ部位タブと器具カテゴリ区分を使い、複数種目を選択・解除できる。「完了」で下書きを保持したまま編集画面へ戻る。
-- ホームの「開始」から `startPreset` を実行すると、プリセットの種目を選択日へ一括投入する（後述 8.3）。
+- ホームの「開始」から `startPreset` を実行すると、トレーニングメニューの種目を選択日へ一括投入する（後述 8.3）。
 
 ### 6.11 分析（`AnalysisScreen`）
 
@@ -728,9 +962,9 @@ weight === 0 または reps === 0 → '0.0'
 - `measurementUnit` / `measurementLabel`: `'seconds'` → `秒`/`秒数`、`'reps'` → `回`/`回数`。
 - `exerciseCategories` / `defaultExerciseCategory`: 器具カテゴリの表示順・ラベル（フリーウエイト種目 / マシン種目 / ダンベル種目 / ケーブル種目 / 自重種目）と、未設定時の既定値（`'free'`）。
 
-### 7.4 予定プリセット（`scheduledPresetsForDate`）
+### 7.4 予定トレーニングメニュー（`scheduledPresetsForDate`）
 
-対象日の曜日・経過日数から、各プリセットのスケジュールが対象日に該当するかを判定し、プリセット一覧の順序で返す。
+対象日の曜日・経過日数から、各トレーニングメニューのスケジュールが対象日に該当するかを判定し、メニュー一覧の順序で返す。
 
 - `weekly`: `weekdays` に対象日の曜日が含まれれば該当。
 - `interval`: `startDate`（無ければ対象日）からの経過日数が 0 以上かつ `intervalDays` の倍数なら該当。
@@ -791,18 +1025,18 @@ weight === 0 または reps === 0 → '0.0'
 - `updateExercise(exerciseId, { part, name, measurementType, category, availableGrips, availableGripStyles })`: 種目の部位・名前・記録単位・カテゴリ・握りの向き候補・握り方候補をまとめて更新（種目名は必須、部位が空なら「その他」）。部位が未登録ならパレット色つきで `state.parts` に登録。改名・部位変更時は既存ワークアウトの `name` / `part` スナップショットも同期。更新できたら `true` を返す。候補から外した値も過去セットの保存値からは削除しない。
 - `updateExerciseGoal`: 指定種目の現在目標を設定・更新する。`undefined` の場合は目標を解除する。
 - `reorderPartExercises(part, layout)`: 指定部位の種目を `layout`（`{ id, category }` の配列＝並び順とカテゴリ）どおりに反映する。部位内の種目だけを並び替え、他部位の種目はマスタ配列内の位置を保つ。カテゴリをまたいでドロップした種目は移動先カテゴリへ変更される。
-- `deleteExercise`: 種目を削除し、全プリセットから該当 ID を除去。トーストの「元に戻す」で種目とプリセット参照を復元できる。
+- `deleteExercise`: 種目を削除し、全トレーニングメニューから該当 ID を除去。トーストの「元に戻す」で種目とメニュー参照を復元できる。
 
-### 8.3 プリセット操作（`usePresetActions`）
+### 8.3 トレーニングメニュー操作（`usePresetActions`）
 
-- `currentPreset`: 選択中プリセット（無ければ先頭）。プリセット増減に応じて選択 ID を補正し、選択日に予定されたプリセットがあれば一覧で最初のものへ切り替える。
-- `savePreset`: 編集下書きを正規化し、同じ ID があれば置換、無ければ新規プリセットとして先頭へ追加する。名称が空なら「名称未設定」、種目 ID は重複排除する。
+- `currentPreset`: 選択中トレーニングメニュー（無ければ先頭）。メニュー増減に応じて選択 ID を補正し、選択日に予定されたメニューがあれば一覧で最初のものへ切り替える。
+- `savePreset`: 編集下書きを正規化し、同じ ID があれば置換、無ければ新規トレーニングメニューとして先頭へ追加する。名称が空なら「名称未設定」、種目 ID は重複排除する。
 - 下書きの作成・更新・破棄、複数種目の選択は `useFitLog` と `useFitLogUi` が担当し、「保存」までは永続 state を変更しない。
-- `deletePreset`: 計画タブから指定プリセットを削除する。トーストの「元に戻す」で元の位置へ復元できる。
-- `startPreset`: 選択日にプリセットの種目を一括投入。
-  - プリセットが空 →「プリセットに種目を追加してください」。
+- `deletePreset`: トレーニングメニュー一覧から指定メニューを削除する。トーストの「元に戻す」で元の位置へ復元できる。
+- `startPreset`: 選択日にトレーニングメニューの種目を一括投入。
+  - メニューが空 →「メニューに種目を追加してください」。
   - 既に当日に存在する種目・重複はスキップ。
-  - 投入対象が 0 件のとき、既存があれば「すでに追加されています」、無ければ「プリセットの種目が見つかりません」。
+  - 投入対象が 0 件のとき、既存があれば「すでに追加されています」、無ければ「メニューの種目が見つかりません」。
   - 投入後はホームへ戻り「N種目を追加しました」。
 
 ### 8.4 部位の編集（`usePartActions`）
