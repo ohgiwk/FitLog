@@ -78,6 +78,7 @@ export function useFitLogCore() {
   const [loadResult] = useState(loadState);
   const [state, setState] = useState<State>(loadResult.state);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const toastRef = useRef<ToastState | null>(null);
   const toastQueueRef = useRef<ToastState[]>([]);
   /**
    * 即時保存(flush)で常に最新の state を参照するための保持用 ref
@@ -100,13 +101,12 @@ export function useFitLogCore() {
       message,
       ...action,
     };
-    setToast((current) => {
-      if (current) {
-        toastQueueRef.current = [...toastQueueRef.current, nextToast];
-        return current;
-      }
-      return nextToast;
-    });
+    if (toastRef.current) {
+      toastQueueRef.current = [...toastQueueRef.current, nextToast];
+      return;
+    }
+    toastRef.current = nextToast;
+    setToast(nextToast);
   }, []);
 
   /**
@@ -202,7 +202,9 @@ export function useFitLogCore() {
   useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => {
-      setToast(toastQueueRef.current.shift() ?? null);
+      const nextToast = toastQueueRef.current.shift() ?? null;
+      toastRef.current = nextToast;
+      setToast(nextToast);
     }, toast.onAction ? 5000 : 1800);
     return () => window.clearTimeout(timer);
   }, [toast]);
@@ -228,7 +230,9 @@ export function useFitLogCore() {
   }, [notifySaveError, notifyStorageConflict]);
 
   const clearToast = useCallback(() => {
-    setToast(toastQueueRef.current.shift() ?? null);
+    const nextToast = toastQueueRef.current.shift() ?? null;
+    toastRef.current = nextToast;
+    setToast(nextToast);
   }, []);
 
   const replaceState = useCallback((nextState: State) => {

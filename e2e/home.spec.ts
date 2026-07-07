@@ -12,9 +12,15 @@ async function openFreshApp(page: Page) {
   await expect(page.getByRole('heading', { name: 'トレーニングを開始' })).toBeVisible();
 }
 
-async function startExercise(page: Page, name = exerciseName) {
-  await page.getByRole('button', { name: '種目を選んで開始' }).click();
+async function startExercise(page: Page, name = exerciseName, part?: string) {
+  const startButton = page.getByRole('button', { name: '種目を選んで開始' });
+  if (await startButton.isVisible()) {
+    await startButton.click();
+  } else {
+    await page.getByRole('button', { name: '種目を追加' }).click();
+  }
   await expect(page.getByText('種目を選択')).toBeVisible();
+  if (part) await page.getByRole('tab', { name: part }).click();
   await page.getByRole('button', { name, exact: true }).click();
   await expect(page.getByText(name).first()).toBeVisible();
 }
@@ -104,6 +110,35 @@ test('トレーニング開始からセット入力まででき、リロード�
   await expect(reloadedExerciseCard).toBeVisible();
   await expect(reloadedExerciseCard.locator('td.weight').first()).toContainText('60.0');
   await expect(reloadedExerciseCard.locator('td.reps').first()).toContainText('10');
+});
+
+test('ホームで種目記録を2件続けて削除しても toast は自動で消える', async ({ page }) => {
+  await startExercise(page, exerciseName);
+  await fillFirstSet(page, '60', '10', exerciseName);
+  await page.getByRole('button', { name: '戻る' }).click();
+
+  await startExercise(page, secondExerciseName, '脚');
+  await fillFirstSet(page, '80', '8', secondExerciseName);
+  await page.getByRole('button', { name: '戻る' }).click();
+
+  await page.getByRole('button', { name: `${exerciseName}を削除` }).click();
+  await page
+    .getByRole('dialog', { name: '記録を削除しますか？' })
+    .getByRole('button', { name: '削除' })
+    .click();
+  await expect(page.locator('.exercise-card').filter({ hasText: exerciseName })).toHaveCount(0);
+
+  await page.getByRole('button', { name: `${secondExerciseName}を削除` }).click();
+  await page
+    .getByRole('dialog', { name: '記録を削除しますか？' })
+    .getByRole('button', { name: '削除' })
+    .click();
+  await expect(page.locator('.exercise-card').filter({ hasText: secondExerciseName })).toHaveCount(
+    0,
+  );
+
+  await expect(page.locator('.toast.show')).toContainText('種目の記録を削除しました');
+  await expect(page.locator('.toast.show')).toBeHidden({ timeout: 11_000 });
 });
 
 test('狭い幅でカレンダー、ドロワー、FAB を操作できる', async ({ page }) => {

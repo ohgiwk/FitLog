@@ -286,7 +286,7 @@ function AppShell() {
       )}
       <div className={`toast ${toast ? 'show' : ''}`} role="status" aria-live="polite">
         {toast && (
-          <>
+          <div className="toast-content" key={toast.id}>
             <span>{toast.message}</span>
             {toast.onAction && (
               <button
@@ -302,7 +302,7 @@ function AppShell() {
                 {toast.actionLabel || '元に戻す'}
               </button>
             )}
-          </>
+          </div>
         )}
       </div>
       {fabAction && (

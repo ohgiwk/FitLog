@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useFitLogCore } from './useFitLogCore';
 
@@ -17,6 +17,7 @@ describe('useFitLogCore toast queue', () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.useRealTimers();
   });
 
@@ -49,6 +50,27 @@ describe('useFitLogCore toast queue', () => {
 
     act(() => {
       vi.advanceTimersByTime(1800);
+    });
+    expect(screen.getByText('toastなし')).toBeTruthy();
+  });
+
+  it('操作付き toast が2件続いても10秒後に消える', () => {
+    let core: CoreValue | null = null;
+    render(<CoreProbe onRender={(nextCore) => (core = nextCore)} />);
+
+    act(() => {
+      core?.showToast('削除1件目', { actionLabel: '元に戻す', onAction: vi.fn() });
+      core?.showToast('削除2件目', { actionLabel: '元に戻す', onAction: vi.fn() });
+    });
+    expect(screen.getByText('削除1件目')).toBeTruthy();
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(screen.getByText('削除2件目')).toBeTruthy();
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
     });
     expect(screen.getByText('toastなし')).toBeTruthy();
   });
