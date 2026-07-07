@@ -5,6 +5,7 @@ import {
   findCurrentPreset,
   scheduledPresetsForDate,
 } from '../selectors/fitLogSelectors';
+import { formatTimeOfDay } from '../utils';
 
 type PresetActionsDeps = {
   state: State;
@@ -79,6 +80,39 @@ export function usePresetActions({
     };
   }
 
+  function collectPresetExercises(exerciseIds: string[]) {
+    const todayExerciseIds = new Set(
+      state.workouts
+        .filter((workout) => workout.date === selectedDate)
+        .map((workout) => workout.exerciseId),
+    );
+    const queuedExerciseIds = new Set<string>();
+    const exercisesToAdd = exerciseIds.flatMap((exerciseId) => {
+      if (todayExerciseIds.has(exerciseId) || queuedExerciseIds.has(exerciseId)) return [];
+      const exercise = state.exercises.find((item) => item.id === exerciseId);
+      if (!exercise) return [];
+      queuedExerciseIds.add(exerciseId);
+      return [exercise];
+    });
+    return { todayExerciseIds, exercisesToAdd };
+  }
+
+  function showPresetStartError(exerciseIds: string[], todayExerciseIds: Set<string>) {
+    const hasExisting = exerciseIds.some((exerciseId) => todayExerciseIds.has(exerciseId));
+    showScreen('home');
+    showToast(hasExisting ? 'すでに追加されています' : 'プリセットの種目が見つかりません');
+  }
+
+  function buildWorkoutStartTimes(prev: State, startTime: string) {
+    const hasWorkoutsForDate = prev.workouts.some((workout) => workout.date === selectedDate);
+    return {
+      ...prev.workoutStartTimes,
+      [selectedDate]: hasWorkoutsForDate
+        ? prev.workoutStartTimes[selectedDate] || startTime
+        : startTime,
+    };
+  }
+
   /**
    * 編集画面の下書きを新規作成または既存プリセットへ反映する
    */
@@ -128,38 +162,18 @@ export function usePresetActions({
     const preset = state.presets.find((item) => item.id === presetId);
     if (!preset || !preset.exerciseIds.length)
       return showToast('プリセットに種目を追加してください');
-    const todayExerciseIds = new Set(
-      state.workouts
-        .filter((workout) => workout.date === selectedDate)
-        .map((workout) => workout.exerciseId),
-    );
-    const queuedExerciseIds = new Set<string>();
-    const exercisesToAdd = preset.exerciseIds.flatMap((exerciseId) => {
-      if (todayExerciseIds.has(exerciseId) || queuedExerciseIds.has(exerciseId)) return [];
-      const exercise = state.exercises.find((item) => item.id === exerciseId);
-      if (!exercise) return [];
-      queuedExerciseIds.add(exerciseId);
-      return [exercise];
-    });
+    const { todayExerciseIds, exercisesToAdd } = collectPresetExercises(preset.exerciseIds);
     if (!exercisesToAdd.length) {
-      showScreen('home');
-      const hasExisting = preset.exerciseIds.some((exerciseId) => todayExerciseIds.has(exerciseId));
-      return showToast(hasExisting ? 'すでに追加されています' : 'プリセットの種目が見つかりません');
+      showPresetStartError(preset.exerciseIds, todayExerciseIds);
+      return;
     }
     const newWorkouts = exercisesToAdd.map((exercise) => createWorkout(exercise, selectedDate));
-    const now = new Date();
-    const startTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const startTime = formatTimeOfDay(new Date());
     saveState((prev) => {
-      const hasWorkoutsForDate = prev.workouts.some((workout) => workout.date === selectedDate);
       return {
         ...prev,
         workouts: [...prev.workouts, ...newWorkouts],
-        workoutStartTimes: {
-          ...prev.workoutStartTimes,
-          [selectedDate]: hasWorkoutsForDate
-            ? prev.workoutStartTimes[selectedDate] || startTime
-            : startTime,
-        },
+        workoutStartTimes: buildWorkoutStartTimes(prev, startTime),
       };
     });
     showScreen('home');
@@ -175,44 +189,22 @@ export function usePresetActions({
     if (!normalizedPreset.exerciseIds.length)
       return showToast('プリセットに種目を追加してください');
 
-    const todayExerciseIds = new Set(
-      state.workouts
-        .filter((workout) => workout.date === selectedDate)
-        .map((workout) => workout.exerciseId),
-    );
-    const queuedExerciseIds = new Set<string>();
-    const exercisesToAdd = normalizedPreset.exerciseIds.flatMap((exerciseId) => {
-      if (todayExerciseIds.has(exerciseId) || queuedExerciseIds.has(exerciseId)) return [];
-      const exercise = state.exercises.find((item) => item.id === exerciseId);
-      if (!exercise) return [];
-      queuedExerciseIds.add(exerciseId);
-      return [exercise];
-    });
+    const { todayExerciseIds, exercisesToAdd } = collectPresetExercises(normalizedPreset.exerciseIds);
     if (!exercisesToAdd.length) {
-      showScreen('home');
-      const hasExisting = normalizedPreset.exerciseIds.some((exerciseId) =>
-        todayExerciseIds.has(exerciseId),
-      );
-      return showToast(hasExisting ? 'すでに追加されています' : 'プリセットの種目が見つかりません');
+      showPresetStartError(normalizedPreset.exerciseIds, todayExerciseIds);
+      return;
     }
 
     const newWorkouts = exercisesToAdd.map((exercise) => createWorkout(exercise, selectedDate));
-    const now = new Date();
-    const startTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const startTime = formatTimeOfDay(new Date());
     saveState((prev) => {
-      const hasWorkoutsForDate = prev.workouts.some((workout) => workout.date === selectedDate);
       return {
         ...prev,
         presets: prev.presets.some((item) => item.id === normalizedPreset.id)
           ? prev.presets.map((item) => (item.id === normalizedPreset.id ? normalizedPreset : item))
           : [normalizedPreset, ...prev.presets],
         workouts: [...prev.workouts, ...newWorkouts],
-        workoutStartTimes: {
-          ...prev.workoutStartTimes,
-          [selectedDate]: hasWorkoutsForDate
-            ? prev.workoutStartTimes[selectedDate] || startTime
-            : startTime,
-        },
+        workoutStartTimes: buildWorkoutStartTimes(prev, startTime),
       };
     });
     setCurrentPresetId(normalizedPreset.id);

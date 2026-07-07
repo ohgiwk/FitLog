@@ -6,8 +6,9 @@ import {
   SetIntensity,
   State,
   Workout,
+  WorkoutSet,
 } from '../types';
-import { isUnstartedWorkout, newSet } from '../utils';
+import { formatTimeOfDay, isUnstartedWorkout, newSet } from '../utils';
 import { createWorkout } from '../selectors/fitLogSelectors';
 
 type WorkoutActionsDeps = {
@@ -43,13 +44,38 @@ export function useWorkoutActions({
     return Boolean(state.workoutEndTimes[date]);
   }
 
+  function findWorkoutBySetId(setId: string, workouts = state.workouts) {
+    return workouts.find((workout) => workout.sets.some((set) => set.id === setId));
+  }
+
+  /**
+   * セット単位の更新で共通する検索と差し替えをまとめる
+   */
+  function updateWorkoutSet(setId: string, buildSet: (set: WorkoutSet) => WorkoutSet) {
+    const target = findWorkoutBySetId(setId);
+    if (!target || isWorkoutDayEnded(target.date)) return;
+    saveState((prev) => {
+      const workoutIndex = prev.workouts.findIndex((workout) =>
+        workout.sets.some((set) => set.id === setId),
+      );
+      const workout = prev.workouts[workoutIndex];
+      if (!workout || prev.workoutEndTimes[workout.date]) return prev;
+      const setIndex = workout.sets.findIndex((set) => set.id === setId);
+      if (setIndex === -1) return prev;
+      const sets = [...workout.sets];
+      sets[setIndex] = buildSet(sets[setIndex]);
+      const workouts = [...prev.workouts];
+      workouts[workoutIndex] = { ...workout, sets };
+      return { ...prev, workouts };
+    });
+  }
+
   /**
    * トレーニング終了時刻を保存し、保存した時刻を返す
    */
   function endWorkoutDay(removeUnstartedWorkouts = false) {
     if (!state.workoutStartTimes[selectedDate]) return null;
-    const now = new Date();
-    const endTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const endTime = formatTimeOfDay(new Date());
     saveState((prev) => ({
       ...prev,
       workouts: removeUnstartedWorkouts
@@ -111,8 +137,7 @@ export function useWorkoutActions({
     if (isWorkoutDayEnded(selectedDate)) return;
     const exercise = state.exercises.find((item) => item.id === exerciseId);
     if (!exercise) return;
-    const now = new Date();
-    const startTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const startTime = formatTimeOfDay(new Date());
     const existing = state.workouts.find(
       (item) => item.date === selectedDate && item.exerciseId === exerciseId,
     );
@@ -187,51 +212,21 @@ export function useWorkoutActions({
    * セットの重量・回数(秒数)を更新する
    */
   function updateSet(setId: string, field: 'weight' | 'recordValue', value: number | null) {
-    const target = state.workouts.find((workout) => workout.sets.some((set) => set.id === setId));
-    if (!target || isWorkoutDayEnded(target.date)) return;
-    saveState((prev) => {
-      const workoutIndex = prev.workouts.findIndex((workout) =>
-        workout.sets.some((set) => set.id === setId),
-      );
-      const workout = prev.workouts[workoutIndex];
-      if (!workout || prev.workoutEndTimes[workout.date]) return prev;
-      const setIndex = workout.sets.findIndex((set) => set.id === setId);
-      if (setIndex === -1) return prev;
-      const sets = [...workout.sets];
-      sets[setIndex] = { ...sets[setIndex], [field]: value };
-      const workouts = [...prev.workouts];
-      workouts[workoutIndex] = { ...workout, sets };
-      return { ...prev, workouts };
-    });
+    updateWorkoutSet(setId, (set) => ({ ...set, [field]: value }));
   }
 
   /**
    * セットの目標達成状態を記録し、未達なら実績入力欄を空に戻す
    */
   function updateSetAchievement(setId: string, achievement: SetAchievement) {
-    const target = state.workouts.find((workout) => workout.sets.some((set) => set.id === setId));
-    if (!target || isWorkoutDayEnded(target.date)) return;
-    saveState((prev) => {
-      const workoutIndex = prev.workouts.findIndex((workout) =>
-        workout.sets.some((set) => set.id === setId),
-      );
-      const workout = prev.workouts[workoutIndex];
-      if (!workout || prev.workoutEndTimes[workout.date]) return prev;
-      const setIndex = workout.sets.findIndex((set) => set.id === setId);
-      if (setIndex === -1) return prev;
-      const currentSet = workout.sets[setIndex];
-      const targetRecordValue = currentSet.targetRecordValue ?? currentSet.recordValue;
-      const nextSet = {
-        ...currentSet,
+    updateWorkoutSet(setId, (set) => {
+      const targetRecordValue = set.targetRecordValue ?? set.recordValue;
+      return {
+        ...set,
         achievement,
         targetRecordValue,
-        recordValue: achievement === 'missed' ? null : currentSet.recordValue,
+        recordValue: achievement === 'missed' ? null : set.recordValue,
       };
-      const sets = [...workout.sets];
-      sets[setIndex] = nextSet;
-      const workouts = [...prev.workouts];
-      workouts[workoutIndex] = { ...workout, sets };
-      return { ...prev, workouts };
     });
   }
 
@@ -239,29 +234,15 @@ export function useWorkoutActions({
    * セットの達成判定を取り消し、判定前の目標入力へ戻す
    */
   function resetSetAchievement(setId: string) {
-    const target = state.workouts.find((workout) => workout.sets.some((set) => set.id === setId));
-    if (!target || isWorkoutDayEnded(target.date)) return;
-    saveState((prev) => {
-      const workoutIndex = prev.workouts.findIndex((workout) =>
-        workout.sets.some((set) => set.id === setId),
-      );
-      const workout = prev.workouts[workoutIndex];
-      if (!workout || prev.workoutEndTimes[workout.date]) return prev;
-      const setIndex = workout.sets.findIndex((set) => set.id === setId);
-      if (setIndex === -1) return prev;
-      const currentSet = workout.sets[setIndex];
+    updateWorkoutSet(setId, (set) => {
       const nextSet = {
-        ...currentSet,
-        recordValue: currentSet.targetRecordValue ?? currentSet.recordValue,
+        ...set,
+        recordValue: set.targetRecordValue ?? set.recordValue,
       };
       delete nextSet.targetRecordValue;
       delete nextSet.achievement;
       delete nextSet.intensity;
-      const sets = [...workout.sets];
-      sets[setIndex] = nextSet;
-      const workouts = [...prev.workouts];
-      workouts[workoutIndex] = { ...workout, sets };
-      return { ...prev, workouts };
+      return nextSet;
     });
   }
 
@@ -283,28 +264,14 @@ export function useWorkoutActions({
    * セットの強度を設定する。未指定(undefined)なら強度を解除する
    */
   function updateSetIntensity(setId: string, intensity?: SetIntensity) {
-    const target = state.workouts.find((workout) => workout.sets.some((set) => set.id === setId));
-    if (!target || isWorkoutDayEnded(target.date)) return;
-    saveState((prev) => {
-      const workoutIndex = prev.workouts.findIndex((workout) =>
-        workout.sets.some((set) => set.id === setId),
-      );
-      const workout = prev.workouts[workoutIndex];
-      if (!workout || prev.workoutEndTimes[workout.date]) return prev;
-      const setIndex = workout.sets.findIndex((set) => set.id === setId);
-      if (setIndex === -1) return prev;
-      const currentSet = workout.sets[setIndex];
-      const nextSet = { ...currentSet };
+    updateWorkoutSet(setId, (set) => {
+      const nextSet = { ...set };
       if (intensity) {
         nextSet.intensity = intensity;
       } else {
         delete nextSet.intensity;
       }
-      const sets = [...workout.sets];
-      sets[setIndex] = nextSet;
-      const workouts = [...prev.workouts];
-      workouts[workoutIndex] = { ...workout, sets };
-      return { ...prev, workouts };
+      return nextSet;
     });
   }
 

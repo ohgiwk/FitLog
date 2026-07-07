@@ -180,6 +180,13 @@ export function formatWorkoutTime(time: string) {
 }
 
 /**
+ * Date を保存用の HH:mm 形式へ整形する
+ */
+export function formatTimeOfDay(date: Date) {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+/**
  * 入力済みセットの重量と回数・秒数が、種目目標の両方に到達しているか判定する
  */
 export function isExerciseGoalAchieved(sets: WorkoutSet[], goal: ExerciseGoal) {
