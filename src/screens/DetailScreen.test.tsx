@@ -199,6 +199,17 @@ describe('DetailScreen set inputs', () => {
     expect(within(table).getByText((_, element) => element?.textContent === '12 回')).toBeTruthy();
   });
 
+  it('前回記録がない場合は開閉できない', () => {
+    const { container } = renderDetailScreen({});
+    const toggle = within(container).getByRole('button', { name: '前回記録' });
+
+    expect((toggle as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(toggle);
+
+    expect(within(container).queryByRole('table', { name: '前回記録のセット一覧' })).toBeNull();
+    expect(within(container).queryByText('前回記録はありません')).toBeNull();
+  });
+
   it('コピーボタンで前回記録の重量と回数を今回セットに挿入する', () => {
     const copyWorkoutSetValues = vi.fn();
     const previousWorkout: Workout = {

@@ -201,6 +201,17 @@
   font-size: 16px;
 }
 
+.previous-record.empty {
+  min-height: 30px;
+  padding: 0;
+}
+
+.previous-record.empty .workout-grip-toggle {
+  color: var(--text-soft);
+  cursor: default;
+  opacity: 0.5;
+}
+
 .workout-grip-toggle svg {
   width: 18px;
   height: 18px;

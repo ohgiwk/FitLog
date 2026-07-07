@@ -289,90 +289,86 @@ function PreviousWorkoutRecord({
   onCopy: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const hasPreviousWorkout = Boolean(workout);
   const unit = workout ? measurementUnit(workout.measurementType) : '回';
   const isReps = workout ? isRepsMeasurement(workout.measurementType) : true;
 
   return (
     <section
-      className={`workout-grip-editor previous-record${open ? ' open' : ''}`}
+      className={`workout-grip-editor previous-record${open ? ' open' : ''}${
+        hasPreviousWorkout ? '' : ' empty'
+      }`}
       aria-label="前回記録"
     >
       <button
         className="workout-grip-toggle"
         type="button"
-        aria-expanded={open}
+        aria-expanded={hasPreviousWorkout ? open : undefined}
+        disabled={!hasPreviousWorkout}
         onClick={() => setOpen((current) => !current)}
       >
         <span>前回記録</span>
-        {open ? <ChevronUp /> : <ChevronDown />}
+        {hasPreviousWorkout && (open ? <ChevronUp /> : <ChevronDown />)}
       </button>
-      {open && (
+      {open && workout && (
         <div className="previous-record-panel">
-          {workout ? (
-            <>
-              <article className="history-card previous-record-card">
-                <header className="history-card-head">
-                  <div className="history-card-date">{workout.date.replaceAll('-', '/')}</div>
-                </header>
-                <table
-                  className="history-set-table previous-record-table"
-                  aria-label="前回記録のセット一覧"
-                >
-                  <thead>
-                    <tr>
-                      <th>セット</th>
-                      <th>重さ</th>
-                      <th>{unit === '秒' ? '秒数' : '回数'}</th>
-                      <th>RM</th>
-                      <th>強度</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {workout.sets.map((set, index) => (
-                      <tr key={set.id}>
-                        <td className="history-num">{index + 1}</td>
-                        <td className="history-weight">
-                          {set.weight === null ? (
-                            '-'
-                          ) : (
-                            <>
-                              {formatWeight(set.weight, weightUnit)}
-                              <small> {weightUnitLabel(weightUnit)}</small>
-                            </>
-                          )}
-                        </td>
-                        <td className="history-reps">
-                          {set.recordValue ?? '-'}
-                          {set.recordValue === null ? '' : <small> {unit}</small>}
-                        </td>
-                        <td className="history-rm">
-                          {isReps && number(set.weight) > 0 && number(set.recordValue) > 0
-                            ? `${formatWeight(
-                                calcRm(number(set.weight), number(set.recordValue)),
-                                weightUnit,
-                              )} ${weightUnitLabel(weightUnit)}`
-                            : '-'}
-                        </td>
-                        <td
-                          className={`history-assist${
-                            set.intensity ? ` intensity-${set.intensity}` : ''
-                          }`}
-                        >
-                          <IntensityIcon intensity={set.intensity} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </article>
-              {canCopy && (
-                <button className="previous-record-copy" type="button" onClick={onCopy}>
-                  前回記録をコピー
-                </button>
-              )}
-            </>
-          ) : (
-            <p className="previous-record-empty">前回記録はありません</p>
+          <article className="history-card previous-record-card">
+            <header className="history-card-head">
+              <div className="history-card-date">{workout.date.replaceAll('-', '/')}</div>
+            </header>
+            <table
+              className="history-set-table previous-record-table"
+              aria-label="前回記録のセット一覧"
+            >
+              <thead>
+                <tr>
+                  <th>セット</th>
+                  <th>重さ</th>
+                  <th>{unit === '秒' ? '秒数' : '回数'}</th>
+                  <th>RM</th>
+                  <th>強度</th>
+                </tr>
+              </thead>
+              <tbody>
+                {workout.sets.map((set, index) => (
+                  <tr key={set.id}>
+                    <td className="history-num">{index + 1}</td>
+                    <td className="history-weight">
+                      {set.weight === null ? (
+                        '-'
+                      ) : (
+                        <>
+                          {formatWeight(set.weight, weightUnit)}
+                          <small> {weightUnitLabel(weightUnit)}</small>
+                        </>
+                      )}
+                    </td>
+                    <td className="history-reps">
+                      {set.recordValue ?? '-'}
+                      {set.recordValue === null ? '' : <small> {unit}</small>}
+                    </td>
+                    <td className="history-rm">
+                      {isReps && number(set.weight) > 0 && number(set.recordValue) > 0
+                        ? `${formatWeight(
+                            calcRm(number(set.weight), number(set.recordValue)),
+                            weightUnit,
+                          )} ${weightUnitLabel(weightUnit)}`
+                        : '-'}
+                    </td>
+                    <td
+                      className={`history-assist${set.intensity ? ` intensity-${set.intensity}` : ''}`}
+                    >
+                      <IntensityIcon intensity={set.intensity} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </article>
+          {canCopy && (
+            <button className="previous-record-copy" type="button" onClick={onCopy}>
+              前回記録をコピー
+            </button>
           )}
         </div>
       )}
