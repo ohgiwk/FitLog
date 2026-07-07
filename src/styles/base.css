@@ -299,6 +299,7 @@ input {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  background: var(--bg);
   padding: 12px 11px 18px;
 }
 
@@ -314,6 +315,7 @@ input {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  background: var(--bg);
 }
 
 .detail-screen .content {

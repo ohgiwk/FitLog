@@ -1,6 +1,6 @@
 .history-wrap {
   min-height: 0;
-  background: var(--surface);
+  background: var(--bg);
   padding: 12px 0 24px;
 }
 
@@ -11,7 +11,7 @@
 .exercise-history-wrap {
   min-height: 0;
   padding: 28px 11px 26px;
-  background: var(--history-bg);
+  background: var(--bg);
 }
 
 .history-analysis-link {
@@ -104,6 +104,7 @@
   margin-bottom: 26px;
   border-radius: 0;
   background: var(--surface);
+  box-shadow: 0 7px 18px var(--shadow-soft);
 }
 
 .history-card-head {
@@ -115,6 +116,11 @@
   padding: 8px 12px;
   background: var(--surface-muted);
   color: var(--ink);
+}
+
+:root[data-theme='light'] .exercise-history-wrap .history-card-head {
+  border-bottom-color: #c3ccd9;
+  background: #e4eaf3;
 }
 
 .history-card-date {

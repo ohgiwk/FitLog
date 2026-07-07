@@ -3,7 +3,7 @@
 }
 
 .training-menu-wrap {
-  background: var(--surface);
+  background: var(--bg);
   padding-bottom: calc(var(--safe-area-bottom) + 24px);
 }
 
