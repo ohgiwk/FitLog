@@ -1,4 +1,4 @@
-import { MouseEvent, useEffect, useRef, useState } from 'react';
+import { MouseEvent, PointerEvent, useEffect, useRef, useState } from 'react';
 import { PlusIcon, TrashIcon } from '../icons';
 import { Workout } from '../types';
 import {
@@ -7,11 +7,14 @@ import {
   formatWorkoutTime,
   isRecordedSet,
   isUnstartedWorkout,
+  localDate,
+  parseDate,
 } from '../utils';
 import { HomeSetRow } from '../components/HomeSetRow';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import { HomeCalendar, type HomeCalendarOverlayState } from '../components/HomeCalendar';
+import { scheduledPresetsForDate } from '../selectors/fitLogSelectors';
 
 type WorkoutSummary = {
   startTime: string;
@@ -23,30 +26,171 @@ type WorkoutSummary = {
 
 const newPresetOptionValue = '__new_preset__';
 const workoutRemoveAnimationMs = 220;
+const daySwipeAnimationMs = 220;
+const dayPageOffsets = [-1, 0, 1] as const;
+
+type DaySwipeState = {
+  offset: number;
+  animating: boolean;
+  dragging: boolean;
+};
+
+type HomeDayPage = {
+  offset: (typeof dayPageOffsets)[number];
+  date: string;
+  workouts: Workout[];
+  scheduledPresets: ReturnType<typeof scheduledPresetsForDate>;
+  workoutStartTime: string | undefined;
+  workoutEndTime: string | undefined;
+};
+
+function moveDateByDays(date: string, days: number) {
+  const next = parseDate(date);
+  next.setDate(next.getDate() + days);
+  return localDate(next);
+}
+
+/**
+ * ホーム本文の横スワイプで前後の日付へ移動するための状態とイベントを管理する
+ */
+function useHomeDaySwipe(selectedDate: string, onSelectDateBySwipe: (date: string) => void) {
+  const [swipe, setSwipe] = useState<DaySwipeState>({
+    offset: 0,
+    animating: false,
+    dragging: false,
+  });
+  const swipeStart = useRef<{ x: number; y: number; width: number } | null>(null);
+  const pendingDays = useRef<number | null>(null);
+  const transitionTimer = useRef<number | null>(null);
+  const suppressClick = useRef(false);
+
+  function clearTransitionTimer() {
+    if (transitionTimer.current === null) return;
+    globalThis.clearTimeout(transitionTimer.current);
+    transitionTimer.current = null;
+  }
+
+  function finishTransition() {
+    clearTransitionTimer();
+    const days = pendingDays.current;
+    pendingDays.current = null;
+    setSwipe({ offset: 0, animating: false, dragging: false });
+    if (days) onSelectDateBySwipe(moveDateByDays(selectedDate, days));
+  }
+
+  function suppressNextClick() {
+    suppressClick.current = true;
+    globalThis.setTimeout(() => {
+      suppressClick.current = false;
+    }, 260);
+  }
+
+  function startSwipe(event: PointerEvent<HTMLElement>) {
+    if (swipe.animating) return;
+    swipeStart.current = {
+      x: event.clientX,
+      y: event.clientY,
+      width: event.currentTarget.getBoundingClientRect().width,
+    };
+    pendingDays.current = null;
+    clearTransitionTimer();
+    setSwipe({ offset: 0, animating: false, dragging: false });
+  }
+
+  function moveSwipe(event: PointerEvent<HTMLElement>) {
+    const start = swipeStart.current;
+    if (!start) return;
+    const diffX = event.clientX - start.x;
+    const diffY = event.clientY - start.y;
+    if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 12) return;
+    const dragging = Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY);
+    if (!dragging && !swipe.dragging) return;
+    if (dragging && !event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+    setSwipe({
+      offset: Math.max(Math.min(diffX, start.width), -start.width),
+      animating: false,
+      dragging: true,
+    });
+  }
+
+  function finishSwipe(event: PointerEvent<HTMLElement>) {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start) return;
+    const diffX = event.clientX - start.x;
+    const diffY = event.clientY - start.y;
+    const wasDragging = swipe.dragging || Math.abs(diffX) > 10;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    if (!wasDragging) return;
+    suppressNextClick();
+    if (Math.abs(diffX) < Math.max(64, start.width * 0.22) || Math.abs(diffX) <= Math.abs(diffY)) {
+      pendingDays.current = null;
+      setSwipe((current) => ({ ...current, offset: 0, animating: current.offset !== 0 }));
+      clearTransitionTimer();
+      transitionTimer.current = globalThis.setTimeout(finishTransition, daySwipeAnimationMs + 60);
+      return;
+    }
+    const days = diffX < 0 ? 1 : -1;
+    pendingDays.current = days;
+    setSwipe({ offset: -days * start.width, animating: true, dragging: false });
+    clearTransitionTimer();
+    transitionTimer.current = globalThis.setTimeout(finishTransition, daySwipeAnimationMs + 60);
+  }
+
+  function cancelSwipe() {
+    swipeStart.current = null;
+    pendingDays.current = null;
+    setSwipe((current) => ({ ...current, offset: 0, animating: current.offset !== 0 }));
+    clearTransitionTimer();
+    transitionTimer.current = globalThis.setTimeout(finishTransition, daySwipeAnimationMs + 60);
+  }
+
+  function blockSuppressedClick(event: MouseEvent<HTMLElement>) {
+    if (!suppressClick.current) return;
+    suppressClick.current = false;
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  useEffect(
+    () => () => {
+      clearTransitionTimer();
+    },
+    [],
+  );
+
+  return {
+    swipe,
+    startSwipe,
+    moveSwipe,
+    finishSwipe,
+    cancelSwipe,
+    finishTransition,
+    blockSuppressedClick,
+  };
+}
 
 /**
  * ホーム画面が必要とする state・派生値・操作を Context から組み立てる view-model フック
  */
 function useHomeScreenModel() {
-  const {
-    selectedDate,
-    state,
-    selectedWorkouts,
-    selectedScheduledPresets,
-    currentPreset,
-    partColors,
-    actions,
-  } = useFitLogContext();
+  const { selectedDate, state, selectedWorkouts, currentPreset, partColors, actions } =
+    useFitLogContext();
 
   return {
     selectedDate,
     workouts: state.workouts,
     selectedWorkouts,
-    selectedScheduledPresets,
     presets: state.presets,
     currentPreset,
     partColors,
     weightUnit: state.weightUnit,
+    workoutStartTimes: state.workoutStartTimes,
+    workoutEndTimes: state.workoutEndTimes,
     workoutStartTime: state.workoutStartTimes[selectedDate],
     workoutEndTime: state.workoutEndTimes[selectedDate],
     /**
@@ -86,11 +230,12 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
     selectedDate,
     workouts,
     selectedWorkouts,
-    selectedScheduledPresets,
     presets,
     currentPreset,
     partColors,
     weightUnit,
+    workoutStartTimes,
+    workoutEndTimes,
     workoutStartTime,
     workoutEndTime,
     onSelectDate,
@@ -120,6 +265,31 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
   const isNewPresetSelected = selectedPresetValue === newPresetOptionValue;
   const selectedPreset = presets.find((preset) => preset.id === selectedPresetValue) || null;
   const currentPresetIsEmpty = !!selectedPreset && selectedPreset.exerciseIds.length === 0;
+  const [dayTransition, setDayTransition] = useState<'fade' | 'none'>('fade');
+  const homeDayClassName = dayTransition === 'fade' ? 'home-day-fade' : '';
+  const dayPages = dayPageOffsets.map((offset) => {
+    const date = moveDateByDays(selectedDate, offset);
+    return {
+      offset,
+      date,
+      workouts: workouts.filter((workout) => workout.date === date),
+      scheduledPresets: scheduledPresetsForDate(date, presets),
+      workoutStartTime: workoutStartTimes[date],
+      workoutEndTime: workoutEndTimes[date],
+    };
+  });
+
+  function selectDateWithFade(date: string) {
+    setDayTransition('fade');
+    onSelectDate(date);
+  }
+
+  function selectDateBySwipe(date: string) {
+    setDayTransition('none');
+    onSelectDate(date);
+  }
+
+  const daySwipe = useHomeDaySwipe(selectedDate, selectDateBySwipe);
 
   useEffect(() => {
     setSelectedPresetValue(currentPreset?.id || newPresetOptionValue);
@@ -218,16 +388,181 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
     finishWorkout(true);
   }
 
+  function renderDayPage(page: HomeDayPage) {
+    const isCurrentPage = page.offset === 0;
+    const pageClassName = page.offset === 0 ? 'current' : page.offset < 0 ? 'previous' : 'next';
+    const startReadyClassName = !page.workouts.length && !page.workoutEndTime ? 'start-ready' : '';
+    const contentMotionClassName = isCurrentPage ? homeDayClassName : '';
+    const startTitleId = `workout-menu-start-title-${page.date}`;
+
+    return (
+      <div
+        className={`home-day-page ${pageClassName} ${startReadyClassName}`}
+        key={page.date}
+        aria-hidden={!isCurrentPage}
+        inert={isCurrentPage ? undefined : true}
+      >
+        {!page.workouts.length && !page.workoutEndTime && (
+          <div
+            className={`workout-start-area ${contentMotionClassName}`}
+            key={`start-${page.date}`}
+          >
+            <section className="workout-start-panel" aria-labelledby={startTitleId}>
+              <div className="workout-start-section">
+                <h2 id={startTitleId}>トレーニングを開始</h2>
+                {!!page.scheduledPresets.length && (
+                  <span className="scheduled-menu-label">
+                    今日の予定: {page.scheduledPresets.map((preset) => preset.name).join(' / ')}
+                  </span>
+                )}
+                <select
+                  aria-label="トレーニングメニューを選択"
+                  value={selectedPresetValue}
+                  onChange={(event) => {
+                    const presetId = event.target.value;
+                    setSelectedPresetValue(presetId);
+                    if (presetId !== newPresetOptionValue) onSelectPreset(presetId);
+                  }}
+                >
+                  {presets.map((preset) => (
+                    <option key={preset.id} value={preset.id}>
+                      {preset.name}
+                    </option>
+                  ))}
+                  <option value={newPresetOptionValue}>[新規作成]</option>
+                </select>
+                <button
+                  className="primary workout-start-primary"
+                  type="button"
+                  onClick={() =>
+                    isNewPresetSelected
+                      ? onCreatePresetDraftForStart()
+                      : currentPresetIsEmpty
+                        ? onEditPresetForStart(selectedPreset?.id || '')
+                        : onStartPreset(selectedPreset?.id || '')
+                  }
+                >
+                  {isNewPresetSelected || currentPresetIsEmpty
+                    ? 'トレーニングメニューを作成する'
+                    : 'トレーニングメニューから開始'}
+                </button>
+              </div>
+              <div className="workout-start-divider">
+                <span>または</span>
+              </div>
+              <div className="workout-start-section">
+                <button
+                  className="workout-select-start-button"
+                  type="button"
+                  onClick={onOpenSelect}
+                >
+                  種目を選んで開始
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
+        <div className={`content ${contentMotionClassName}`} key={`content-${page.date}`}>
+          {page.workouts.map((workout) => (
+            <article
+              className={`exercise-card ${removingWorkoutId === workout.id ? 'removing' : ''}`}
+              key={workout.id}
+            >
+              <button
+                className="exercise-card-open"
+                type="button"
+                aria-label={`${workout.name}の詳細を開く`}
+                disabled={removingWorkoutId === workout.id}
+                onClick={() => onOpenDetail(workout.id)}
+              />
+              <header
+                className="exercise-head"
+                style={{ borderLeftColor: partColors.get(workout.part) }}
+              >
+                <h2>
+                  {workout.part} - {workout.name}
+                </h2>
+              </header>
+              <div className="exercise-body">
+                <table className="set-table">
+                  <thead>
+                    <tr>
+                      <th>セット</th>
+                      <th>重さ</th>
+                      <th>記録</th>
+                      <th>RM</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workout.sets.map((set, setIndex) => (
+                      <HomeSetRow
+                        key={set.id}
+                        set={set}
+                        index={setIndex}
+                        measurementType={workout.measurementType}
+                        weightUnit={weightUnit}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+                {!page.workoutEndTime && isUnstartedWorkout(workout) && (
+                  <div className="new-workout-overlay" aria-hidden="true">
+                    <div className="new-workout-overlay-icon">
+                      <PlusIcon />
+                    </div>
+                  </div>
+                )}
+              </div>
+              {!page.workoutEndTime && (
+                <button
+                  className="delete-workout"
+                  type="button"
+                  aria-label={`${workout.name}を削除`}
+                  onClick={(event) => requestDelete(event, workout)}
+                >
+                  <TrashIcon />
+                </button>
+              )}
+            </article>
+          ))}
+          {page.workoutStartTime && !page.workoutEndTime && !!page.workouts.length && (
+            <button
+              className="primary workout-action-button"
+              type="button"
+              onClick={requestFinishWorkout}
+            >
+              トレーニングを終了
+            </button>
+          )}
+          {page.workoutStartTime && page.workoutEndTime && (
+            <div className="workout-completed-actions">
+              <button
+                className="workout-action-button workout-summary-button"
+                type="button"
+                onClick={() => showWorkoutSummary(page.workoutEndTime || '')}
+              >
+                トレーニング結果を見る
+              </button>
+              <button className="resume-workout-button" type="button" onClick={onResumeWorkoutDay}>
+                再開
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <section
-      className={`screen active detail-screen ${
+      className={`screen active detail-screen home-screen ${
         !selectedWorkouts.length && !workoutEndTime ? 'workout-start-ready' : ''
       }`}
     >
       <HomeCalendar
         selectedDate={selectedDate}
         workouts={workouts}
-        onSelectDate={onSelectDate}
+        onSelectDate={selectDateWithFade}
         onOpenTrainingMenu={onOpenTrainingMenu}
         onOpenAnalysis={onOpenAnalysis}
         onOpenSettings={onOpenSettings}
@@ -235,145 +570,23 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
         onOverlayStateChange={onOverlayStateChange}
         cloud={cloud}
       />
-      {!selectedWorkouts.length && !workoutEndTime && (
-        <div className="workout-start-area home-day-fade" key={`start-${selectedDate}`}>
-          <section className="workout-start-panel" aria-labelledby="workout-menu-start-title">
-            <div className="workout-start-section">
-              <h2 id="workout-menu-start-title">トレーニングを開始</h2>
-              {!!selectedScheduledPresets.length && (
-                <span className="scheduled-menu-label">
-                  今日の予定: {selectedScheduledPresets.map((preset) => preset.name).join(' / ')}
-                </span>
-              )}
-              <select
-                aria-label="トレーニングメニューを選択"
-                value={selectedPresetValue}
-                onChange={(event) => {
-                  const presetId = event.target.value;
-                  setSelectedPresetValue(presetId);
-                  if (presetId !== newPresetOptionValue) onSelectPreset(presetId);
-                }}
-              >
-                {presets.map((preset) => (
-                  <option key={preset.id} value={preset.id}>
-                    {preset.name}
-                  </option>
-                ))}
-                <option value={newPresetOptionValue}>[新規作成]</option>
-              </select>
-              <button
-                className="primary workout-start-primary"
-                type="button"
-                onClick={() =>
-                  isNewPresetSelected
-                    ? onCreatePresetDraftForStart()
-                    : currentPresetIsEmpty
-                      ? onEditPresetForStart(selectedPreset?.id || '')
-                      : onStartPreset(selectedPreset?.id || '')
-                }
-              >
-                {isNewPresetSelected || currentPresetIsEmpty
-                  ? 'トレーニングメニューを作成する'
-                  : 'トレーニングメニューから開始'}
-              </button>
-            </div>
-            <div className="workout-start-divider">
-              <span>または</span>
-            </div>
-            <div className="workout-start-section">
-              <button className="workout-select-start-button" type="button" onClick={onOpenSelect}>
-                種目を選んで開始
-              </button>
-            </div>
-          </section>
+      <div
+        className="home-day-swipe"
+        onPointerDown={daySwipe.startSwipe}
+        onPointerMove={daySwipe.moveSwipe}
+        onPointerUp={daySwipe.finishSwipe}
+        onPointerCancel={daySwipe.cancelSwipe}
+        onClickCapture={daySwipe.blockSuppressedClick}
+      >
+        <div
+          className={`home-day-swipe-track ${
+            daySwipe.swipe.animating ? 'animating' : ''
+          } ${daySwipe.swipe.dragging ? 'dragging' : ''}`}
+          style={{ transform: `translateX(${daySwipe.swipe.offset}px)` }}
+          onTransitionEnd={daySwipe.finishTransition}
+        >
+          {dayPages.map(renderDayPage)}
         </div>
-      )}
-      <div className="content home-day-fade" key={`content-${selectedDate}`}>
-        {selectedWorkouts.map((workout) => (
-          <article
-            className={`exercise-card ${removingWorkoutId === workout.id ? 'removing' : ''}`}
-            key={workout.id}
-          >
-            <button
-              className="exercise-card-open"
-              type="button"
-              aria-label={`${workout.name}の詳細を開く`}
-              disabled={removingWorkoutId === workout.id}
-              onClick={() => onOpenDetail(workout.id)}
-            />
-            <header
-              className="exercise-head"
-              style={{ borderLeftColor: partColors.get(workout.part) }}
-            >
-              <h2>
-                {workout.part} - {workout.name}
-              </h2>
-            </header>
-            <div className="exercise-body">
-              <table className="set-table">
-                <thead>
-                  <tr>
-                    <th>セット</th>
-                    <th>重さ</th>
-                    <th>記録</th>
-                    <th>RM</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {workout.sets.map((set, setIndex) => (
-                    <HomeSetRow
-                      key={set.id}
-                      set={set}
-                      index={setIndex}
-                      measurementType={workout.measurementType}
-                      weightUnit={weightUnit}
-                    />
-                  ))}
-                </tbody>
-              </table>
-              {!workoutEndTime && isUnstartedWorkout(workout) && (
-                <div className="new-workout-overlay" aria-hidden="true">
-                  <div className="new-workout-overlay-icon">
-                    <PlusIcon />
-                  </div>
-                </div>
-              )}
-            </div>
-            {!workoutEndTime && (
-              <button
-                className="delete-workout"
-                type="button"
-                aria-label={`${workout.name}を削除`}
-                onClick={(event) => requestDelete(event, workout)}
-              >
-                <TrashIcon />
-              </button>
-            )}
-          </article>
-        ))}
-        {workoutStartTime && !workoutEndTime && !!selectedWorkouts.length && (
-          <button
-            className="primary workout-action-button"
-            type="button"
-            onClick={requestFinishWorkout}
-          >
-            トレーニングを終了
-          </button>
-        )}
-        {workoutStartTime && workoutEndTime && (
-          <div className="workout-completed-actions">
-            <button
-              className="workout-action-button workout-summary-button"
-              type="button"
-              onClick={() => showWorkoutSummary(workoutEndTime)}
-            >
-              トレーニング結果を見る
-            </button>
-            <button className="resume-workout-button" type="button" onClick={onResumeWorkoutDay}>
-              再開
-            </button>
-          </div>
-        )}
       </div>
       {deleteTarget && (
         <ConfirmDialog

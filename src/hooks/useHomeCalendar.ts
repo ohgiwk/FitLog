@@ -1,4 +1,4 @@
-import { PointerEvent, useMemo, useRef, useState } from 'react';
+import { PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { compactCalendarCells, localDate, parseDate } from '../utils';
 
 export type HomeCalendarMode = 'week' | 'month';
@@ -56,6 +56,10 @@ export function useHomeCalendar(selectedDate: string, onSelectDate: (date: strin
       }),
     [anchorDate, mode],
   );
+
+  useEffect(() => {
+    setAnchorDate(parseDate(selectedDate));
+  }, [selectedDate]);
 
   function clearTransitionTimer() {
     if (transitionTimer.current === null) return;

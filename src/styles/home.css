@@ -234,10 +234,80 @@
   white-space: nowrap;
 }
 
-.screen.active.workout-start-ready {
+.screen.active.home-screen {
   display: flex;
   min-height: 0;
   flex-direction: column;
+}
+
+.home-day-swipe {
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.screen.active.home-screen > .home-day-swipe {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.home-day-swipe-track {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  will-change: transform;
+}
+
+.screen.active.home-screen .home-day-swipe-track {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.home-day-swipe-track.animating {
+  transition: transform 0.22s ease;
+}
+
+.home-day-swipe-track.dragging {
+  cursor: grabbing;
+}
+
+.home-day-page {
+  width: 100%;
+}
+
+.screen.active.home-screen .home-day-page.current {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.home-day-page.previous,
+.home-day-page.next {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  pointer-events: none;
+}
+
+.home-day-page.previous {
+  right: 100%;
+}
+
+.home-day-page.next {
+  left: 100%;
+}
+
+.home-day-page.start-ready {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+}
+
+.screen.active.home-screen .home-day-page.current.start-ready {
+  flex: 1;
 }
 
 .workout-start-area {
@@ -247,7 +317,11 @@
   padding: 20px 0;
 }
 
-.workout-start-ready > .content {
+.home-day-page.start-ready > .workout-start-area {
+  min-height: 100%;
+}
+
+.workout-start-ready .home-day-page.current.start-ready > .content {
   display: none;
 }
 
@@ -325,7 +399,14 @@
 }
 
 .workout-start-primary {
-  background: linear-gradient(20deg, #0ea5ff 0%, #6d28d9 2%, #e11d48 34%, #ff173d 72%, #ff6b00 100%);
+  background: linear-gradient(
+    20deg,
+    #0ea5ff 0%,
+    #6d28d9 2%,
+    #e11d48 34%,
+    #ff173d 72%,
+    #ff6b00 100%
+  );
   transition:
     filter 0.2s ease,
     box-shadow 0.2s ease,
@@ -553,6 +634,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .home-day-fade,
+  .home-day-swipe-track.animating,
   .exercise-card.removing,
   .home-calendar-backdrop,
   .home-app-backdrop,
