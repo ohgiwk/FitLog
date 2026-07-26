@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, DragHandle, EditIcon, TrashIcon } from '../icons';
+import { DragHandle, EditIcon, TrashIcon } from '../icons';
 import { ReorderItem, useExerciseReorder } from '../hooks/useExerciseReorder';
 import type { Exercise } from '../types';
 import { exerciseCategories } from '../utils';
@@ -91,24 +91,6 @@ export function ExercisePicker({
                             <DragHandle />
                           </span>
                           <span className="exercise-name">{exercise.name}</span>
-                          <button
-                            className="move-exercise"
-                            data-row-action
-                            type="button"
-                            aria-label={`${exercise.name}を上へ移動`}
-                            onClick={() => reorder.moveItem(exercise.id, -1)}
-                          >
-                            <ChevronUp />
-                          </button>
-                          <button
-                            className="move-exercise"
-                            data-row-action
-                            type="button"
-                            aria-label={`${exercise.name}を下へ移動`}
-                            onClick={() => reorder.moveItem(exercise.id, 1)}
-                          >
-                            <ChevronDown />
-                          </button>
                           <button
                             className="edit-exercise"
                             data-row-action
