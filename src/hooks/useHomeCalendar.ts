@@ -130,7 +130,6 @@ export function useHomeCalendar(selectedDate: string, onSelectDate: (date: strin
     };
     pendingMove.current = null;
     setDragOffset(0);
-    event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function startHandleSwipe(event: PointerEvent<HTMLButtonElement>) {
@@ -148,6 +147,13 @@ export function useHomeCalendar(selectedDate: string, onSelectDate: (date: strin
     const diffX = event.clientX - start.x;
     const diffY = event.clientY - start.y;
     if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 12) return;
+    if (
+      Math.abs(diffX) > 10 &&
+      Math.abs(diffX) > Math.abs(diffY) &&
+      !event.currentTarget.hasPointerCapture(event.pointerId)
+    ) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
     setDragOffset(Math.max(Math.min(diffX, start.width), -start.width));
   }
 
@@ -155,6 +161,9 @@ export function useHomeCalendar(selectedDate: string, onSelectDate: (date: strin
     const start = swipeStart.current;
     swipeStart.current = null;
     if (!start) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
     const diffX = event.clientX - start.x;
     const diffY = event.clientY - start.y;
     if (Math.abs(diffY) >= 44 && Math.abs(diffY) > Math.abs(diffX)) {
@@ -184,8 +193,11 @@ export function useHomeCalendar(selectedDate: string, onSelectDate: (date: strin
     transitionTimer.current = globalThis.setTimeout(finishTransition, 260);
   }
 
-  function cancelSwipe() {
+  function cancelSwipe(event: PointerEvent<HTMLElement>) {
     swipeStart.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
     pendingMove.current = null;
     setAnimating(dragOffset !== 0);
     setDragOffset(0);
