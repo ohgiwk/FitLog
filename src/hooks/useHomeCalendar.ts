@@ -162,6 +162,9 @@ export function useHomeCalendar(selectedDate: string, onSelectDate: (date: strin
       setMode(diffY > 0 ? 'month' : 'week');
       return;
     }
+    if (Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY)) {
+      ignoreNextClick();
+    }
     if (Math.abs(diffX) < Math.max(56, start.width * 0.18) || Math.abs(diffX) <= Math.abs(diffY)) {
       pendingMove.current = null;
       setAnimating(dragOffset !== 0);

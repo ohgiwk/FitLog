@@ -250,13 +250,6 @@ export function HomeCalendar({
                                   isToday ? 'today' : ''
                                 } ${selected ? 'selected' : ''}`}
                                 type="button"
-                                onPointerDown={(event) => event.stopPropagation()}
-                                onPointerUp={(event) => event.stopPropagation()}
-                                onTouchEnd={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  calendar.selectDate(cell.date);
-                                }}
                                 onClick={() => calendar.selectDate(cell.date)}
                               >
                                 {cell.day}
