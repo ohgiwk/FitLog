@@ -5,6 +5,7 @@
   --muted: #9ca3af;
   --line: #343946;
   --bg: #0f1115;
+  --app-outside-bg: #07080b;
   --panel: #171a20;
   --tab: #151820;
   --surface: #1b1f27;
@@ -73,6 +74,7 @@
   --muted: #687282;
   --line: #d8dee8;
   --bg: #f5f7fb;
+  --app-outside-bg: #e3e7ee;
   --panel: #fff;
   --tab: #eef2f7;
   --surface: #fff;
@@ -137,7 +139,7 @@ html {
   height: 100dvh;
   min-height: 100dvh;
   overflow: hidden;
-  background: var(--bg);
+  background: var(--app-outside-bg);
   color-scheme: dark;
 }
 
@@ -146,7 +148,7 @@ html {
   height: 100dvh;
   min-height: 100dvh;
   overflow: hidden;
-  background: var(--bg);
+  background: var(--app-outside-bg);
 }
 
 body {
@@ -160,7 +162,7 @@ body {
   margin: 0;
   overflow: hidden;
   overscroll-behavior: none;
-  background: var(--bg);
+  background: var(--app-outside-bg);
   color: var(--ink);
 }
 
