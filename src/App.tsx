@@ -181,12 +181,12 @@ function AppShell() {
     };
 
     scheduleCheck();
-    app.addEventListener('scroll', scheduleCheck, { passive: true });
+    app.addEventListener('scroll', scheduleCheck, { capture: true, passive: true });
     window.addEventListener('resize', scheduleCheck);
 
     return () => {
       window.cancelAnimationFrame(frameId);
-      app.removeEventListener('scroll', scheduleCheck);
+      app.removeEventListener('scroll', scheduleCheck, true);
       window.removeEventListener('resize', scheduleCheck);
     };
   }, [
