@@ -44,6 +44,7 @@
 | 区分 | 採用技術 |
 | --- | --- |
 | UI | React 19 系 |
+| ルーティング | React Router（Declarative Mode / `HashRouter`） |
 | ビルド | Vite |
 | 言語 | TypeScript |
 | PWA | `vite-plugin-pwa`（workbox） |
@@ -94,7 +95,7 @@ npm run format       # prettier --write
 
 ### 2.3 エントリポイント（`src/main.tsx`）
 
-- `React.StrictMode` → `ErrorBoundary` → `App` の順に包む。
+- `React.StrictMode` → `HashRouter` → `ErrorBoundary` → `App` の順に包む。
 - `registerSW({ immediate: true, onNeedRefresh })` で Service Worker を即時登録し、新しい Service Worker を検出したらアプリへ更新イベントを通知する。
 
 ### 2.4 プロジェクト構成 / 主要ファイル
@@ -113,8 +114,9 @@ npm run format       # prettier --write
 | `.github/workflows/deploy-pages.yml` | GitHub Pages デプロイ workflow |
 | `ios/` | Capacitor が生成した iOS / Xcode プロジェクト |
 | `docs/` | 仕様・設計ドキュメント |
-| `src/main.tsx` | エントリー（`ErrorBoundary` + PWA 登録） |
+| `src/main.tsx` | エントリー（`HashRouter` + `ErrorBoundary` + PWA 登録） |
 | `src/App.tsx` | 画面切り替え・ボトムナビ・トースト |
+| `src/routes.ts` | 画面とハッシュURLの対応、パスから画面への変換 |
 | `src/types.ts` | 共通の TypeScript 型 |
 | `src/utils.ts` | 日付・計算・汎用ヘルパー |
 | `src/storage.ts` | `localStorage` の読み込み・壊れたデータの退避 |
@@ -149,8 +151,9 @@ FitLog/
 │   ├── specification.md      # 詳細仕様
 │   └── improvements.md       # 改善候補の備忘録
 └── src/
-    ├── main.tsx              # エントリー(ErrorBoundary + PWA 登録)
+    ├── main.tsx              # エントリー(HashRouter + ErrorBoundary + PWA 登録)
     ├── App.tsx               # 画面切り替え・ナビ・トースト
+    ├── routes.ts             # 画面とハッシュURLの対応
     ├── types.ts              # 共通の型
     ├── utils.ts              # 日付・計算・汎用ヘルパー
     ├── storage.ts            # localStorage の読み込み・退避
@@ -226,7 +229,7 @@ useFitLogCore (state + 永続化 + トースト)
 | フック | ファイル | 責務 |
 | --- | --- | --- |
 | `useFitLogCore` | `hooks/useFitLogCore.ts` | `State` の保持、`localStorage` 保存（デバウンス・flush・失敗通知）、トースト管理、`saveState` / `setState` 提供 |
-| `useNavigation` | `hooks/useNavigation.ts` | `screen` / `transitionFrom` / `transitionDirection` / `selectedDate` / `currentWorkoutId` の管理、画面遷移、日付・月移動、離脱時の空セット掃除 |
+| `useNavigation` | `hooks/useNavigation.ts` | React Router の現在パスから導出する `screen`、`transitionFrom` / `transitionDirection` / `selectedDate` / `currentWorkoutId` の管理、画面遷移、日付・月移動、離脱時の空セット掃除 |
 | `useHomeCalendar` | `hooks/useHomeCalendar.ts` | ホームの週/月カレンダー表示、スワイプ遷移、選択日の同期 |
 | `useExerciseReorder` | `hooks/useExerciseReorder.ts` | 種目のドラッグ中レイアウトとカテゴリを管理し、終了時に確定 |
 | `useFitLogUi` | `hooks/useFitLogUi.ts` | 保存しない一時 UI 状態（編集モード、部位タブ、履歴フィルタ、トレーニングメニュー下書き） |
@@ -710,7 +713,8 @@ flowchart TD
 
 ### 6.1 アプリ外枠とナビゲーション（`App.tsx`）
 
-- `<main class="app">` 内に現在の画面を 1 つだけ描画。
+- `HashRouter` と宣言的な `Routes` で画面をURLへ対応させ、`<main class="app">` 内に現在の画面を 1 つだけ描画する。GitHub Pages と Capacitor の両方でサーバー側のパスフォールバックを必要としないハッシュURLを使う。
+- ルート定義は `src/routes.ts` に集約し、未定義のパスはホームへ置き換える。画面操作は `showScreen` を通してURL履歴へ追加し、ブラウザの戻る・進む操作でも表示画面を同期する。
 - `html` / `body` / `#root` / `.app` は `100dvh` を基準にする。`.app` と各画面は縦 flex とし、ヘッダ外の本文領域だけをスクロールさせる。
 - iOS アプリでは Capacitor Keyboard の `resize` を `none` にし、キーボード表示時に WebView / body 側をリサイズしない。
 - 画面切り替え時は `transitionDirection` に応じてプッシュ風アニメーションを付ける。進む遷移では遷移先画面が上に被さり、戻る遷移では上に被さっていた遷移元画面が右へ抜けて下の戻り先画面を見せる。端末の `prefers-reduced-motion` が有効な場合はアニメーションしない。

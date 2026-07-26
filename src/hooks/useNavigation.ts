@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
 import { Screen, State } from '../types';
 import { isBlank, localDate, parseDate } from '../utils';
 import { findCurrentWorkout } from '../selectors/fitLogSelectors';
+import { screenFromPath, screenPaths } from '../routes';
 import { GoalAchievement } from './useFitLogUi';
 import { appendGoalAchievement, findGoalAchievement } from './goalAchievement';
 
@@ -36,10 +38,7 @@ const screenDepth: Record<Screen, number> = {
   presetExerciseSelect: 3,
 };
 
-function getTransitionDirection(
-  current: Screen,
-  next: Screen,
-): ScreenTransitionDirection {
+function getTransitionDirection(current: Screen, next: Screen): ScreenTransitionDirection {
   if (current === next) return 'none';
   return screenDepth[next] > screenDepth[current] ? 'forward' : 'back';
 }
@@ -53,12 +52,17 @@ export function useNavigation({
   setEditMode,
   setGoalAchievement,
 }: NavigationDeps) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const routeScreen = screenFromPath(location.pathname);
+  const screen = routeScreen ?? 'home';
   const [selectedDate, setSelectedDate] = useState(() => localDate(new Date()));
-  const [screen, setScreen] = useState<Screen>('home');
   const [transitionFrom, setTransitionFrom] = useState<Screen | null>(null);
-  const [transitionDirection, setTransitionDirection] =
-    useState<ScreenTransitionDirection>('none');
+  const [transitionDirection, setTransitionDirection] = useState<ScreenTransitionDirection>('none');
   const [currentWorkoutId, setCurrentWorkoutId] = useState<string | null>(null);
+  const previousScreen = useRef(screen);
+  const pendingScreen = useRef<Screen | null>(null);
+  const handleScreenExitRef = useRef<(source: Screen, next: Screen) => void>(() => undefined);
 
   /**
    * 選択中の日付に紐づくワークアウト一覧
@@ -75,11 +79,29 @@ export function useNavigation({
     [currentWorkoutId, selectedDate, selectedWorkouts, state.workouts],
   );
 
+  useEffect(() => {
+    if (routeScreen) return;
+    void navigate(screenPaths.home, { replace: true });
+  }, [navigate, routeScreen]);
+
+  useEffect(() => {
+    const previous = previousScreen.current;
+    previousScreen.current = screen;
+    if (previous === screen) return;
+    if (pendingScreen.current === screen) {
+      pendingScreen.current = null;
+      return;
+    }
+    handleScreenExitRef.current(previous, screen);
+    setTransitionFrom(previous);
+    setTransitionDirection(getTransitionDirection(previous, screen));
+  }, [screen]);
+
   /**
    * 詳細画面を離れる際、未入力のままの空セットを取り除く
    */
-  function cleanupBlankDetailSets() {
-    if (screen !== 'detail' || !currentWorkout) return;
+  function cleanupBlankDetailSets(sourceScreen: Screen) {
+    if (sourceScreen !== 'detail' || !currentWorkout) return;
     if (state.workoutEndTimes[currentWorkout.date]) return;
     saveState((prev) => {
       const workout = prev.workouts.find((item) => item.id === currentWorkout.id);
@@ -97,20 +119,12 @@ export function useNavigation({
   }
 
   /**
-   * 画面を切り替える。離脱時の後片付けや編集モード解除も行う
+   * 画面を離れる際の後片付けと編集モード解除を行う
    */
-  function showScreen(next: Screen) {
-    function commitScreen() {
-      const direction = getTransitionDirection(screen, next);
-      setTransitionFrom(direction === 'none' ? null : screen);
-      setTransitionDirection(direction);
-      setScreen(next);
-    }
-
+  function handleScreenExit(sourceScreen: Screen, next: Screen) {
     const isReadOnlyWorkout = Boolean(currentWorkout && state.workoutEndTimes[currentWorkout.date]);
-    if (screen === 'detail' && next !== 'detail' && currentWorkout) {
+    if (sourceScreen === 'detail' && next !== 'detail' && currentWorkout) {
       if (isReadOnlyWorkout) {
-        commitScreen();
         if (next !== 'select') setEditMode(false);
         return;
       }
@@ -120,9 +134,22 @@ export function useNavigation({
         setGoalAchievement(goalResult.achievement);
       }
     }
-    if (next !== 'detail' && next !== 'exerciseHistory') cleanupBlankDetailSets();
+    if (next !== 'detail' && next !== 'exerciseHistory') cleanupBlankDetailSets(sourceScreen);
     if (next !== 'select' && next !== 'exerciseEdit') setEditMode(false);
-    commitScreen();
+  }
+
+  handleScreenExitRef.current = handleScreenExit;
+
+  /**
+   * 画面を切り替える。離脱処理後にURL履歴へ遷移先を追加する
+   */
+  function showScreen(next: Screen) {
+    handleScreenExit(screen, next);
+    const direction = getTransitionDirection(screen, next);
+    setTransitionFrom(direction === 'none' ? null : screen);
+    setTransitionDirection(direction);
+    pendingScreen.current = next;
+    void navigate(screenPaths[next]);
   }
 
   /**

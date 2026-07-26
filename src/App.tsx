@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type AnimationEvent } from 'react';
+import { Navigate, Route, Routes } from 'react-router';
 import type { HomeCalendarOverlayState } from './components/HomeCalendar';
 import { FitLogProvider } from './hooks/FitLogContext';
 import { useFitLogContext } from './hooks/useFitLogContext';
@@ -22,6 +23,7 @@ import { AnalysisScreen } from './screens/AnalysisScreen';
 import { TrainingMenuScreen } from './screens/TrainingMenuScreen';
 import { PlusIcon } from './icons';
 import type { Screen } from './types';
+import { screenPaths } from './routes';
 import {
   formatStoredWeightInput,
   formatWeightForStorageInput,
@@ -220,11 +222,7 @@ function AppShell() {
 
   function renderScreen(targetScreen: Screen) {
     if (targetScreen === 'home') {
-      return (
-        <HomeScreen
-          onOverlayStateChange={setHomeOverlayState}
-        />
-      );
+      return <HomeScreen onOverlayStateChange={setHomeOverlayState} />;
     }
     if (targetScreen === 'select') return <SelectScreen />;
     if (targetScreen === 'exerciseEdit') return <ExerciseEditScreen />;
@@ -254,6 +252,17 @@ function AppShell() {
     return null;
   }
 
+  function renderRoutes() {
+    return (
+      <Routes>
+        {(Object.entries(screenPaths) as [Screen, string][]).map(([routeScreen, path]) => (
+          <Route path={path} element={renderScreen(routeScreen)} key={routeScreen} />
+        ))}
+        <Route path="*" element={<Navigate replace to={screenPaths.home} />} />
+      </Routes>
+    );
+  }
+
   return (
     <>
       <main className="app" ref={appRef}>
@@ -270,13 +279,11 @@ function AppShell() {
             </div>
           )}
           <div
-            className={`screen-layer current ${
-              transitionDirection === 'forward' ? 'forward' : ''
-            }`}
+            className={`screen-layer current ${transitionDirection === 'forward' ? 'forward' : ''}`}
             key={screen}
             onAnimationEnd={transitionDirection === 'forward' ? clearScreenTransition : undefined}
           >
-            {renderScreen(screen)}
+            {renderRoutes()}
           </div>
         </div>
       </main>

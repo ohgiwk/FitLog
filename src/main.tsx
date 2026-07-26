@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { HashRouter } from 'react-router';
 import './styles.css';
 import { App } from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -14,8 +15,10 @@ const updateSW = registerSW({
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
+    <HashRouter>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </HashRouter>
   </React.StrictMode>,
 );
