@@ -1,7 +1,12 @@
-import { render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RestTimer } from './RestTimer';
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe('RestTimer settings', () => {
   it('秒数ボタンから設定を開き、プリセットまたは自由入力と自動開始を保存できる', async () => {
@@ -13,6 +18,7 @@ describe('RestTimer settings', () => {
       <RestTimer
         defaultSeconds={60}
         autoStartOnIntensity
+        showIdle
         onChangeDefaultSeconds={onChangeDefaultSeconds}
         onChangeAutoStart={onChangeAutoStart}
       />,
@@ -34,5 +40,30 @@ describe('RestTimer settings', () => {
     expect(onChangeDefaultSeconds).toHaveBeenCalledWith(75);
     expect(onChangeAutoStart).toHaveBeenCalledWith(false);
     expect(screen.queryByRole('dialog', { name: 'レストタイマー設定' })).toBeNull();
+  });
+
+  it('開始後は待機中表示を隠しても操作を遮らないミニバーを維持する', () => {
+    vi.useFakeTimers();
+    const props = {
+      defaultSeconds: 60,
+      autoStartOnIntensity: true,
+      onChangeDefaultSeconds: vi.fn(),
+      onChangeAutoStart: vi.fn(),
+    };
+    const { rerender } = render(<RestTimer {...props} showIdle />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'START' }));
+    rerender(<RestTimer {...props} showIdle={false} />);
+
+    expect(screen.getByText('REST')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'STOP' })).toBeTruthy();
+    expect(document.querySelector('.rest-timer-overlay')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'STOP' }));
+    act(() => {
+      vi.advanceTimersByTime(420);
+    });
+
+    expect(document.querySelector('.rest-timer')).toBeNull();
   });
 });

@@ -22,6 +22,7 @@ import { ForgotPasswordScreen } from './screens/ForgotPasswordScreen';
 import { AnalysisScreen } from './screens/AnalysisScreen';
 import { TrainingMenuScreen } from './screens/TrainingMenuScreen';
 import { PlusIcon } from './icons';
+import { RestTimer } from './components/RestTimer';
 import type { Screen } from './types';
 import { screenPaths } from './routes';
 import {
@@ -78,6 +79,10 @@ function AppShell() {
   const showTrainingMenuFab = screen === 'trainingMenu';
   const showPartEditFab = screen === 'partEdit';
   const showFab = showHomeFab || showExerciseManageFab || showTrainingMenuFab || showPartEditFab;
+  const showRestTimerIdle =
+    screen === 'detail' &&
+    Boolean(currentWorkout) &&
+    !state.workoutEndTimes[currentWorkout?.date ?? ''];
   const drawerOverlayVisible = homeOverlayState.drawerState !== 'closed';
   const drawerOverlayClass = homeOverlayState.drawerState;
   let fabKey = '';
@@ -288,6 +293,13 @@ function AppShell() {
         </div>
       </main>
 
+      <RestTimer
+        defaultSeconds={state.restTimerSettings.defaultSeconds}
+        autoStartOnIntensity={state.restTimerSettings.autoStartOnIntensity}
+        showIdle={showRestTimerIdle}
+        onChangeDefaultSeconds={actions.setRestTimerDefaultSeconds}
+        onChangeAutoStart={actions.setRestTimerAutoStart}
+      />
       {drawerOverlayVisible && (
         <div className={`home-app-backdrop ${drawerOverlayClass}`} aria-hidden="true" />
       )}

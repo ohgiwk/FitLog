@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { restTimerStartEvent } from '../components/RestTimer';
 import { FitLogContext, FitLogContextValue } from '../hooks/useFitLogContext';
@@ -104,7 +104,9 @@ function renderDetailScreen({
 }
 
 function detailNumberInputs(container: HTMLElement) {
-  return [...container.querySelectorAll('.detail-table input[type="number"]')] as HTMLInputElement[];
+  return [
+    ...container.querySelectorAll('.detail-table input[type="number"]'),
+  ] as HTMLInputElement[];
 }
 
 describe('DetailScreen set inputs', () => {
@@ -148,9 +150,9 @@ describe('DetailScreen set inputs', () => {
     const updateSetAchievement = vi.fn();
     const { container } = renderDetailScreen({ updateSetAchievement });
 
-    const missedButton = within(container).getAllByRole('button', { name: '未達' }).find(
-      (button) => !button.hasAttribute('disabled'),
-    );
+    const missedButton = within(container)
+      .getAllByRole('button', { name: '未達' })
+      .find((button) => !button.hasAttribute('disabled'));
     expect(missedButton).toBeTruthy();
     fireEvent.click(missedButton!);
 
@@ -160,7 +162,9 @@ describe('DetailScreen set inputs', () => {
   it('未達セットでは目標値と強度ピッカーを表示する', () => {
     const missedWorkout: Workout = {
       ...workout,
-      sets: [{ id: 's1', weight: 50, recordValue: 8, targetRecordValue: 10, achievement: 'missed' }],
+      sets: [
+        { id: 's1', weight: 50, recordValue: 8, targetRecordValue: 10, achievement: 'missed' },
+      ],
     };
     const { container } = renderDetailScreen({ currentWorkout: missedWorkout });
 
@@ -174,7 +178,10 @@ describe('DetailScreen set inputs', () => {
       ...workout,
       sets: [{ id: 's1', weight: 50, recordValue: 10, achievement: 'achieved' }],
     };
-    const { container } = renderDetailScreen({ currentWorkout: achievedWorkout, resetSetAchievement });
+    const { container } = renderDetailScreen({
+      currentWorkout: achievedWorkout,
+      resetSetAchievement,
+    });
 
     fireEvent.click(within(container).getByRole('button', { name: '1セット目の達成判定を戻す' }));
 
@@ -197,7 +204,9 @@ describe('DetailScreen set inputs', () => {
 
     const table = within(container).getByRole('table', { name: '前回記録のセット一覧' });
     expect(within(container).getByText('2026/07/01')).toBeTruthy();
-    expect(within(table).getByText((_, element) => element?.textContent === '45.0 kg')).toBeTruthy();
+    expect(
+      within(table).getByText((_, element) => element?.textContent === '45.0 kg'),
+    ).toBeTruthy();
     expect(within(table).getByText((_, element) => element?.textContent === '12 回')).toBeTruthy();
   });
 
@@ -269,12 +278,6 @@ describe('DetailScreen set inputs', () => {
     window.removeEventListener(restTimerStartEvent, onStartRestTimer);
 
     expect(onStartRestTimer).toHaveBeenCalledTimes(1);
-  });
-
-  it('レストタイマーの秒数ボタンに設定のデフォルト秒数を反映する', () => {
-    renderDetailScreen({ restTimerDefaultSeconds: 90 });
-
-    expect(screen.getByRole('button', { name: 'レストタイマー設定、現在90秒' })).toBeTruthy();
   });
 
   it('選択済みの強度アイコンを解除してもレストタイマー開始イベントを送らない', () => {

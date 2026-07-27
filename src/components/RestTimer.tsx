@@ -10,6 +10,7 @@ export const restTimerStartEvent = 'fitlog:start-rest-timer';
 type RestTimerProps = {
   defaultSeconds: number;
   autoStartOnIntensity: boolean;
+  showIdle: boolean;
   onChangeDefaultSeconds: (seconds: number) => void;
   onChangeAutoStart: (enabled: boolean) => void;
 };
@@ -17,6 +18,7 @@ type RestTimerProps = {
 export function RestTimer({
   defaultSeconds,
   autoStartOnIntensity,
+  showIdle,
   onChangeDefaultSeconds,
   onChangeAutoStart,
 }: RestTimerProps) {
@@ -52,6 +54,10 @@ export function RestTimer({
     setSelectedSeconds(nextSeconds);
     setRemaining(nextSeconds);
   }, [defaultSeconds]);
+
+  useEffect(() => {
+    if (!showIdle) setSettingsOpen(false);
+  }, [showIdle]);
 
   useEffect(() => {
     window.addEventListener(restTimerStartEvent, startTimer);
@@ -160,75 +166,45 @@ export function RestTimer({
 
   const timer = (
     <>
-      {showRunningTimer && (
-        <button
-          className={`rest-timer-overlay ${exiting ? 'exiting' : ''}`}
-          type="button"
-          aria-label="レストタイマーを停止"
-          onClick={stopTimer}
-        />
-      )}
-      <div
-        className={`rest-timer ${showRunningTimer ? 'running' : ''} ${exiting ? 'exiting' : ''}`}
-        aria-label="レストタイマー"
-      >
-        {showRunningTimer ? (
-          <>
-            <svg className="rest-timer-label-arc" viewBox="0 0 196 58" aria-hidden="true">
-              <defs>
-                <path id="rest-timer-label-path" d="M 36 71 A 68 68 0 0 1 160 71" />
-              </defs>
-              <text className="rest-timer-label-outline">
-                <textPath href="#rest-timer-label-path" startOffset="50%" textAnchor="middle">
-                  REST
-                </textPath>
-              </text>
-              <text className="rest-timer-label-fill">
-                <textPath href="#rest-timer-label-path" startOffset="50%" textAnchor="middle">
-                  REST
-                </textPath>
-              </text>
-            </svg>
-            <div className="rest-timer-dial">
-              <svg className="rest-timer-progress" viewBox="0 0 100 100" aria-hidden="true">
-                <circle className="rest-timer-progress-track" cx="50" cy="50" r="46" />
-                <circle
-                  className="rest-timer-progress-value"
-                  cx="50"
-                  cy="50"
-                  r="46"
-                  pathLength="100"
-                  strokeDasharray="100"
-                  strokeDashoffset={progressOffset}
-                />
-              </svg>
-              <div className="rest-timer-countdown">
-                <strong aria-live="polite">{remaining}</strong>
-                <button type="button" onClick={toggleTimer}>
-                  STOP
-                </button>
+      {(showRunningTimer || showIdle) && (
+        <div
+          className={`rest-timer ${showRunningTimer ? 'running' : ''} ${exiting ? 'exiting' : ''}`}
+          aria-label="レストタイマー"
+        >
+          {showRunningTimer ? (
+            <>
+              <span className="rest-timer-running-label">REST</span>
+              <strong className="rest-timer-running-seconds" aria-live="polite">
+                {remaining}
+                <small>秒</small>
+              </strong>
+              <button className="rest-timer-stop-button" type="button" onClick={toggleTimer}>
+                STOP
+              </button>
+              <div className="rest-timer-progress" aria-hidden="true">
+                <span style={{ width: `${100 - progressOffset}%` }} />
               </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <TimerIcon />
-            <button
-              className="rest-timer-seconds-button"
-              type="button"
-              aria-label={`レストタイマー設定、現在${selectedSeconds}秒`}
-              onClick={openSettings}
-            >
-              {selectedSeconds}
-            </button>
-            <span>秒</span>
-            <button type="button" onClick={toggleTimer}>
-              START
-            </button>
-          </>
-        )}
-      </div>
-      {settingsOpen && (
+            </>
+          ) : (
+            <>
+              <TimerIcon />
+              <button
+                className="rest-timer-seconds-button"
+                type="button"
+                aria-label={`レストタイマー設定、現在${selectedSeconds}秒`}
+                onClick={openSettings}
+              >
+                {selectedSeconds}
+              </button>
+              <span>秒</span>
+              <button type="button" onClick={toggleTimer}>
+                START
+              </button>
+            </>
+          )}
+        </div>
+      )}
+      {settingsOpen && showIdle && (
         <ConfirmDialog
           className="rest-timer-settings-dialog"
           title="レストタイマー設定"
