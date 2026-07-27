@@ -50,6 +50,8 @@ function useDetailScreenModel() {
     onAddSet: actions.addSet,
     onCopyWorkoutSetValues: actions.copyWorkoutSetValues,
     onUpdateExerciseGoal: actions.updateExerciseGoal,
+    onChangeRestTimerDefaultSeconds: actions.setRestTimerDefaultSeconds,
+    onChangeRestTimerAutoStart: actions.setRestTimerAutoStart,
   };
 }
 
@@ -515,6 +517,8 @@ export function DetailScreen() {
     onAddSet,
     onCopyWorkoutSetValues,
     onUpdateExerciseGoal,
+    onChangeRestTimerDefaultSeconds,
+    onChangeRestTimerAutoStart,
   } = useDetailScreenModel();
   const [openDeleteSetId, setOpenDeleteSetId] = useState<string | null>(null);
   const [weightInputs, setWeightInputs] = useState<Record<string, string>>({});
@@ -741,7 +745,14 @@ export function DetailScreen() {
           />
         </label>
       </div>
-      {!readOnly && <RestTimer defaultSeconds={restTimerSettings.defaultSeconds} />}
+      {!readOnly && (
+        <RestTimer
+          defaultSeconds={restTimerSettings.defaultSeconds}
+          autoStartOnIntensity={restTimerSettings.autoStartOnIntensity}
+          onChangeDefaultSeconds={onChangeRestTimerDefaultSeconds}
+          onChangeAutoStart={onChangeRestTimerAutoStart}
+        />
+      )}
     </section>
   );
 }

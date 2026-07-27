@@ -740,26 +740,14 @@
   stroke-width: 2.4;
 }
 
-.rest-timer select {
+.rest-timer .rest-timer-seconds-button {
   min-width: 0;
   height: 28px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  padding: 0 20px 0 8px;
+  padding: 0 8px;
   background: var(--surface-float);
-  color: var(--ink);
-  font-size: 16px;
-  font-weight: 900;
-  text-align: center;
-}
-
-.rest-timer input {
-  min-width: 0;
-  height: 28px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 0 5px;
-  color: var(--ink);
+  color: var(--red);
   font-size: 16px;
   font-weight: 900;
   text-align: center;
@@ -873,6 +861,79 @@
   min-height: 34px;
   background: var(--surface-soft);
   color: var(--text-secondary-strong);
+}
+
+.rest-timer-settings-dialog {
+  gap: 18px;
+}
+
+.rest-timer-settings-field {
+  display: grid;
+  gap: 10px;
+}
+
+.rest-timer-settings-field > span {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.rest-timer-preset-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+}
+
+.rest-timer-preset-buttons button {
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid var(--red-border-soft);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.rest-timer-preset-buttons button.active {
+  border-color: var(--red);
+  background: var(--red);
+  color: var(--text-on-primary);
+}
+
+.rest-timer-settings-dialog .rest-timer-custom-seconds {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.rest-timer-custom-seconds-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.rest-timer-custom-seconds-input input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.rest-timer-settings-dialog .unit-switch {
+  width: 100%;
 }
 
 @keyframes rest-timer-pop-in {

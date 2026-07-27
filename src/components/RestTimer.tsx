@@ -1,12 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { defaultRestTimerSeconds, restTimerPresetSeconds } from '../types';
+import { ConfirmDialog } from './ConfirmDialog';
 
 const exitAnimationMilliseconds = 420;
 const alarmSoundPath = `${import.meta.env.BASE_URL}Clock-Alarm.mp3`;
 export const restTimerStartEvent = 'fitlog:start-rest-timer';
 
-export function RestTimer({ defaultSeconds }: { defaultSeconds: number }) {
+type RestTimerProps = {
+  defaultSeconds: number;
+  autoStartOnIntensity: boolean;
+  onChangeDefaultSeconds: (seconds: number) => void;
+  onChangeAutoStart: (enabled: boolean) => void;
+};
+
+export function RestTimer({
+  defaultSeconds,
+  autoStartOnIntensity,
+  onChangeDefaultSeconds,
+  onChangeAutoStart,
+}: RestTimerProps) {
   const initialSeconds = clampSeconds(defaultSeconds);
   const [selectedSeconds, setSelectedSeconds] = useState(initialSeconds);
   const [remaining, setRemaining] = useState(initialSeconds);
@@ -15,6 +28,9 @@ export function RestTimer({ defaultSeconds }: { defaultSeconds: number }) {
   const [endTime, setEndTime] = useState<number | null>(null);
   const [showRunningTimer, setShowRunningTimer] = useState(false);
   const [timerExiting, setTimerExiting] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsSeconds, setSettingsSeconds] = useState(String(initialSeconds));
+  const [settingsAutoStart, setSettingsAutoStart] = useState(autoStartOnIntensity);
   const audioContextRef = useRef<AudioContext | null>(null);
   const alarmBufferRef = useRef<AudioBuffer | null>(null);
   const alarmBufferPromiseRef = useRef<Promise<AudioBuffer | null> | null>(null);
@@ -54,17 +70,34 @@ export function RestTimer({ defaultSeconds }: { defaultSeconds: number }) {
         window.clearInterval(timer);
         hideRunningTimer();
         setEndTime(null);
-        void playAlert(audioContextRef.current, alarmBufferRef.current, alarmBufferPromiseRef.current);
+        void playAlert(
+          audioContextRef.current,
+          alarmBufferRef.current,
+          alarmBufferPromiseRef.current,
+        );
       }
     }, 250);
 
     return () => window.clearInterval(timer);
   }, [endTime]);
 
-  function updateSeconds(value: string) {
-    const seconds = clampSeconds(value);
+  function openSettings() {
+    setSettingsSeconds(String(defaultSeconds));
+    setSettingsAutoStart(autoStartOnIntensity);
+    setSettingsOpen(true);
+  }
+
+  function updateSettingsSeconds(value: string) {
+    setSettingsSeconds(value.replace(/[^\d]/g, '').slice(0, 3));
+  }
+
+  function saveSettings() {
+    const seconds = clampSeconds(settingsSeconds);
     setSelectedSeconds(seconds);
-    if (!running) setRemaining(seconds);
+    setRemaining(seconds);
+    onChangeDefaultSeconds(seconds);
+    onChangeAutoStart(settingsAutoStart);
+    setSettingsOpen(false);
   }
 
   function toggleTimer() {
@@ -82,10 +115,12 @@ export function RestTimer({ defaultSeconds }: { defaultSeconds: number }) {
     audioContextRef.current = context;
     void context?.resume();
     if (context) {
-      alarmBufferPromiseRef.current = prepareAlertSound(context, alarmBufferRef.current).then((buffer) => {
-        alarmBufferRef.current = buffer;
-        return buffer;
-      });
+      alarmBufferPromiseRef.current = prepareAlertSound(context, alarmBufferRef.current).then(
+        (buffer) => {
+          alarmBufferRef.current = buffer;
+          return buffer;
+        },
+      );
     }
     const duration = seconds * 1000;
     setSelectedSeconds(seconds);
@@ -133,7 +168,10 @@ export function RestTimer({ defaultSeconds }: { defaultSeconds: number }) {
           onClick={stopTimer}
         />
       )}
-      <div className={`rest-timer ${showRunningTimer ? 'running' : ''} ${exiting ? 'exiting' : ''}`} aria-label="レストタイマー">
+      <div
+        className={`rest-timer ${showRunningTimer ? 'running' : ''} ${exiting ? 'exiting' : ''}`}
+        aria-label="レストタイマー"
+      >
         {showRunningTimer ? (
           <>
             <svg className="rest-timer-label-arc" viewBox="0 0 196 58" aria-hidden="true">
@@ -175,17 +213,14 @@ export function RestTimer({ defaultSeconds }: { defaultSeconds: number }) {
         ) : (
           <>
             <TimerIcon />
-            <select
-              aria-label="タイマー秒数"
-              value={String(selectedSeconds)}
-              onChange={(event) => updateSeconds(event.target.value)}
+            <button
+              className="rest-timer-seconds-button"
+              type="button"
+              aria-label={`レストタイマー設定、現在${selectedSeconds}秒`}
+              onClick={openSettings}
             >
-              {timerSelectOptions(selectedSeconds).map((seconds) => (
-                <option key={seconds} value={seconds}>
-                  {seconds}
-                </option>
-              ))}
-            </select>
+              {selectedSeconds}
+            </button>
             <span>秒</span>
             <button type="button" onClick={toggleTimer}>
               START
@@ -193,6 +228,75 @@ export function RestTimer({ defaultSeconds }: { defaultSeconds: number }) {
           </>
         )}
       </div>
+      {settingsOpen && (
+        <ConfirmDialog
+          className="rest-timer-settings-dialog"
+          title="レストタイマー設定"
+          labelledBy="rest-timer-settings-title"
+          onClose={() => setSettingsOpen(false)}
+        >
+          <div className="rest-timer-settings-field">
+            <span>デフォルト秒数</span>
+            <div className="rest-timer-preset-buttons" aria-label="デフォルト秒数">
+              {restTimerPresetSeconds.map((seconds) => (
+                <button
+                  className={settingsSeconds === String(seconds) ? 'active' : ''}
+                  type="button"
+                  key={seconds}
+                  aria-pressed={settingsSeconds === String(seconds)}
+                  onClick={() => setSettingsSeconds(String(seconds))}
+                >
+                  {seconds}秒
+                </button>
+              ))}
+            </div>
+            <label className="rest-timer-custom-seconds">
+              <span>自由入力</span>
+              <span className="rest-timer-custom-seconds-input">
+                <input
+                  aria-label="レストタイマーのデフォルト秒数を入力"
+                  type="number"
+                  min="1"
+                  max="999"
+                  inputMode="numeric"
+                  value={settingsSeconds}
+                  onChange={(event) => updateSettingsSeconds(event.target.value)}
+                />
+                <span>秒</span>
+              </span>
+            </label>
+          </div>
+          <div className="rest-timer-settings-field">
+            <span>強度入力時に開始</span>
+            <div className="unit-switch" role="group" aria-label="強度入力時の自動開始">
+              <button
+                className={`unit-switch-button ${settingsAutoStart ? 'active' : ''}`}
+                type="button"
+                aria-pressed={settingsAutoStart}
+                onClick={() => setSettingsAutoStart(true)}
+              >
+                ON
+              </button>
+              <button
+                className={`unit-switch-button ${settingsAutoStart ? '' : 'active'}`}
+                type="button"
+                aria-pressed={!settingsAutoStart}
+                onClick={() => setSettingsAutoStart(false)}
+              >
+                OFF
+              </button>
+            </div>
+          </div>
+          <div className="confirm-actions">
+            <button className="small-outline" type="button" onClick={() => setSettingsOpen(false)}>
+              キャンセル
+            </button>
+            <button className="small-primary" type="button" onClick={saveSettings}>
+              保存
+            </button>
+          </div>
+        </ConfirmDialog>
+      )}
     </>
   );
 
@@ -207,12 +311,6 @@ function TimerIcon() {
       <path d="M12 7v6l4 2" />
     </svg>
   );
-}
-
-function timerSelectOptions(selectedSeconds: number) {
-  return restTimerPresetSeconds.includes(selectedSeconds as (typeof restTimerPresetSeconds)[number])
-    ? [...restTimerPresetSeconds]
-    : [selectedSeconds, ...restTimerPresetSeconds].sort((a, b) => a - b);
 }
 
 function clampSeconds(value: string | number) {

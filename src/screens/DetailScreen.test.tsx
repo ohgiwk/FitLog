@@ -1,4 +1,4 @@
-import { fireEvent, render, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { restTimerStartEvent } from '../components/RestTimer';
 import { FitLogContext, FitLogContextValue } from '../hooks/useFitLogContext';
@@ -91,6 +91,8 @@ function renderDetailScreen({
       addSet: vi.fn(),
       copyWorkoutSetValues,
       updateExerciseGoal: vi.fn(),
+      setRestTimerDefaultSeconds: vi.fn(),
+      setRestTimerAutoStart: vi.fn(),
     },
   } as unknown as FitLogContextValue;
 
@@ -269,14 +271,10 @@ describe('DetailScreen set inputs', () => {
     expect(onStartRestTimer).toHaveBeenCalledTimes(1);
   });
 
-  it('レストタイマーの秒数セレクトに設定のデフォルト秒数を反映する', () => {
+  it('レストタイマーの秒数ボタンに設定のデフォルト秒数を反映する', () => {
     renderDetailScreen({ restTimerDefaultSeconds: 90 });
 
-    const timerSelect = document.body.querySelector(
-      'select[aria-label="タイマー秒数"]',
-    ) as HTMLSelectElement | null;
-
-    expect(timerSelect?.value).toBe('90');
+    expect(screen.getByRole('button', { name: 'レストタイマー設定、現在90秒' })).toBeTruthy();
   });
 
   it('選択済みの強度アイコンを解除してもレストタイマー開始イベントを送らない', () => {
