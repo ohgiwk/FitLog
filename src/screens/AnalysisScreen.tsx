@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AnalysisIcon, ChevronLeft } from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { AnalysisIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import {
   ExerciseGrowthMetric,
@@ -114,7 +115,7 @@ export function AnalysisScreen() {
 
   function handlePageBack(page: AnalysisPage) {
     if (page === 'menu') {
-      actions.setScreen('home');
+      actions.goBack();
       return;
     }
     showAnalysisPage('menu');
@@ -195,20 +196,11 @@ export function AnalysisScreen() {
     const isMenuFrame = page === 'menu';
     return (
       <>
-        <header className="topbar">
-          <div className="bar-row">
-            <button
-              className="bar-btn"
-              type="button"
-              aria-label={isMenuFrame ? '戻る' : '分析メニューへ戻る'}
-              onClick={() => handlePageBack(page)}
-            >
-              <ChevronLeft />
-            </button>
-            <div className="bar-title">分析</div>
-            <span />
-          </div>
-        </header>
+        <ScreenHeader
+          title="分析"
+          backLabel={isMenuFrame ? '戻る' : '分析メニューへ戻る'}
+          onBack={() => handlePageBack(page)}
+        />
         <div className="analysis-content">{renderPage(page)}</div>
       </>
     );

@@ -38,6 +38,28 @@ const screenDepth: Record<Screen, number> = {
   presetExerciseSelect: 3,
 };
 
+const fallbackBackScreens: Record<Screen, Screen> = {
+  home: 'home',
+  select: 'home',
+  trainingMenu: 'home',
+  goalAchievements: 'home',
+  analysis: 'home',
+  settings: 'home',
+  detail: 'home',
+  exerciseEdit: 'select',
+  exerciseHistory: 'detail',
+  presetEdit: 'trainingMenu',
+  presetExerciseSelect: 'presetEdit',
+  partEdit: 'settings',
+  exerciseManage: 'settings',
+  notificationSettings: 'settings',
+  privacyPolicy: 'settings',
+  termsOfService: 'settings',
+  backup: 'settings',
+  accountManagement: 'backup',
+  forgotPassword: 'backup',
+};
+
 function getTransitionDirection(current: Screen, next: Screen): ScreenTransitionDirection {
   if (current === next) return 'none';
   return screenDepth[next] > screenDepth[current] ? 'forward' : 'back';
@@ -62,6 +84,7 @@ export function useNavigation({
   const [currentWorkoutId, setCurrentWorkoutId] = useState<string | null>(null);
   const previousScreen = useRef(screen);
   const pendingScreen = useRef<Screen | null>(null);
+  const pendingBack = useRef(false);
   const handleScreenExitRef = useRef<(source: Screen, next: Screen) => void>(() => undefined);
 
   /**
@@ -94,7 +117,8 @@ export function useNavigation({
     }
     handleScreenExitRef.current(previous, screen);
     setTransitionFrom(previous);
-    setTransitionDirection(getTransitionDirection(previous, screen));
+    setTransitionDirection(pendingBack.current ? 'back' : getTransitionDirection(previous, screen));
+    pendingBack.current = false;
   }, [screen]);
 
   /**
@@ -153,6 +177,32 @@ export function useNavigation({
   }
 
   /**
+   * React Router の履歴を戻り、直接アクセス時だけ既定画面へ置き換える
+   */
+  function goBack() {
+    if (screen === 'home') return;
+    const historyState: unknown = window.history.state;
+    const historyIndex =
+      typeof historyState === 'object' && historyState !== null && 'idx' in historyState
+        ? historyState.idx
+        : null;
+    const hasPreviousEntry =
+      location.key !== 'default' || (typeof historyIndex === 'number' && historyIndex > 0);
+    if (hasPreviousEntry) {
+      pendingBack.current = true;
+      void navigate(-1);
+      return;
+    }
+
+    const next = fallbackBackScreens[screen];
+    handleScreenExit(screen, next);
+    setTransitionFrom(screen);
+    setTransitionDirection('back');
+    pendingScreen.current = next;
+    void navigate(screenPaths[next], { replace: true });
+  }
+
+  /**
    * 選択日を指定日数ぶん前後に動かしてホームへ戻る
    */
   function moveDate(days: number) {
@@ -181,6 +231,7 @@ export function useNavigation({
     transitionDirection,
     clearScreenTransition: () => setTransitionFrom(null),
     showScreen,
+    goBack,
     currentWorkoutId,
     setCurrentWorkoutId,
     selectedWorkouts,

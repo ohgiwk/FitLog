@@ -91,7 +91,7 @@ function AppShell() {
   } else if (showExerciseManageFab && currentExerciseManagePart) {
     fabKey = `exercise-manage-add-${currentExerciseManagePart}`;
     fabLabel = `${currentExerciseManagePart}に種目を追加`;
-    fabAction = () => actions.openExerciseEditor(currentExerciseManagePart, null, 'exerciseManage');
+    fabAction = () => actions.openExerciseEditor(currentExerciseManagePart);
   } else if (showTrainingMenuFab) {
     fabKey = 'training-menu-add';
     fabLabel = 'トレーニングメニューを追加';

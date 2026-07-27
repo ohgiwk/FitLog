@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ExerciseForm, ExerciseFormValue } from '../components/ExerciseForm';
-import { ChevronLeft } from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import { allGripStyleTypes, allGripTypes } from '../utils';
 
@@ -44,20 +44,10 @@ export function ExerciseEditScreen() {
 
   return (
     <section className="screen active">
-      <header className="topbar">
-        <div className="bar-row">
-          <button
-            className="bar-btn"
-            type="button"
-            aria-label="戻る"
-            onClick={actions.closeExerciseEditor}
-          >
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">{isEditing ? '種目を編集' : '種目を追加'}</div>
-          <span />
-        </div>
-      </header>
+      <ScreenHeader
+        title={isEditing ? '種目を編集' : '種目を追加'}
+        onBack={actions.closeExerciseEditor}
+      />
       <div className="content exercise-editor-content">
         <ExerciseForm
           value={value}

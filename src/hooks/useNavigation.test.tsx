@@ -49,4 +49,84 @@ describe('useNavigation routing', () => {
     expect(result.current.transitionFrom).toBe('home');
     expect(result.current.transitionDirection).toBe('forward');
   });
+
+  it('goBackで直前に表示していた画面へ戻る', async () => {
+    const { result } = renderHook(
+      () =>
+        useNavigation({
+          state: createDefaultState(),
+          saveState: vi.fn(),
+          setEditMode: vi.fn(),
+          setGoalAchievement: vi.fn(),
+        }),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.showScreen('select');
+    });
+    await waitFor(() => expect(result.current.screen).toBe('select'));
+
+    act(() => {
+      result.current.showScreen('exerciseManage');
+    });
+    await waitFor(() => expect(result.current.screen).toBe('exerciseManage'));
+
+    act(() => {
+      result.current.goBack();
+    });
+
+    await waitFor(() => expect(result.current.screen).toBe('select'));
+    expect(result.current.transitionDirection).toBe('back');
+  });
+
+  it('別の入口から開いた同じ画面でもgoBackで遷移元へ戻る', async () => {
+    const settingsWrapper = ({ children }: { children: ReactNode }) => (
+      <MemoryRouter initialEntries={[screenPaths.settings]}>{children}</MemoryRouter>
+    );
+    const { result } = renderHook(
+      () =>
+        useNavigation({
+          state: createDefaultState(),
+          saveState: vi.fn(),
+          setEditMode: vi.fn(),
+          setGoalAchievement: vi.fn(),
+        }),
+      { wrapper: settingsWrapper },
+    );
+
+    act(() => {
+      result.current.showScreen('exerciseManage');
+    });
+    await waitFor(() => expect(result.current.screen).toBe('exerciseManage'));
+
+    act(() => {
+      result.current.goBack();
+    });
+
+    await waitFor(() => expect(result.current.screen).toBe('settings'));
+  });
+
+  it('直接アクセスで履歴がない場合は既定画面へ置き換える', async () => {
+    const directWrapper = ({ children }: { children: ReactNode }) => (
+      <MemoryRouter initialEntries={[screenPaths.exerciseManage]}>{children}</MemoryRouter>
+    );
+    const { result } = renderHook(
+      () =>
+        useNavigation({
+          state: createDefaultState(),
+          saveState: vi.fn(),
+          setEditMode: vi.fn(),
+          setGoalAchievement: vi.fn(),
+        }),
+      { wrapper: directWrapper },
+    );
+
+    act(() => {
+      result.current.goBack();
+    });
+
+    await waitFor(() => expect(result.current.screen).toBe('settings'));
+    expect(result.current.transitionDirection).toBe('back');
+  });
 });

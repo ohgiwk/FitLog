@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronUp, PlusIcon, TrashIcon } from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { ChevronDown, ChevronUp, PlusIcon, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import { PresetSchedule, TrainingPlanMode } from '../types';
 import { parseDate, weekdayLabels } from '../utils';
@@ -60,17 +61,15 @@ export function PresetEditScreen() {
 
   return (
     <section className="screen active">
-      <header className="topbar">
-        <div className="bar-row">
-          <button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}>
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">メニュー編集</div>
+      <ScreenHeader
+        title="メニュー編集"
+        onBack={onBack}
+        right={
           <button className="bar-btn right" type="button" onClick={onSave}>
             {isStartFlow ? '開始' : '保存'}
           </button>
-        </div>
-      </header>
+        }
+      />
       <div className="preset-wrap">
         {!preset ? (
           <div className="empty">

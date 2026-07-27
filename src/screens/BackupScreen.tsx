@@ -1,5 +1,6 @@
 import { ChangeEvent, useRef, useState, useActionState } from 'react';
-import { ChevronLeft, ExportIcon, ImportIcon, TrashIcon } from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { ExportIcon, ImportIcon, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 
 type CloudBackupItem = ReturnType<typeof useFitLogContext>['actions']['cloud']['backups'][number];
@@ -122,20 +123,7 @@ export function BackupScreen() {
 
   return (
     <section className="screen active settings-screen">
-      <header className="topbar">
-        <div className="bar-row">
-          <button
-            className="bar-btn"
-            type="button"
-            aria-label="戻る"
-            onClick={() => actions.setScreen('settings')}
-          >
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">バックアップ</div>
-          <span />
-        </div>
-      </header>
+      <ScreenHeader title="バックアップ" />
       <div className="settings-content">
         <input
           ref={importInputRef}

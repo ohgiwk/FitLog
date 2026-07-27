@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ExerciseGoal, MeasurementType, Preset, Screen } from '../types';
+import { ExerciseGoal, MeasurementType, Preset } from '../types';
 
 export type GoalAchievement = {
   exerciseId: string;
@@ -20,8 +20,6 @@ export function useFitLogUi() {
     exerciseId: string | null;
     part: string;
   } | null>(null);
-  const [exerciseEditorReturnScreen, setExerciseEditorReturnScreen] =
-    useState<Screen>('select');
   const [goalAchievement, setGoalAchievement] = useState<GoalAchievement | null>(null);
   const [analysisTargetExerciseId, setAnalysisTargetExerciseId] = useState<string | null>(null);
 
@@ -44,8 +42,6 @@ export function useFitLogUi() {
     selectPart,
     exerciseEditor,
     setExerciseEditor,
-    exerciseEditorReturnScreen,
-    setExerciseEditorReturnScreen,
     goalAchievement,
     setGoalAchievement,
     analysisTargetExerciseId,

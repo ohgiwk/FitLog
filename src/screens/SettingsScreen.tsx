@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  ChevronLeft,
-  EditIcon,
-  ExportIcon,
-  NotificationIcon,
-  PartsIcon,
-  PrivacyIcon,
-} from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { EditIcon, ExportIcon, NotificationIcon, PartsIcon, PrivacyIcon } from '../icons';
 import { defaultRestTimerSeconds, restTimerPresetSeconds, ThemeMode, WeightUnit } from '../types';
 import { weightUnitLabel } from '../utils';
 import { useFitLogContext } from '../hooks/useFitLogContext';
@@ -28,7 +22,6 @@ function useSettingsScreenModel() {
     weightUnit: state.weightUnit,
     themeMode: state.themeMode,
     restTimerSettings: state.restTimerSettings,
-    onBack: () => actions.setScreen('home'),
     onEditParts: () => actions.setScreen('partEdit'),
     onEditExercises: () => actions.setScreen('exerciseManage'),
     onChangeWeightUnit: actions.setWeightUnit,
@@ -50,7 +43,6 @@ export function SettingsScreen() {
     weightUnit,
     themeMode,
     restTimerSettings,
-    onBack,
     onEditParts,
     onEditExercises,
     onChangeWeightUnit,
@@ -89,15 +81,7 @@ export function SettingsScreen() {
 
   return (
     <section className="screen active settings-screen">
-      <header className="topbar">
-        <div className="bar-row">
-          <button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}>
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">設定</div>
-          <span />
-        </div>
-      </header>
+      <ScreenHeader title="設定" />
       <div className="settings-content">
         <section className="settings-section" aria-labelledby="display-settings-title">
           <h2 className="settings-section-title" id="display-settings-title">
@@ -151,7 +135,11 @@ export function SettingsScreen() {
               <span>自動開始</span>
               <strong>強度入力時に自動で開始</strong>
             </div>
-            <div className="unit-switch" role="group" aria-label="強度入力時のレストタイマー自動開始">
+            <div
+              className="unit-switch"
+              role="group"
+              aria-label="強度入力時のレストタイマー自動開始"
+            >
               <button
                 className={`unit-switch-button ${restTimerSettings.autoStartOnIntensity ? 'active' : ''}`}
                 type="button"

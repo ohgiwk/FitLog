@@ -1,4 +1,5 @@
-import { ChevronLeft, TrophyIcon } from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { TrophyIcon } from '../icons';
 import { ExerciseGoalAchievement } from '../types';
 import { formatWeight, measurementUnit, weightUnitLabel } from '../utils';
 import { useFitLogContext } from '../hooks/useFitLogContext';
@@ -7,11 +8,10 @@ import { useFitLogContext } from '../hooks/useFitLogContext';
  * 目標達成記録画面が必要とするデータと操作を Context から組み立てる
  */
 function useGoalAchievementScreenModel() {
-  const { state, actions } = useFitLogContext();
+  const { state } = useFitLogContext();
   return {
     achievements: state.goalAchievements,
     weightUnit: state.weightUnit,
-    onBack: () => actions.setScreen('home'),
   };
 }
 
@@ -19,20 +19,12 @@ function useGoalAchievementScreenModel() {
  * 種目ごとに目標達成日と実際の達成セットを一覧表示する画面
  */
 export function GoalAchievementScreen() {
-  const { achievements, weightUnit, onBack } = useGoalAchievementScreenModel();
+  const { achievements, weightUnit } = useGoalAchievementScreenModel();
   const groups = groupAchievements(achievements);
 
   return (
     <section className="screen active goal-achievement-screen">
-      <header className="topbar">
-        <div className="bar-row">
-          <button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}>
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">目標達成記録</div>
-          <span />
-        </div>
-      </header>
+      <ScreenHeader title="目標達成記録" />
       <div className="goal-history-content">
         {!groups.length ? (
           <div className="empty">

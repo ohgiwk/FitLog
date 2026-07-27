@@ -1,5 +1,5 @@
 import { useRef, useState, useActionState } from 'react';
-import { ChevronLeft } from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 
 /**
@@ -28,20 +28,7 @@ export function AccountManagementScreen() {
 
   return (
     <section className="screen active settings-screen">
-      <header className="topbar">
-        <div className="bar-row">
-          <button
-            className="bar-btn"
-            type="button"
-            aria-label="戻る"
-            onClick={() => actions.setScreen('backup')}
-          >
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">アカウント管理</div>
-          <span />
-        </div>
-      </header>
+      <ScreenHeader title="アカウント管理" />
       <div className="settings-content">
         {!cloud.enabled ? (
           <section className="settings-section" aria-labelledby="account-disabled-title">

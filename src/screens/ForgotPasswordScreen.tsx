@@ -1,5 +1,5 @@
 import { useRef, useActionState } from 'react';
-import { ChevronLeft } from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 
 /**
@@ -21,20 +21,7 @@ export function ForgotPasswordScreen() {
 
   return (
     <section className="screen active settings-screen">
-      <header className="topbar">
-        <div className="bar-row">
-          <button
-            className="bar-btn"
-            type="button"
-            aria-label="戻る"
-            onClick={() => actions.setScreen('backup')}
-          >
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">パスワード再設定</div>
-          <span />
-        </div>
-      </header>
+      <ScreenHeader title="パスワード再設定" />
       <div className="settings-content">
         <section className="settings-section" aria-labelledby="forgot-password-title">
           <h2 className="settings-section-title" id="forgot-password-title">

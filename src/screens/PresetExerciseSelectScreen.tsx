@@ -1,5 +1,5 @@
 import { ExercisePicker } from '../components/ExercisePicker';
-import { ChevronLeft } from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 
 /**
@@ -12,26 +12,14 @@ export function PresetExerciseSelectScreen() {
 
   return (
     <section className="screen active">
-      <header className="topbar">
-        <div className="bar-row">
-          <button
-            className="bar-btn"
-            type="button"
-            aria-label="戻る"
-            onClick={() => actions.setScreen('presetEdit')}
-          >
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">メニュー種目</div>
-          <button
-            className="bar-btn right"
-            type="button"
-            onClick={() => actions.setScreen('presetEdit')}
-          >
+      <ScreenHeader
+        title="メニュー種目"
+        right={
+          <button className="bar-btn right" type="button" onClick={actions.goBack}>
             完了
           </button>
-        </div>
-      </header>
+        }
+      />
       <ExercisePicker
         activePart={activePart}
         groupedExercises={groupedExercises}

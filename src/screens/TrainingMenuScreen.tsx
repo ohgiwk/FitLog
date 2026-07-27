@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { CalendarIcon, ChevronLeft, EditIcon, TrashIcon } from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { CalendarIcon, EditIcon, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import { Preset } from '../types';
 import { weekdayLabels } from '../utils';
@@ -12,7 +13,6 @@ function useTrainingMenuScreenModel() {
 
   return {
     presets: state.presets,
-    onBack: () => actions.setScreen('home'),
     onEditPreset: actions.editPreset,
     onDeletePreset: actions.deletePreset,
   };
@@ -22,7 +22,7 @@ function useTrainingMenuScreenModel() {
  * トレーニングメニューの一覧・追加・編集・削除を行う画面
  */
 export function TrainingMenuScreen() {
-  const { presets, onBack, onEditPreset, onDeletePreset } = useTrainingMenuScreenModel();
+  const { presets, onEditPreset, onDeletePreset } = useTrainingMenuScreenModel();
   const [deleteTarget, setDeleteTarget] = useState<Preset | null>(null);
 
   /**
@@ -36,15 +36,7 @@ export function TrainingMenuScreen() {
 
   return (
     <section className="screen active training-menu-screen">
-      <header className="topbar">
-        <div className="bar-row">
-          <button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}>
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">トレーニングメニュー</div>
-          <span />
-        </div>
-      </header>
+      <ScreenHeader title="トレーニングメニュー" />
       <div className="training-menu-wrap">
         <section className="schedule-panel">
           <div className="schedule-panel-head">

@@ -1,5 +1,4 @@
-import { ChevronLeft } from '../icons';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 const termsSections = [
   {
@@ -62,24 +61,9 @@ const termsSections = [
  * SmithNote（スミスノート）の利用条件を表示する画面
  */
 export function TermsOfServiceScreen() {
-  const { actions } = useFitLogContext();
-
   return (
     <section className="screen active settings-screen">
-      <header className="topbar">
-        <div className="bar-row">
-          <button
-            className="bar-btn"
-            type="button"
-            aria-label="戻る"
-            onClick={() => actions.setScreen('settings')}
-          >
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">利用規約</div>
-          <span />
-        </div>
-      </header>
+      <ScreenHeader title="利用規約" />
       <div className="settings-content">
         <article className="settings-section privacy-policy" aria-labelledby="terms-title">
           <div className="privacy-policy-head">

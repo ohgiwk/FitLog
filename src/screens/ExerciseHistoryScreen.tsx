@@ -1,6 +1,7 @@
 import { WeightUnit, Workout, WorkoutSet } from '../types';
 import { IntensityIcon } from '../components/IntensityIcon';
-import { AnalysisIcon, ChevronLeft } from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { AnalysisIcon } from '../icons';
 import {
   calcRm,
   formatWeight,
@@ -25,7 +26,6 @@ function useExerciseHistoryScreenModel() {
     workout: currentWorkout,
     workouts: state.workouts,
     weightUnit: state.weightUnit,
-    onBack: () => actions.setScreen('detail'),
     onOpenGrowthGraph: (exerciseId: string) => actions.openExerciseGrowthAnalysis(exerciseId),
   };
 }
@@ -34,8 +34,7 @@ function useExerciseHistoryScreenModel() {
  * 種目別の履歴画面。ベスト記録と日別のセット履歴を一覧表示する
  */
 export function ExerciseHistoryScreen() {
-  const { workout, workouts, weightUnit, onBack, onOpenGrowthGraph } =
-    useExerciseHistoryScreenModel();
+  const { workout, workouts, weightUnit, onOpenGrowthGraph } = useExerciseHistoryScreenModel();
   if (!workout) return null;
   const histories = workouts
     .filter((item) => item.exerciseId === workout.exerciseId && item.sets.some(hasRecordedValue))
@@ -43,12 +42,9 @@ export function ExerciseHistoryScreen() {
   const bestRecord = buildBestRecord(histories, workout.measurementType, weightUnit);
   return (
     <section className="screen active">
-      <header className="topbar">
-        <div className="bar-row">
-          <button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}>
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">{workout.name}</div>
+      <ScreenHeader
+        title={workout.name}
+        right={
           <button
             className="bar-btn right history-analysis-link"
             type="button"
@@ -57,8 +53,8 @@ export function ExerciseHistoryScreen() {
           >
             <AnalysisIcon />
           </button>
-        </div>
-      </header>
+        }
+      />
       <div className="exercise-history-wrap">
         {!histories.length ? (
           <div className="empty">

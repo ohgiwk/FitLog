@@ -127,7 +127,7 @@ npm run format       # prettier --write
 | `src/hooks/useFitLog.ts` | 各ドメインフックを束ねる統合フック |
 | `src/selectors/fitLogSelectors.ts` | React 非依存の純粋な派生値計算（セレクタ） |
 | `src/screens/` | 各画面コンポーネント（view-model フックで Context から取得） |
-| `src/components/` | 小さな再利用コンポーネント（エラー境界・セット行・強度アイコンなど） |
+| `src/components/` | 小さな再利用コンポーネント（共通画面ヘッダ・エラー境界・セット行・強度アイコンなど） |
 | `src/data/starterExercises.ts` | 初期種目マスタとカタログ版 |
 | `src/data/partColors.ts` | 部位の表示色パレット（8 色）と既定色 |
 | `src/styles/` | 役割ごとに分割した CSS |
@@ -229,7 +229,7 @@ useFitLogCore (state + 永続化 + トースト)
 | フック | ファイル | 責務 |
 | --- | --- | --- |
 | `useFitLogCore` | `hooks/useFitLogCore.ts` | `State` の保持、`localStorage` 保存（デバウンス・flush・失敗通知）、トースト管理、`saveState` / `setState` 提供 |
-| `useNavigation` | `hooks/useNavigation.ts` | React Router の現在パスから導出する `screen`、`transitionFrom` / `transitionDirection` / `selectedDate` / `currentWorkoutId` の管理、画面遷移、日付・月移動、離脱時の空セット掃除 |
+| `useNavigation` | `hooks/useNavigation.ts` | React Router の現在パスから導出する `screen`、`transitionFrom` / `transitionDirection` / `selectedDate` / `currentWorkoutId` の管理、進む・戻る画面遷移、日付・月移動、離脱時の空セット掃除 |
 | `useHomeCalendar` | `hooks/useHomeCalendar.ts` | ホームの週/月カレンダー表示、スワイプ遷移、選択日の同期 |
 | `useExerciseReorder` | `hooks/useExerciseReorder.ts` | 種目のドラッグ中レイアウトとカテゴリを管理し、終了時に確定 |
 | `useFitLogUi` | `hooks/useFitLogUi.ts` | 保存しない一時 UI 状態（編集モード、部位タブ、履歴フィルタ、トレーニングメニュー下書き） |
@@ -665,7 +665,7 @@ Firebase環境変数が設定されている場合だけ、クラウドバック
 
 ### 6.0 画面遷移の全体像
 
-ホームを起点に、記録追加・詳細編集・履歴確認・設定系画面へ遷移します。各詳細画面の戻る操作は、原則として遷移元の一覧または設定画面へ戻ります。
+ホームを起点に、記録追加・詳細編集・履歴確認・設定系画面へ遷移します。各詳細画面の通常の戻る操作は React Router の履歴を使い、直前に表示していた画面へ戻ります。
 
 ```mermaid
 flowchart TD
@@ -690,6 +690,7 @@ flowchart TD
   terms["利用規約"]
 
   home --> select
+  select --> exerciseManage
   select --> detail
   home --> detail
   detail --> history
@@ -714,7 +715,9 @@ flowchart TD
 ### 6.1 アプリ外枠とナビゲーション（`App.tsx`）
 
 - `HashRouter` と宣言的な `Routes` で画面をURLへ対応させ、`<main class="app">` 内に現在の画面を 1 つだけ描画する。GitHub Pages と Capacitor の両方でサーバー側のパスフォールバックを必要としないハッシュURLを使う。
-- ルート定義は `src/routes.ts` に集約し、未定義のパスはホームへ置き換える。画面操作は `showScreen` を通してURL履歴へ追加し、ブラウザの戻る・進む操作でも表示画面を同期する。
+- ルート定義は `src/routes.ts` に集約し、未定義のパスはホームへ置き換える。画面操作は `showScreen` を通してURL履歴へ追加し、共通ヘッダの戻る操作は `goBack` で React Router の履歴を1件戻る。ブラウザの戻る・進む操作でも表示画面を同期する。
+- 各画面のトップバーは `ScreenHeader` を共通利用する。通常は戻り先を画面側で指定せず、右側操作や分析画面内の戻り、下書き破棄など意味のある例外だけを props で渡す。
+- 直接URLを開いてアプリ内の戻り履歴がない場合、`useNavigation` が画面ごとの既定遷移先を一元管理し、履歴を増やさず置き換える。
 - `html` / `body` / `#root` / `.app` は `100dvh` を基準にする。`.app` と各画面は縦 flex とし、ヘッダ外の本文領域だけをスクロールさせる。
 - iOS アプリでは Capacitor Keyboard の `resize` を `none` にし、キーボード表示時に WebView / body 側をリサイズしない。
 - 画面切り替え時は `transitionDirection` に応じてプッシュ風アニメーションを付ける。進む遷移では遷移先画面が上に被さり、戻る遷移では上に被さっていた遷移元画面が右へ抜けて下の戻り先画面を見せる。端末の `prefers-reduced-motion` が有効な場合はアニメーションしない。
@@ -726,7 +729,7 @@ flowchart TD
 - FAB は画面または用途が切り替わるたびに一度非表示状態からフェードインし、画面遷移後の操作対象が変わったことを示す。
 - 画面階層は `screenDepth` で管理し、種目マスタ編集（`exerciseManage`）から個別の種目追加 / 編集（`exerciseEdit`）へ進むときは進む遷移として扱う。
 
-#### 画面遷移の共通処理（`showScreen`）
+#### 画面遷移の共通処理（`showScreen` / `goBack`）
 
 - 遷移先が `detail` / `exerciseHistory` 以外のとき、`cleanupBlankDetailSets()` を実行（詳細画面で増やした空セットの掃除）。
 - 遷移先が `select` / `exerciseEdit` 以外のとき、編集モードを解除。
@@ -773,7 +776,7 @@ flowchart TD
 - **通常モード**:
   - 各種目はボタンで、タップすると選択日にその種目を追加して詳細画面へ（`addExerciseToToday`）。
   - リスト見出しに選択中部位の最終実施ラベル（`partRecentLabels`: `履歴なし` / `今日` / `N日前`）を表示。
-- 種目選択画面自体には編集切り替えを置かず、種目マスタの編集は設定画面から開く「種目を編集」画面で行う。
+- ヘッダ右の「編集」から種目マスタ編集画面を開ける。設定画面の「種目を編集」からも同じ画面へ遷移する。
 
 ### 6.4 種目マスタ編集（`ExerciseManageScreen`）
 

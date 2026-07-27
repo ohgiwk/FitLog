@@ -1,4 +1,4 @@
-import { ChevronLeft } from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 
 /**
@@ -10,20 +10,7 @@ export function NotificationSettingsScreen() {
 
   return (
     <section className="screen active settings-screen">
-      <header className="topbar">
-        <div className="bar-row">
-          <button
-            className="bar-btn"
-            type="button"
-            aria-label="設定に戻る"
-            onClick={() => actions.setScreen('settings')}
-          >
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">通知設定</div>
-          <span />
-        </div>
-      </header>
+      <ScreenHeader title="通知設定" backLabel="設定に戻る" />
       <div className="settings-content">
         <section className="settings-section" aria-labelledby="workout-reminder-title">
           <h2 className="settings-section-title" id="workout-reminder-title">

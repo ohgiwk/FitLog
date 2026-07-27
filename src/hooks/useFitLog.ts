@@ -14,7 +14,7 @@ import {
   sendTestWorkoutReminderNotification,
   syncWorkoutReminderNotification,
 } from '../notifications';
-import { defaultRestTimerSeconds, Preset, Screen, ThemeMode, WeightUnit } from '../types';
+import { defaultRestTimerSeconds, Preset, ThemeMode, WeightUnit } from '../types';
 import { uid } from '../utils';
 
 /**
@@ -74,72 +74,87 @@ export function useFitLog() {
     setCurrentPresetId: presets.setCurrentPresetId,
   });
 
-  const setWeightUnit = useCallback((weightUnit: WeightUnit) => {
-    core.saveState((current) => ({ ...current, weightUnit }));
-  }, [core]);
+  const setWeightUnit = useCallback(
+    (weightUnit: WeightUnit) => {
+      core.saveState((current) => ({ ...current, weightUnit }));
+    },
+    [core],
+  );
 
-  const setThemeMode = useCallback((themeMode: ThemeMode) => {
-    core.saveState((current) => ({ ...current, themeMode }));
-  }, [core]);
+  const setThemeMode = useCallback(
+    (themeMode: ThemeMode) => {
+      core.saveState((current) => ({ ...current, themeMode }));
+    },
+    [core],
+  );
 
-  const setRestTimerAutoStart = useCallback((autoStartOnIntensity: boolean) => {
-    core.saveState((current) => ({
-      ...current,
-      restTimerSettings: {
-        ...(current.restTimerSettings ?? {
-          autoStartOnIntensity: true,
-          defaultSeconds: defaultRestTimerSeconds,
-        }),
-        autoStartOnIntensity,
-      },
-    }));
-  }, [core]);
-
-  const setRestTimerDefaultSeconds = useCallback((defaultSeconds: number) => {
-    const seconds = Math.max(1, Math.min(999, Number(defaultSeconds) || defaultRestTimerSeconds));
-    core.saveState((current) => ({
-      ...current,
-      restTimerSettings: {
-        ...(current.restTimerSettings ?? {
-          autoStartOnIntensity: true,
-          defaultSeconds: defaultRestTimerSeconds,
-        }),
-        defaultSeconds: seconds,
-      },
-    }));
-  }, [core]);
-
-  const setWorkoutReminderEnabled = useCallback(async (enabled: boolean) => {
-    if (!enabled) {
-      await cancelWorkoutReminderNotification();
+  const setRestTimerAutoStart = useCallback(
+    (autoStartOnIntensity: boolean) => {
       core.saveState((current) => ({
         ...current,
-        notificationSettings: { ...current.notificationSettings, enabled: false },
+        restTimerSettings: {
+          ...(current.restTimerSettings ?? {
+            autoStartOnIntensity: true,
+            defaultSeconds: defaultRestTimerSeconds,
+          }),
+          autoStartOnIntensity,
+        },
       }));
-      core.showToast('通知をオフにしました');
-      return;
-    }
+    },
+    [core],
+  );
 
-    const permission = await requestWorkoutReminderPermission();
-    if (permission !== 'granted') {
+  const setRestTimerDefaultSeconds = useCallback(
+    (defaultSeconds: number) => {
+      const seconds = Math.max(1, Math.min(999, Number(defaultSeconds) || defaultRestTimerSeconds));
       core.saveState((current) => ({
         ...current,
-        notificationSettings: { ...current.notificationSettings, enabled: false },
+        restTimerSettings: {
+          ...(current.restTimerSettings ?? {
+            autoStartOnIntensity: true,
+            defaultSeconds: defaultRestTimerSeconds,
+          }),
+          defaultSeconds: seconds,
+        },
       }));
-      core.showToast(
-        permission === 'unsupported'
-          ? 'この環境では通知を利用できません'
-          : '通知が許可されませんでした',
-      );
-      return;
-    }
+    },
+    [core],
+  );
 
-    core.saveState((current) => ({
-      ...current,
-      notificationSettings: { ...current.notificationSettings, enabled: true },
-    }));
-    core.showToast('通知をオンにしました');
-  }, [core]);
+  const setWorkoutReminderEnabled = useCallback(
+    async (enabled: boolean) => {
+      if (!enabled) {
+        await cancelWorkoutReminderNotification();
+        core.saveState((current) => ({
+          ...current,
+          notificationSettings: { ...current.notificationSettings, enabled: false },
+        }));
+        core.showToast('通知をオフにしました');
+        return;
+      }
+
+      const permission = await requestWorkoutReminderPermission();
+      if (permission !== 'granted') {
+        core.saveState((current) => ({
+          ...current,
+          notificationSettings: { ...current.notificationSettings, enabled: false },
+        }));
+        core.showToast(
+          permission === 'unsupported'
+            ? 'この環境では通知を利用できません'
+            : '通知が許可されませんでした',
+        );
+        return;
+      }
+
+      core.saveState((current) => ({
+        ...current,
+        notificationSettings: { ...current.notificationSettings, enabled: true },
+      }));
+      core.showToast('通知をオンにしました');
+    },
+    [core],
+  );
 
   const sendWorkoutReminderTestNotification = useCallback(async () => {
     const permission = await sendTestWorkoutReminderNotification();
@@ -159,19 +174,17 @@ export function useFitLog() {
     void syncWorkoutReminderNotification(core.state);
   }, [core.state]);
 
-  const openExerciseEditor = useCallback((
-    part: string,
-    exerciseId: string | null = null,
-    returnScreen: Screen = 'select',
-  ) => {
-    ui.setExerciseEditor({ part, exerciseId });
-    ui.setExerciseEditorReturnScreen(returnScreen);
-    nav.showScreen('exerciseEdit');
-  }, [nav, ui]);
+  const openExerciseEditor = useCallback(
+    (part: string, exerciseId: string | null = null) => {
+      ui.setExerciseEditor({ part, exerciseId });
+      nav.showScreen('exerciseEdit');
+    },
+    [nav, ui],
+  );
 
   const closeExerciseEditor = useCallback(() => {
     ui.setExerciseEditor(null);
-    nav.showScreen(ui.exerciseEditorReturnScreen);
+    nav.goBack();
   }, [nav, ui]);
 
   /**
@@ -185,10 +198,13 @@ export function useFitLog() {
   /**
    * 指定種目の成長グラフを選択した状態で分析画面を開く
    */
-  const openExerciseGrowthAnalysis = useCallback((exerciseId: string) => {
-    ui.setAnalysisTargetExerciseId(exerciseId);
-    nav.showScreen('analysis');
-  }, [nav, ui]);
+  const openExerciseGrowthAnalysis = useCallback(
+    (exerciseId: string) => {
+      ui.setAnalysisTargetExerciseId(exerciseId);
+      nav.showScreen('analysis');
+    },
+    [nav, ui],
+  );
 
   /**
    * 新規プリセットの下書きを作成して編集画面を開く
@@ -211,56 +227,68 @@ export function useFitLog() {
   /**
    * 既存プリセットを複製した下書きで編集画面を開く
    */
-  const editPreset = useCallback((presetId: string) => {
-    const preset = core.state.presets.find((item) => item.id === presetId);
-    if (!preset) return;
-    ui.setPresetDraftMode('menu');
-    ui.setPresetDraft({
-      ...preset,
-      exerciseIds: [...preset.exerciseIds],
-      schedule: preset.schedule
-        ? { ...preset.schedule, weekdays: [...preset.schedule.weekdays] }
-        : undefined,
-    });
-    nav.showScreen('presetEdit');
-  }, [core.state.presets, nav, ui]);
+  const editPreset = useCallback(
+    (presetId: string) => {
+      const preset = core.state.presets.find((item) => item.id === presetId);
+      if (!preset) return;
+      ui.setPresetDraftMode('menu');
+      ui.setPresetDraft({
+        ...preset,
+        exerciseIds: [...preset.exerciseIds],
+        schedule: preset.schedule
+          ? { ...preset.schedule, weekdays: [...preset.schedule.weekdays] }
+          : undefined,
+      });
+      nav.showScreen('presetEdit');
+    },
+    [core.state.presets, nav, ui],
+  );
 
   /**
    * ホームの開始導線から、選択中メニューの下書きを開く
    */
-  const editPresetForStart = useCallback((presetId: string) => {
-    const preset = core.state.presets.find((item) => item.id === presetId);
-    if (!preset) return;
-    ui.setPresetDraftMode('start');
-    ui.setPresetDraft({
-      ...preset,
-      exerciseIds: [...preset.exerciseIds],
-      schedule: preset.schedule
-        ? { ...preset.schedule, weekdays: [...preset.schedule.weekdays] }
-        : undefined,
-    });
-    nav.showScreen('presetEdit');
-  }, [core.state.presets, nav, ui]);
+  const editPresetForStart = useCallback(
+    (presetId: string) => {
+      const preset = core.state.presets.find((item) => item.id === presetId);
+      if (!preset) return;
+      ui.setPresetDraftMode('start');
+      ui.setPresetDraft({
+        ...preset,
+        exerciseIds: [...preset.exerciseIds],
+        schedule: preset.schedule
+          ? { ...preset.schedule, weekdays: [...preset.schedule.weekdays] }
+          : undefined,
+      });
+      nav.showScreen('presetEdit');
+    },
+    [core.state.presets, nav, ui],
+  );
 
   /**
    * プリセット下書きの一部を更新する
    */
-  const updatePresetDraft = useCallback((update: Partial<Preset>) => {
-    ui.setPresetDraft((current) => (current ? { ...current, ...update } : current));
-  }, [ui]);
+  const updatePresetDraft = useCallback(
+    (update: Partial<Preset>) => {
+      ui.setPresetDraft((current) => (current ? { ...current, ...update } : current));
+    },
+    [ui],
+  );
 
   /**
    * プリセット下書きの種目を追加・解除する
    */
-  const togglePresetDraftExercise = useCallback((exerciseId: string) => {
-    ui.setPresetDraft((current) => {
-      if (!current) return current;
-      const exerciseIds = current.exerciseIds.includes(exerciseId)
-        ? current.exerciseIds.filter((id) => id !== exerciseId)
-        : [...current.exerciseIds, exerciseId];
-      return { ...current, exerciseIds };
-    });
-  }, [ui]);
+  const togglePresetDraftExercise = useCallback(
+    (exerciseId: string) => {
+      ui.setPresetDraft((current) => {
+        if (!current) return current;
+        const exerciseIds = current.exerciseIds.includes(exerciseId)
+          ? current.exerciseIds.filter((id) => id !== exerciseId)
+          : [...current.exerciseIds, exerciseId];
+        return { ...current, exerciseIds };
+      });
+    },
+    [ui],
+  );
 
   /**
    * プリセット下書きを保存してトレーニングメニュー画面へ戻る
@@ -283,10 +311,9 @@ export function useFitLog() {
    * プリセット下書きを破棄してトレーニングメニュー画面へ戻る
    */
   const cancelPresetDraft = useCallback(() => {
-    const nextScreen = ui.presetDraftMode === 'start' ? 'home' : 'trainingMenu';
     ui.setPresetDraft(null);
     ui.setPresetDraftMode('menu');
-    nav.showScreen(nextScreen);
+    nav.goBack();
   }, [nav, ui]);
 
   const actions = useMemo(
@@ -327,6 +354,7 @@ export function useFitLog() {
       selectPreset: presets.setCurrentPresetId,
       setCurrentWorkoutId: nav.setCurrentWorkoutId,
       setScreen: nav.showScreen,
+      goBack: nav.goBack,
       setEditMode: ui.setEditMode,
       setWeightUnit,
       setThemeMode,
@@ -384,29 +412,32 @@ export function useFitLog() {
     ],
   );
 
-  return useMemo(() => ({
-    currentPreset: presets.currentPreset,
-    currentWorkout: nav.currentWorkout,
-    editMode: ui.editMode,
-    presetDraft: ui.presetDraft,
-    presetDraftMode: ui.presetDraftMode,
-    activePart: ui.activePart,
-    exerciseEditor: ui.exerciseEditor,
-    analysisTargetExerciseId: ui.analysisTargetExerciseId,
-    groupedExercises: selectors.groupedExercises,
-    partRecentLabels: selectors.partRecentLabels,
-    orderedParts: selectors.orderedParts,
-    partColors: selectors.partColors,
-    screen: nav.screen,
-    transitionFrom: nav.transitionFrom,
-    transitionDirection: nav.transitionDirection,
-    selectedDate: nav.selectedDate,
-    selectedScheduledPresets: selectors.selectedScheduledPresets,
-    selectedWorkouts: nav.selectedWorkouts,
-    splitPartOptions: selectors.splitPartOptions,
-    state: core.state,
-    toast: core.toast,
-    goalAchievement: ui.goalAchievement,
-    actions,
-  }), [actions, core, nav, presets, selectors, ui]);
+  return useMemo(
+    () => ({
+      currentPreset: presets.currentPreset,
+      currentWorkout: nav.currentWorkout,
+      editMode: ui.editMode,
+      presetDraft: ui.presetDraft,
+      presetDraftMode: ui.presetDraftMode,
+      activePart: ui.activePart,
+      exerciseEditor: ui.exerciseEditor,
+      analysisTargetExerciseId: ui.analysisTargetExerciseId,
+      groupedExercises: selectors.groupedExercises,
+      partRecentLabels: selectors.partRecentLabels,
+      orderedParts: selectors.orderedParts,
+      partColors: selectors.partColors,
+      screen: nav.screen,
+      transitionFrom: nav.transitionFrom,
+      transitionDirection: nav.transitionDirection,
+      selectedDate: nav.selectedDate,
+      selectedScheduledPresets: selectors.selectedScheduledPresets,
+      selectedWorkouts: nav.selectedWorkouts,
+      splitPartOptions: selectors.splitPartOptions,
+      state: core.state,
+      toast: core.toast,
+      goalAchievement: ui.goalAchievement,
+      actions,
+    }),
+    [actions, core, nav, presets, selectors, ui],
+  );
 }

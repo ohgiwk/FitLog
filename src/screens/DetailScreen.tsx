@@ -1,13 +1,6 @@
 import { MouseEvent, PointerEvent, ReactNode, useEffect, useRef, useState } from 'react';
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronUp,
-  HistoryIcon,
-  PlusIcon,
-  TrashIcon,
-  UndoIcon,
-} from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { ChevronDown, ChevronUp, HistoryIcon, PlusIcon, TrashIcon, UndoIcon } from '../icons';
 import {
   calcRm,
   formatStoredWeightInput,
@@ -45,7 +38,6 @@ function useDetailScreenModel() {
     weightUnit: state.weightUnit,
     restTimerSettings: state.restTimerSettings,
     readOnly: Boolean(currentWorkout && state.workoutEndTimes[currentWorkout.date]),
-    onBack: () => actions.setScreen('home'),
     onOpenHistory: () => actions.setScreen('exerciseHistory'),
     onUpdateSet: actions.updateSet,
     onUpdateSetAchievement: actions.updateSetAchievement,
@@ -196,10 +188,7 @@ function WorkoutGripEditor({
   const [open, setOpen] = useState(false);
 
   return (
-    <section
-      className={`workout-grip-editor${open ? ' open' : ''}`}
-      aria-label="グリップ"
-    >
+    <section className={`workout-grip-editor${open ? ' open' : ''}`} aria-label="グリップ">
       <button
         className="workout-grip-toggle"
         type="button"
@@ -247,21 +236,17 @@ function WorkoutGripEditor({
               onChange={(event) =>
                 onUpdateGripStyle(
                   workout.id,
-                  event.target.value
-                    ? (event.target.value as GripStyleType)
-                    : undefined,
+                  event.target.value ? (event.target.value as GripStyleType) : undefined,
                 )
               }
             >
               <option value="">未選択</option>
-              {workout.gripStyle &&
-                !exercise?.availableGripStyles?.includes(workout.gripStyle) && (
-                  <option value={workout.gripStyle}>
-                    {gripStyleOptions.find(
-                      (option) => option.value === workout.gripStyle,
-                    )?.label ?? workout.gripStyle}
-                  </option>
-                )}
+              {workout.gripStyle && !exercise?.availableGripStyles?.includes(workout.gripStyle) && (
+                <option value={workout.gripStyle}>
+                  {gripStyleOptions.find((option) => option.value === workout.gripStyle)?.label ??
+                    workout.gripStyle}
+                </option>
+              )}
               {gripStyleOptions
                 .filter((option) => exercise?.availableGripStyles?.includes(option.value))
                 .map((option) => (
@@ -518,7 +503,6 @@ export function DetailScreen() {
     weightUnit,
     restTimerSettings,
     readOnly,
-    onBack,
     onOpenHistory,
     onUpdateSet,
     onUpdateSetAchievement,
@@ -543,7 +527,7 @@ export function DetailScreen() {
     return weightInputs[setId] ?? formatStoredWeightInput(value, weightUnit);
   }
   function recordInputValue(setId: string, value: number | null) {
-    return recordInputs[setId] ?? (value ?? '');
+    return recordInputs[setId] ?? value ?? '';
   }
   function updateWeightInput(setId: string, value: string) {
     setWeightInputs((current) => ({ ...current, [setId]: value }));
@@ -588,7 +572,8 @@ export function DetailScreen() {
       const currentSet = currentWorkout.sets[index];
       if (!currentSet) return;
       nextWeightInputs[currentSet.id] = formatStoredWeightInput(previousSet.weight, weightUnit);
-      nextRecordInputs[currentSet.id] = previousSet.recordValue === null ? '' : String(previousSet.recordValue);
+      nextRecordInputs[currentSet.id] =
+        previousSet.recordValue === null ? '' : String(previousSet.recordValue);
     });
     onCopyWorkoutSetValues(currentWorkout.id, previousWorkout.sets);
     setWeightInputs((current) => ({ ...current, ...nextWeightInputs }));
@@ -596,17 +581,14 @@ export function DetailScreen() {
   }
   return (
     <section className="screen active">
-      <header className="topbar">
-        <div className="bar-row">
-          <button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}>
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">{workout.name}</div>
+      <ScreenHeader
+        title={workout.name}
+        right={
           <button className="history-btn" type="button" aria-label="履歴" onClick={onOpenHistory}>
             <HistoryIcon />
           </button>
-        </div>
-      </header>
+        }
+      />
       <div className="content">
         {exercise && (
           <>

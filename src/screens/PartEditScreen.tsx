@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { PartSetting } from '../types';
 import { partColorPalette } from '../data/partColors';
-import { ChevronDown, ChevronUp, ChevronLeft, TrashIcon } from '../icons';
+import { ChevronDown, ChevronUp, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 
 /**
@@ -11,7 +12,6 @@ function usePartEditScreenModel() {
   const { orderedParts, actions } = useFitLogContext();
   return {
     orderedParts,
-    onBack: () => actions.setScreen('settings'),
     onAddPart: actions.addPart,
     onDeletePart: actions.deletePart,
     onMovePart: actions.movePart,
@@ -28,7 +28,7 @@ type PartEditScreenProps = {
 };
 
 export function PartEditScreen({ addDialogOpen, onCloseAddDialog }: PartEditScreenProps) {
-  const { orderedParts, onBack, onAddPart, onDeletePart, onMovePart, onSetPartColor } =
+  const { orderedParts, onAddPart, onDeletePart, onMovePart, onSetPartColor } =
     usePartEditScreenModel();
   const [newPartName, setNewPartName] = useState('');
 
@@ -50,15 +50,7 @@ export function PartEditScreen({ addDialogOpen, onCloseAddDialog }: PartEditScre
 
   return (
     <section className="screen active">
-      <header className="topbar">
-        <div className="bar-row">
-          <button className="bar-btn" type="button" aria-label="戻る" onClick={onBack}>
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">部位の編集</div>
-          <span />
-        </div>
-      </header>
+      <ScreenHeader title="部位の編集" />
       <div className="content">
         {!orderedParts.length ? (
           <div className="part-edit-empty">部位がありません</div>
@@ -142,20 +134,10 @@ function PartEditRow({
         <span className="part-edit-swatch" style={{ background: part.color }} aria-hidden="true" />
         <span className="part-edit-name">{part.name}</span>
         <div className="part-edit-order">
-          <button
-            type="button"
-            aria-label="上へ"
-            disabled={isFirst}
-            onClick={onMoveUp}
-          >
+          <button type="button" aria-label="上へ" disabled={isFirst} onClick={onMoveUp}>
             <ChevronUp />
           </button>
-          <button
-            type="button"
-            aria-label="下へ"
-            disabled={isLast}
-            onClick={onMoveDown}
-          >
+          <button type="button" aria-label="下へ" disabled={isLast} onClick={onMoveDown}>
             <ChevronDown />
           </button>
         </div>

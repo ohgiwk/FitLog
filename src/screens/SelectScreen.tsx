@@ -1,35 +1,29 @@
 import { ExercisePicker } from '../components/ExercisePicker';
-import { ChevronLeft } from '../icons';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 
 type ExerciseListMode = 'select' | 'manage';
 
-function useSelectScreenModel(mode: ExerciseListMode) {
-  const {
-    groupedExercises,
-    partRecentLabels,
-    partColors,
-    activePart,
-    actions,
-  } = useFitLogContext();
-  const isManageMode = mode === 'manage';
+function useSelectScreenModel() {
+  const { groupedExercises, partRecentLabels, partColors, activePart, actions } =
+    useFitLogContext();
   return {
     groupedExercises,
     partRecentLabels,
     partColors,
     activePart,
-    onBack: () => actions.setScreen(isManageMode ? 'settings' : 'home'),
+    onOpenExerciseManager: () => actions.setScreen('exerciseManage'),
     onAddExercise: actions.addExerciseToToday,
     onReorder: actions.reorderPartExercises,
     onDeleteExercise: actions.deleteExercise,
     onOpenExerciseEditor: (part: string, exerciseId: string | null = null) =>
-      actions.openExerciseEditor(part, exerciseId, isManageMode ? 'exerciseManage' : 'select'),
+      actions.openExerciseEditor(part, exerciseId),
     onSelectPart: actions.selectPart,
   };
 }
 
 function ExerciseListScreen({ mode }: { mode: ExerciseListMode }) {
-  const model = useSelectScreenModel(mode);
+  const model = useSelectScreenModel();
   const isManageMode = mode === 'manage';
   const currentPart =
     model.activePart && model.groupedExercises.has(model.activePart)
@@ -38,15 +32,16 @@ function ExerciseListScreen({ mode }: { mode: ExerciseListMode }) {
 
   return (
     <section className="screen active">
-      <header className="topbar">
-        <div className="bar-row">
-          <button className="bar-btn" type="button" aria-label="戻る" onClick={model.onBack}>
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">{mode === 'manage' ? '種目一覧を編集' : '種目を選択'}</div>
-          <span />
-        </div>
-      </header>
+      <ScreenHeader
+        title={mode === 'manage' ? '種目一覧を編集' : '種目を選択'}
+        right={
+          isManageMode ? undefined : (
+            <button className="bar-btn right" type="button" onClick={model.onOpenExerciseManager}>
+              編集
+            </button>
+          )
+        }
+      />
       <ExercisePicker
         activePart={model.activePart}
         groupedExercises={model.groupedExercises}

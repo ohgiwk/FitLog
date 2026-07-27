@@ -1,5 +1,4 @@
-import { ChevronLeft } from '../icons';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { ScreenHeader } from '../components/ScreenHeader';
 
 const policySections = [
   {
@@ -55,24 +54,9 @@ const policySections = [
  * SmithNote（スミスノート）のデータ取り扱い方針を表示する画面
  */
 export function PrivacyPolicyScreen() {
-  const { actions } = useFitLogContext();
-
   return (
     <section className="screen active settings-screen">
-      <header className="topbar">
-        <div className="bar-row">
-          <button
-            className="bar-btn"
-            type="button"
-            aria-label="戻る"
-            onClick={() => actions.setScreen('settings')}
-          >
-            <ChevronLeft />
-          </button>
-          <div className="bar-title">プライバシーポリシー</div>
-          <span />
-        </div>
-      </header>
+      <ScreenHeader title="プライバシーポリシー" />
       <div className="settings-content">
         <article className="settings-section privacy-policy" aria-labelledby="privacy-policy-title">
           <div className="privacy-policy-head">
