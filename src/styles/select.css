@@ -132,8 +132,25 @@
 }
 
 .exercise-option.dragging {
-  opacity: 0.5;
+  opacity: 0.22;
   background: var(--surface-muted);
+}
+
+.exercise-drag-overlay {
+  position: fixed;
+  z-index: 1000;
+  border: 1px solid var(--red-border-soft);
+  background: var(--surface);
+  box-shadow: 0 12px 28px rgba(21, 24, 32, 0.22);
+  opacity: 0.98;
+  pointer-events: none;
+  transform: scale(1.025);
+  transform-origin: center;
+}
+
+.exercise-row-action-placeholder {
+  display: grid;
+  place-items: center;
 }
 
 .drag-handle {

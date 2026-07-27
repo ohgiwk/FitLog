@@ -43,6 +43,12 @@ export function useExerciseReorder({
   const listRef = useRef<HTMLDivElement>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [layout, setLayout] = useState<ReorderItem[] | null>(null);
+  const [dragOverlay, setDragOverlay] = useState<{
+    left: number;
+    top: number;
+    width: number;
+  } | null>(null);
+  const pointerOffsetRef = useRef({ x: 0, y: 0 });
   const byId = useMemo(
     () => new Map(exercises.map((exercise) => [exercise.id, exercise])),
     [exercises],
@@ -67,13 +73,32 @@ export function useExerciseReorder({
 
   function onPointerDown(event: PointerEvent<HTMLDivElement>, id: string) {
     if (!(event.target as HTMLElement).closest('[data-drag-handle]')) return;
+    const box = event.currentTarget.getBoundingClientRect();
     event.currentTarget.setPointerCapture(event.pointerId);
+    pointerOffsetRef.current = {
+      x: event.clientX - box.left,
+      y: event.clientY - box.top,
+    };
     setDraggingId(id);
     setLayout(baseLayout);
+    setDragOverlay({
+      left: box.left,
+      top: box.top,
+      width: box.width,
+    });
   }
 
   function onPointerMove(event: PointerEvent<HTMLDivElement>) {
     if (draggingId === null || !listRef.current) return;
+    setDragOverlay((current) =>
+      current
+        ? {
+            ...current,
+            left: event.clientX - pointerOffsetRef.current.x,
+            top: event.clientY - pointerOffsetRef.current.y,
+          }
+        : current,
+    );
     const sections = Array.from(
       listRef.current.querySelectorAll<HTMLElement>('[data-category-section]'),
     );
@@ -113,7 +138,16 @@ export function useExerciseReorder({
     if (draggingId !== null && layout && !sameExerciseLayout(layout, baseLayout)) onCommit(layout);
     setDraggingId(null);
     setLayout(null);
+    setDragOverlay(null);
   }
 
-  return { listRef, draggingId, itemsFor, onPointerDown, onPointerMove, onPointerUp };
+  return {
+    listRef,
+    draggingId,
+    dragOverlay,
+    itemsFor,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+  };
 }

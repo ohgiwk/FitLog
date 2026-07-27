@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { DragHandle, EditIcon, TrashIcon } from '../icons';
 import { ReorderItem, useExerciseReorder } from '../hooks/useExerciseReorder';
 import type { Exercise } from '../types';
@@ -41,6 +42,9 @@ export function ExercisePicker({
     },
   });
   const selectedIds = new Set(selectedExerciseIds);
+  const draggedExercise = currentExercises.find(
+    (exercise) => exercise.id === reorder.draggingId,
+  );
 
   return (
     <>
@@ -156,6 +160,32 @@ export function ExercisePicker({
           </section>
         )}
       </div>
+      {mode === 'manage' &&
+        draggedExercise &&
+        reorder.dragOverlay &&
+        createPortal(
+          <div
+            className="exercise-option edit-row exercise-drag-overlay"
+            style={{
+              left: reorder.dragOverlay.left,
+              top: reorder.dragOverlay.top,
+              width: reorder.dragOverlay.width,
+            }}
+            aria-hidden="true"
+          >
+            <span className="drag-handle">
+              <DragHandle />
+            </span>
+            <span className="exercise-name">{draggedExercise.name}</span>
+            <span className="edit-exercise exercise-row-action-placeholder">
+              <EditIcon />
+            </span>
+            <span className="delete-exercise exercise-row-action-placeholder">
+              <TrashIcon />
+            </span>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

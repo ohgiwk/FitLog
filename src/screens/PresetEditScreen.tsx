@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { ChevronDown, ChevronUp, PlusIcon, TrashIcon } from '../icons';
+import { useFlatReorder } from '../hooks/useFlatReorder';
+import { DragHandle, PlusIcon, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import { PresetSchedule, TrainingPlanMode } from '../types';
 import { parseDate, weekdayLabels } from '../utils';
@@ -37,19 +39,10 @@ export function PresetEditScreen() {
     onUpdate,
     onOpenExerciseSelect,
   } = usePresetEditScreenModel();
-
-  /**
-   * 下書き内の種目順を1つ前後へ移動する
-   */
-  function moveExercise(exerciseId: string, direction: number) {
-    if (!preset) return;
-    const index = preset.exerciseIds.indexOf(exerciseId);
-    const nextIndex = index + direction;
-    if (index < 0 || nextIndex < 0 || nextIndex >= preset.exerciseIds.length) return;
-    const exerciseIds = [...preset.exerciseIds];
-    [exerciseIds[index], exerciseIds[nextIndex]] = [exerciseIds[nextIndex], exerciseIds[index]];
-    onUpdate({ exerciseIds });
-  }
+  const reorder = useFlatReorder({
+    items: preset?.exerciseIds ?? [],
+    onCommit: (exerciseIds) => onUpdate({ exerciseIds }),
+  });
 
   /**
    * 下書きから指定種目を外す
@@ -58,6 +51,10 @@ export function PresetEditScreen() {
     if (!preset) return;
     onUpdate({ exerciseIds: preset.exerciseIds.filter((id) => id !== exerciseId) });
   }
+  const draggedExercise = exercises.find((item) => item.id === reorder.draggingId);
+  const draggedExerciseName = draggedExercise
+    ? `${draggedExercise.part} - ${draggedExercise.name}`
+    : '削除済みの種目';
 
   return (
     <section className="screen active">
@@ -111,34 +108,29 @@ export function PresetEditScreen() {
                   </button>
                 </div>
               </div>
-              <div>
+              <div ref={reorder.listRef}>
                 {preset.exerciseIds.length ? (
-                  preset.exerciseIds.map((exerciseId, index) => {
+                  reorder.activeItems.map((exerciseId) => {
                     const exercise = exercises.find((item) => item.id === exerciseId);
                     const name = exercise
                       ? `${exercise.part} - ${exercise.name}`
                       : '削除済みの種目';
                     return (
-                      <div className="preset-row" key={exerciseId}>
+                      <div
+                        className={`preset-row ${
+                          reorder.draggingId === exerciseId ? 'dragging' : ''
+                        }`}
+                        data-reorder-row={exerciseId}
+                        key={exerciseId}
+                        onPointerDown={(event) => reorder.onPointerDown(event, exerciseId)}
+                        onPointerMove={reorder.onPointerMove}
+                        onPointerUp={reorder.onPointerUp}
+                        onPointerCancel={reorder.onPointerUp}
+                      >
+                        <span className="drag-handle" data-drag-handle aria-hidden="true">
+                          <DragHandle />
+                        </span>
                         <div className="preset-row-name">{name}</div>
-                        <button
-                          className="preset-row-btn"
-                          type="button"
-                          aria-label="上へ移動"
-                          disabled={index === 0}
-                          onClick={() => moveExercise(exerciseId, -1)}
-                        >
-                          <ChevronUp />
-                        </button>
-                        <button
-                          className="preset-row-btn"
-                          type="button"
-                          aria-label="下へ移動"
-                          disabled={index === preset.exerciseIds.length - 1}
-                          onClick={() => moveExercise(exerciseId, 1)}
-                        >
-                          <ChevronDown />
-                        </button>
                         <button
                           className="preset-row-btn"
                           type="button"
@@ -163,6 +155,28 @@ export function PresetEditScreen() {
           </div>
         )}
       </div>
+      {reorder.draggingId &&
+        reorder.dragOverlay &&
+        createPortal(
+          <div
+            className="preset-row preset-row-drag-overlay"
+            style={{
+              left: reorder.dragOverlay.left,
+              top: reorder.dragOverlay.top,
+              width: reorder.dragOverlay.width,
+            }}
+            aria-hidden="true"
+          >
+            <span className="drag-handle">
+              <DragHandle />
+            </span>
+            <div className="preset-row-name">{draggedExerciseName}</div>
+            <span className="preset-row-btn preset-row-delete-placeholder">
+              <TrashIcon />
+            </span>
+          </div>,
+          document.body,
+        )}
     </section>
   );
 }

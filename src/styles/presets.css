@@ -292,11 +292,44 @@
 }
 
 .preset-row {
-  grid-template-columns: 1fr 38px 38px 38px;
-  gap: 4px;
-  min-height: 50px;
+  grid-template-columns: 40px minmax(0, 1fr) 38px;
+  gap: 8px;
+  min-height: 54px;
   border-bottom: 1px solid var(--line);
-  padding: 0 8px 0 14px;
+  padding: 0 8px;
+  user-select: none;
+}
+
+.preset-row .drag-handle {
+  cursor: grab;
+  touch-action: none;
+}
+
+.preset-row .drag-handle:active {
+  cursor: grabbing;
+}
+
+.preset-row.dragging {
+  opacity: 0.22;
+  background: var(--surface-muted);
+}
+
+.preset-row-drag-overlay {
+  position: fixed;
+  z-index: 1000;
+  border: 1px solid var(--red-border-soft);
+  background: var(--surface);
+  box-shadow: 0 12px 28px rgba(21, 24, 32, 0.22);
+  opacity: 0.98;
+  pointer-events: none;
+  transform: scale(1.025);
+  transform-origin: center;
+}
+
+.preset-row-delete-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
 }
 
 .preset-section-heading {
@@ -343,9 +376,4 @@
 .preset-row-name {
   font-size: 17px;
   font-weight: 850;
-}
-
-.preset-row-btn:disabled {
-  cursor: default;
-  opacity: 0.35;
 }
