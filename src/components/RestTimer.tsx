@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { createPortal } from 'react-dom';
+import {
+  cancelRestTimerNotification,
+  scheduleRestTimerNotification,
+} from '../restTimerNotification';
 import { defaultRestTimerSeconds, restTimerPresetSeconds } from '../types';
 import { ConfirmDialog } from './ConfirmDialog';
 
 const exitAnimationMilliseconds = 420;
-const alarmSoundPath = `${import.meta.env.BASE_URL}Clock-Alarm.mp3`;
+const alarmSoundPath = `${import.meta.env.BASE_URL}Clock-Alarm.wav`;
 export const restTimerStartEvent = 'fitlog:start-rest-timer';
 
 type RestTimerProps = {
@@ -36,7 +41,11 @@ export function RestTimer({
   const audioContextRef = useRef<AudioContext | null>(null);
   const alarmBufferRef = useRef<AudioBuffer | null>(null);
   const alarmBufferPromiseRef = useRef<Promise<AudioBuffer | null> | null>(null);
+  const alarmSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const exitTimeoutRef = useRef<number | null>(null);
+  const endTimeRef = useRef<number | null>(null);
+  const runIdRef = useRef(0);
+  const expiredWhileHiddenRef = useRef(false);
 
   const running = endTime !== null;
   const exiting = timerExiting;
@@ -45,7 +54,24 @@ export function RestTimer({
     : 0;
 
   useEffect(() => {
-    return () => clearExitTimeout();
+    function trackHiddenExpiration() {
+      const currentEndTime = endTimeRef.current;
+      if (
+        document.visibilityState === 'visible' &&
+        currentEndTime !== null &&
+        currentEndTime <= Date.now()
+      ) {
+        expiredWhileHiddenRef.current = true;
+      }
+    }
+
+    document.addEventListener('visibilitychange', trackHiddenExpiration);
+    return () => {
+      document.removeEventListener('visibilitychange', trackHiddenExpiration);
+      clearExitTimeout();
+      stopAlarmSource();
+      void cancelRestTimerNotification();
+    };
   }, []);
 
   useEffect(() => {
@@ -66,8 +92,13 @@ export function RestTimer({
 
   useEffect(() => {
     if (!endTime) return;
+    const runId = runIdRef.current;
 
     const timer = window.setInterval(() => {
+      if (runId !== runIdRef.current) {
+        window.clearInterval(timer);
+        return;
+      }
       const nextRemainingMilliseconds = Math.max(0, endTime - Date.now());
       const nextRemaining = Math.ceil(nextRemainingMilliseconds / 1000);
       setRemainingMilliseconds(nextRemainingMilliseconds);
@@ -76,11 +107,20 @@ export function RestTimer({
         window.clearInterval(timer);
         hideRunningTimer();
         setEndTime(null);
-        void playAlert(
-          audioContextRef.current,
-          alarmBufferRef.current,
-          alarmBufferPromiseRef.current,
-        );
+        endTimeRef.current = null;
+        void cancelRestTimerNotification();
+        const notificationHandledAlert =
+          Capacitor.isNativePlatform() && expiredWhileHiddenRef.current;
+        if (!notificationHandledAlert) {
+          void playAlert(
+            audioContextRef.current,
+            alarmBufferRef.current,
+            alarmBufferPromiseRef.current,
+            runId,
+            runIdRef,
+            alarmSourceRef,
+          );
+        }
       }
     }, 250);
 
@@ -116,6 +156,9 @@ export function RestTimer({
   }
 
   function startTimer() {
+    ++runIdRef.current;
+    stopAlarmSource();
+    expiredWhileHiddenRef.current = false;
     const seconds = clampSeconds(selectedSeconds);
     const context = getAudioContext(audioContextRef.current);
     audioContextRef.current = context;
@@ -134,10 +177,17 @@ export function RestTimer({
     setRemainingMilliseconds(duration);
     setDurationMilliseconds(duration);
     showActiveTimer();
-    setEndTime(Date.now() + duration);
+    const nextEndTime = Date.now() + duration;
+    endTimeRef.current = nextEndTime;
+    setEndTime(nextEndTime);
+    void scheduleRestTimerNotification(new Date(nextEndTime));
   }
 
   function stopTimer() {
+    ++runIdRef.current;
+    endTimeRef.current = null;
+    stopAlarmSource();
+    void cancelRestTimerNotification();
     hideRunningTimer();
     setEndTime(null);
   }
@@ -162,6 +212,18 @@ export function RestTimer({
     if (exitTimeoutRef.current === null) return;
     window.clearTimeout(exitTimeoutRef.current);
     exitTimeoutRef.current = null;
+  }
+
+  function stopAlarmSource() {
+    const source = alarmSourceRef.current;
+    if (!source) return;
+    source.onended = null;
+    try {
+      source.stop();
+    } catch {
+      alarmSourceRef.current = null;
+    }
+    alarmSourceRef.current = null;
   }
 
   const timer = (
@@ -315,14 +377,26 @@ async function playAlert(
   context: AudioContext | null,
   currentBuffer: AudioBuffer | null,
   bufferPromise: Promise<AudioBuffer | null> | null,
+  runId: number,
+  runIdRef: { current: number },
+  sourceRef: { current: AudioBufferSourceNode | null },
 ) {
   if (!context) return;
-  await context.resume();
+  try {
+    await context.resume();
+  } catch {
+    return;
+  }
+  if (runId !== runIdRef.current) return;
   const buffer = currentBuffer ?? (await bufferPromise);
-  if (!buffer) return;
+  if (!buffer || runId !== runIdRef.current) return;
 
   const source = context.createBufferSource();
   source.buffer = buffer;
   source.connect(context.destination);
+  sourceRef.current = source;
+  source.onended = () => {
+    if (sourceRef.current === source) sourceRef.current = null;
+  };
   source.start();
 }
