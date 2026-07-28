@@ -141,7 +141,7 @@
   z-index: 1000;
   border: 1px solid var(--red-border-soft);
   background: var(--surface);
-  box-shadow: 0 12px 28px rgba(21, 24, 32, 0.22);
+  box-shadow: var(--elevation-dragging);
   opacity: 0.98;
   pointer-events: none;
   transform: scale(1.025);
@@ -204,7 +204,7 @@
 .measurement-toggle button.active {
   background: var(--surface);
   color: var(--red);
-  box-shadow: 0 1px 4px var(--shadow-soft);
+  box-shadow: var(--elevation-subtle);
 }
 
 .exercise-editor-content {
@@ -223,7 +223,7 @@
   border-radius: 14px;
   padding: 16px;
   background: var(--surface);
-  box-shadow: 0 5px 16px var(--shadow-soft);
+  box-shadow: var(--elevation-header);
 }
 
 .exercise-editor-section h2 {

@@ -33,7 +33,7 @@
   height: 58px;
   background: var(--red);
   color: var(--text-on-primary);
-  box-shadow: 0 5px 13px var(--shadow-strong);
+  box-shadow: var(--elevation-floating-control);
   opacity: 1;
   animation: fab-enter 0.22s ease;
   transition:
@@ -282,7 +282,7 @@
   .goal-save-button,
   .rest-timer button
 ):active:not(:disabled) {
-  box-shadow: 0 2px 6px var(--shadow-medium);
+  box-shadow: var(--elevation-control);
 }
 
 @media (prefers-reduced-motion: reduce) {

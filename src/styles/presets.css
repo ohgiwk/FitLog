@@ -319,7 +319,7 @@
   z-index: 1000;
   border: 1px solid var(--red-border-soft);
   background: var(--surface);
-  box-shadow: 0 12px 28px rgba(21, 24, 32, 0.22);
+  box-shadow: var(--elevation-dragging);
   opacity: 0.98;
   pointer-events: none;
   transform: scale(1.025);

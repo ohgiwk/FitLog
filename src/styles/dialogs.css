@@ -16,7 +16,7 @@
   padding: 18px;
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 14px 30px var(--shadow-dialog);
+  box-shadow: var(--elevation-dialog);
 }
 
 .confirm-title {

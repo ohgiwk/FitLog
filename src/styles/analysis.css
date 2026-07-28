@@ -41,7 +41,7 @@
 
 .analysis-page-panel.current.forward {
   animation: analysis-page-cover-forward 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  box-shadow: -10px 0 24px var(--shadow-soft);
+  box-shadow: var(--elevation-side-left);
   will-change: transform;
 }
 
@@ -52,7 +52,7 @@
 .analysis-page-panel.previous.back {
   z-index: 3;
   animation: analysis-page-uncover-back 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  box-shadow: -10px 0 24px var(--shadow-soft);
+  box-shadow: var(--elevation-side-left);
   will-change: transform;
 }
 
@@ -73,7 +73,7 @@
   border-radius: 14px;
   padding: 12px 16px;
   background: var(--panel);
-  box-shadow: 0 7px 18px var(--shadow-soft);
+  box-shadow: var(--elevation-card);
   text-align: left;
 }
 
@@ -127,7 +127,7 @@
 }
 
 .analysis-view-switch button.active {
-  box-shadow: 0 4px 12px var(--shadow-medium);
+  box-shadow: var(--elevation-control);
 }
 
 .analysis-heading {
@@ -190,7 +190,7 @@
   border-radius: 14px;
   padding: 18px 15px 20px;
   background: var(--panel);
-  box-shadow: 0 7px 18px var(--shadow-soft);
+  box-shadow: var(--elevation-card);
 }
 
 .exercise-chart-row {
@@ -253,7 +253,7 @@
   border-radius: 14px;
   padding: 24px 18px 20px;
   background: var(--panel);
-  box-shadow: 0 7px 18px var(--shadow-soft);
+  box-shadow: var(--elevation-card);
 }
 
 .part-pie-chart {
@@ -262,7 +262,7 @@
   aspect-ratio: 1;
   place-items: center;
   border-radius: 50%;
-  box-shadow: 0 8px 24px var(--shadow-medium);
+  box-shadow: var(--elevation-raised);
 }
 
 .part-pie-center {
@@ -351,7 +351,7 @@
   border-radius: 14px;
   padding: 16px 12px 12px;
   background: var(--panel);
-  box-shadow: 0 7px 18px var(--shadow-soft);
+  box-shadow: var(--elevation-card);
 }
 
 .growth-chart-title {
@@ -436,7 +436,7 @@
   border-radius: 14px;
   padding: 12px;
   background: var(--panel);
-  box-shadow: 0 7px 18px var(--shadow-soft);
+  box-shadow: var(--elevation-card);
 }
 
 .growth-select-row label {
@@ -469,7 +469,7 @@
   border: 1px solid var(--border-medium);
   border-radius: 14px;
   background: var(--panel);
-  box-shadow: 0 7px 18px var(--shadow-soft);
+  box-shadow: var(--elevation-card);
 }
 
 .volume-row {
@@ -517,7 +517,7 @@
   border-radius: 14px;
   padding: 15px;
   background: var(--panel);
-  box-shadow: 0 7px 18px var(--shadow-soft);
+  box-shadow: var(--elevation-card);
 }
 
 .best-record-card header {

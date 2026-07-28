@@ -49,6 +49,19 @@
   --shadow-medium: rgba(0, 0, 0, 0.34);
   --shadow-strong: rgba(0, 0, 0, 0.45);
   --shadow-dialog: rgba(0, 0, 0, 0.55);
+  --elevation-subtle: 0 1px 4px var(--shadow-soft);
+  --elevation-control: 0 2px 6px var(--shadow-medium);
+  --elevation-pressed: 0 3px 9px var(--shadow-medium);
+  --elevation-header: 0 4px 16px var(--shadow-soft);
+  --elevation-floating-control: 0 5px 13px var(--shadow-strong);
+  --elevation-card: 0 7px 18px var(--shadow-soft);
+  --elevation-raised: 0 8px 24px var(--shadow-medium);
+  --elevation-dragging: 0 12px 28px var(--shadow-strong);
+  --elevation-dialog: 0 14px 30px var(--shadow-dialog);
+  --elevation-side-left: -10px 0 24px var(--shadow-soft);
+  --elevation-side-right: 8px 0 24px var(--shadow-strong);
+  --elevation-section-edge: 0 14px 20px -18px var(--shadow-soft);
+  --focus-ring-shadow: 0 0 0 2px var(--shadow-strong);
   --overlay: rgba(0, 0, 0, 0.64);
   --toast-bg: rgba(0, 0, 0, 0.88);
   --white-border: rgba(255, 255, 255, 0.7);
@@ -240,7 +253,7 @@ input {
 .screen-layer.previous.back-exit {
   z-index: 3;
   animation: screen-uncover-back 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  box-shadow: -10px 0 24px var(--shadow-soft);
+  box-shadow: var(--elevation-side-left);
   will-change: transform;
 }
 
@@ -251,7 +264,7 @@ input {
 
 .screen-layer.current.forward {
   animation: screen-cover-forward 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  box-shadow: -10px 0 24px var(--shadow-soft);
+  box-shadow: var(--elevation-side-left);
   will-change: transform;
 }
 

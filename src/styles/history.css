@@ -28,7 +28,7 @@
   padding: 14px;
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 8px 18px var(--shadow-medium);
+  box-shadow: var(--elevation-raised);
 }
 
 .best-record-label {
@@ -104,7 +104,7 @@
   margin-bottom: 26px;
   border-radius: 0;
   background: var(--surface);
-  box-shadow: 0 7px 18px var(--shadow-soft);
+  box-shadow: var(--elevation-card);
 }
 
 .history-card-head {

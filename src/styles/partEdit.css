@@ -91,7 +91,7 @@
 
 .part-color-swatch.active {
   border-color: var(--white-border-strong);
-  box-shadow: 0 0 0 2px var(--shadow-strong);
+  box-shadow: var(--focus-ring-shadow);
 }
 
 .part-add-dialog {

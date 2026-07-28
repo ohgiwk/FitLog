@@ -4,7 +4,7 @@
   margin-bottom: 14px;
   border-radius: 0;
   background: var(--panel);
-  box-shadow: 0 7px 18px var(--shadow-soft);
+  box-shadow: var(--elevation-card);
   transition:
     filter 0.2s ease,
     box-shadow 0.2s ease;
@@ -25,7 +25,7 @@
 }
 
 .exercise-card:has(.exercise-card-open:active) {
-  box-shadow: 0 3px 9px var(--shadow-medium);
+  box-shadow: var(--elevation-pressed);
   filter: brightness(0.88);
 }
 
@@ -559,7 +559,7 @@
   padding: max(18px, env(safe-area-inset-top)) 14px 18px;
   background: var(--panel);
   color: var(--ink);
-  box-shadow: 8px 0 24px var(--shadow-strong);
+  box-shadow: var(--elevation-side-right);
 }
 
 .home-drawer.open {
@@ -775,7 +775,7 @@
   overflow: hidden;
   border-bottom: 1px solid var(--border-medium);
   background: var(--panel);
-  box-shadow: 0 14px 20px -18px var(--shadow-soft);
+  box-shadow: var(--elevation-section-edge);
   transition:
     max-height 0.24s cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 0.24s ease;
