@@ -14,6 +14,13 @@ import {
 import { formatWeight, weightUnitLabel } from '../utils';
 
 type AnalysisPage = 'menu' | 'growth' | 'volume' | 'bests' | 'counts';
+const analysisPageTitles: Record<AnalysisPage, string> = {
+  menu: '分析一覧',
+  growth: '成長グラフ',
+  volume: '総ボリューム',
+  bests: '自己ベスト',
+  counts: '実施回数',
+};
 type AnalysisPageTransition = {
   direction: 'forward' | 'back';
   from: AnalysisPage;
@@ -197,7 +204,7 @@ export function AnalysisScreen() {
     return (
       <>
         <ScreenHeader
-          title="分析"
+          title={analysisPageTitles[page]}
           backLabel={isMenuFrame ? '戻る' : '分析メニューへ戻る'}
           onBack={() => handlePageBack(page)}
         />
