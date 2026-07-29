@@ -169,11 +169,12 @@ export function useNavigation({
    */
   function showScreen(next: Screen) {
     handleScreenExit(screen, next);
-    const direction = getTransitionDirection(screen, next);
+    const replacesExerciseSelection = screen === 'select' && next === 'detail';
+    const direction = replacesExerciseSelection ? 'forward' : getTransitionDirection(screen, next);
     setTransitionFrom(direction === 'none' ? null : screen);
     setTransitionDirection(direction);
     pendingScreen.current = next;
-    void navigate(screenPaths[next]);
+    void navigate(screenPaths[next], { replace: replacesExerciseSelection });
   }
 
   /**
