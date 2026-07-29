@@ -240,6 +240,14 @@
   flex-direction: column;
 }
 
+.home-screen .content {
+  scrollbar-width: none;
+}
+
+.home-screen .content::-webkit-scrollbar {
+  display: none;
+}
+
 .home-day-swipe {
   overflow: hidden;
   touch-action: pan-y;
