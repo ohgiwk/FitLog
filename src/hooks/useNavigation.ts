@@ -170,10 +170,15 @@ export function useNavigation({
   function showScreen(next: Screen) {
     handleScreenExit(screen, next);
     const replacesExerciseSelection = screen === 'select' && next === 'detail';
+    const returnsFromSavedPresetEditor = screen === 'presetEdit' && next === 'trainingMenu';
     const direction = replacesExerciseSelection ? 'forward' : getTransitionDirection(screen, next);
     setTransitionFrom(direction === 'none' ? null : screen);
     setTransitionDirection(direction);
     pendingScreen.current = next;
+    if (returnsFromSavedPresetEditor) {
+      void navigate(-1);
+      return;
+    }
     void navigate(screenPaths[next], { replace: replacesExerciseSelection });
   }
 

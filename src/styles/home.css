@@ -253,6 +253,10 @@
   touch-action: pan-y;
 }
 
+.home-day-swipe.horizontal-dragging .content {
+  overflow-y: hidden;
+}
+
 .screen.active.home-screen > .home-day-swipe {
   display: flex;
   flex: 1;

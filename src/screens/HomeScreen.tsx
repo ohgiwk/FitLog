@@ -571,7 +571,7 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
         cloud={cloud}
       />
       <div
-        className="home-day-swipe"
+        className={`home-day-swipe ${daySwipe.swipe.dragging ? 'horizontal-dragging' : ''}`}
         onPointerDown={daySwipe.startSwipe}
         onPointerMove={daySwipe.moveSwipe}
         onPointerUp={daySwipe.finishSwipe}

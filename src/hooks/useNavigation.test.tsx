@@ -111,6 +111,40 @@ describe('useNavigation routing', () => {
     expect(result.current.transitionDirection).toBe('back');
   });
 
+  it('メニュー編集を保存して一覧へ戻った後はホームへ戻る', async () => {
+    const { result } = renderHook(
+      () =>
+        useNavigation({
+          state: createDefaultState(),
+          saveState: vi.fn(),
+          setEditMode: vi.fn(),
+          setGoalAchievement: vi.fn(),
+        }),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.showScreen('trainingMenu');
+    });
+    await waitFor(() => expect(result.current.screen).toBe('trainingMenu'));
+
+    act(() => {
+      result.current.showScreen('presetEdit');
+    });
+    await waitFor(() => expect(result.current.screen).toBe('presetEdit'));
+
+    act(() => {
+      result.current.showScreen('trainingMenu');
+    });
+    await waitFor(() => expect(result.current.screen).toBe('trainingMenu'));
+
+    act(() => {
+      result.current.goBack();
+    });
+    await waitFor(() => expect(result.current.screen).toBe('home'));
+    expect(result.current.transitionDirection).toBe('back');
+  });
+
   it('別の入口から開いた同じ画面でもgoBackで遷移元へ戻る', async () => {
     const settingsWrapper = ({ children }: { children: ReactNode }) => (
       <MemoryRouter initialEntries={[screenPaths.settings]}>{children}</MemoryRouter>
