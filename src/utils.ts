@@ -194,16 +194,23 @@ export function isExerciseGoalAchieved(sets: WorkoutSet[], goal: ExerciseGoal) {
 }
 
 /**
- * 種目目標の重量と回数・秒数の両方を満たす最初の入力済みセットを返す
+ * 種目目標を満たすセットのうち、重量、回数・秒数の順に目標を最も上回るセットを返す
  */
 export function findExerciseGoalAchievementSet(sets: WorkoutSet[], goal: ExerciseGoal) {
-  return sets.find(
-    (set) =>
-      !isBlank(set.weight) &&
-      !isBlank(set.recordValue) &&
-      number(set.weight) >= goal.weight &&
-      number(set.recordValue) >= goal.recordValue,
-  );
+  return sets
+    .filter(
+      (set) =>
+        !isBlank(set.weight) &&
+        !isBlank(set.recordValue) &&
+        number(set.weight) >= goal.weight &&
+        number(set.recordValue) >= goal.recordValue,
+    )
+    .reduce<WorkoutSet | undefined>((best, set) => {
+      if (!best) return set;
+      const weightDifference = number(set.weight) - number(best.weight);
+      if (weightDifference !== 0) return weightDifference > 0 ? set : best;
+      return number(set.recordValue) > number(best.recordValue) ? set : best;
+    }, undefined);
 }
 
 export function formatWeight(value: string | number | null, unit: WeightUnit = 'kg') {

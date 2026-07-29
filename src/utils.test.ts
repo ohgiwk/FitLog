@@ -123,11 +123,19 @@ describe('isExerciseGoalAchieved', () => {
 });
 
 describe('findExerciseGoalAchievementSet', () => {
-  it('目標を満たす最初のセットを返す', () => {
+  it('目標を最も上回る重量のセットを返す', () => {
     const sets = [
       { id: 's1', weight: 80, recordValue: 8 },
       { id: 's2', weight: 82.5, recordValue: 10 },
       { id: 's3', weight: 85, recordValue: 12 },
+    ];
+    expect(findExerciseGoalAchievementSet(sets, { weight: 80, recordValue: 10 })).toEqual(sets[2]);
+  });
+
+  it('重量が同じなら回数・秒数が最も多いセットを返す', () => {
+    const sets = [
+      { id: 's1', weight: 82.5, recordValue: 10 },
+      { id: 's2', weight: 82.5, recordValue: 12 },
     ];
     expect(findExerciseGoalAchievementSet(sets, { weight: 80, recordValue: 10 })).toEqual(sets[1]);
   });

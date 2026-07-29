@@ -16,6 +16,8 @@ export function findGoalAchievement(
       exerciseName: exercise.name,
       measurementType: exercise.measurementType,
       goal: exercise.goal,
+      setWeight: number(achievedSet.weight),
+      setRecordValue: number(achievedSet.recordValue),
     },
     setWeight: number(achievedSet.weight),
     setRecordValue: number(achievedSet.recordValue),

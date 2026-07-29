@@ -378,9 +378,9 @@ function NextGoalDialog({
   const [recordValue, setRecordValue] = useState('');
 
   useEffect(() => {
-    const currentWeight = number(formatStoredWeightInput(achievement.goal.weight, weightUnit));
-    setWeight(String(currentWeight + (weightUnit === 'lbs' ? 5 : 2.5)));
-    setRecordValue(String(achievement.goal.recordValue));
+    const achievedWeight = number(formatStoredWeightInput(achievement.setWeight, weightUnit));
+    setWeight(String(achievedWeight + (weightUnit === 'lbs' ? 5 : 2.5)));
+    setRecordValue(String(achievement.setRecordValue));
   }, [achievement, weightUnit]);
 
   const storedWeight = formatWeightForStorageInput(weight, weightUnit);

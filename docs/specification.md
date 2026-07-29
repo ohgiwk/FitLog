@@ -823,10 +823,10 @@ flowchart TD
 - 詳細を開く際、セットが 5 未満なら 5 まで空セットを補充（`openWorkoutDetail`）。
 - 詳細から離れる際、記録ありセットが 1 つでもあれば未入力の空セットを取り除く（`cleanupBlankDetailSets`）。記録が 0 件のときは何もしない（5 セットのまま残す）。
 - 詳細から別画面へ遷移する際、同じ 1 セット内で重量と回数・秒数の両方が現在目標以上なら達成扱いにする。
-  - 条件を満たした最初のセットについて、達成日・実際の重量と回数/秒数・達成時の目標値を `goalAchievements` へ保存する。
+  - 条件を満たしたセットのうち、重量、回数・秒数の順に目標を最も上回ったセットについて、達成日・実際の重量と回数/秒数・達成時の目標値を `goalAchievements` へ保存する。
   - 同一種目・同一日・同一目標の記録が既にある場合は重複保存しない。
   - 遷移後に祝福ダイアログを表示し、次の目標重量と回数・秒数を入力できる。
-  - 次の重量は既定で現在目標より kg 表示時は 2.5 kg、Lbs 表示時は 5 Lbs 高い値を提示し、回数・秒数は現在目標を引き継ぐ。
+  - 次の重量は既定で目標を最も上回ったセットの実績より kg 表示時は 2.5 kg、Lbs 表示時は 5 Lbs 高い値を提示し、回数・秒数は同セットの実績を引き継ぐ。
   - 「次の目標にする」で `Exercise.goal` を更新する。「あとで」は目標を変更せずダイアログだけ閉じるため、同じ目標のまま再度詳細を離れると再判定される。
 
 ### 6.7 種目別履歴（`ExerciseHistoryScreen`）
@@ -981,7 +981,7 @@ weight === 0 または reps === 0 → '0.0'
 - `formatStoredWeightInput(value, unit)`: 詳細画面の重量入力欄用に、保存値 kg を設定単位へ換算する。保存値は `number | null`。
 - `formatWeightForStorageInput(value, unit)`: 詳細画面の入力値を kg の `number | null` 保存値へ戻す。入力途中の文字列は詳細画面ローカル state に保持し、保存 state へは混ぜない。
 - `isExerciseGoalAchieved(sets, goal)`: 同じ入力済みセットの重量と回数・秒数が、目標の両方に到達していれば true。
-- `findExerciseGoalAchievementSet(sets, goal)`: 目標の両方を満たす最初の入力済みセットを返し、達成記録の保存に使用する。
+- `findExerciseGoalAchievementSet(sets, goal)`: 目標の両方を満たすセットのうち、重量、回数・秒数の順に目標を最も上回るセットを返し、達成記録と次回目標の提案に使用する。
 - `weightUnitLabel(unit)`: `kg` / `Lbs` の表示ラベルを返す。
 - `measurementUnit` / `measurementLabel`: `'seconds'` → `秒`/`秒数`、`'reps'` → `回`/`回数`。
 - `exerciseCategories` / `defaultExerciseCategory`: 器具カテゴリの表示順・ラベル（フリーウエイト種目 / マシン種目 / ダンベル種目 / ケーブル種目 / 自重種目）と、未設定時の既定値（`'free'`）。

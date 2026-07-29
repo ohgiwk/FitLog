@@ -6,6 +6,8 @@ export type GoalAchievement = {
   exerciseName: string;
   measurementType: MeasurementType;
   goal: ExerciseGoal;
+  setWeight: number;
+  setRecordValue: number;
 };
 
 /**
