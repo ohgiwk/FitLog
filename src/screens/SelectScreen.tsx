@@ -1,6 +1,9 @@
+import { useState } from 'react';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { useFitLogContext } from '../hooks/useFitLogContext';
+import type { Exercise } from '../types';
 
 type ExerciseListMode = 'select' | 'manage';
 
@@ -25,10 +28,24 @@ function useSelectScreenModel() {
 function ExerciseListScreen({ mode }: { mode: ExerciseListMode }) {
   const model = useSelectScreenModel();
   const isManageMode = mode === 'manage';
+  const [deleteTarget, setDeleteTarget] = useState<Exercise | null>(null);
   const currentPart =
     model.activePart && model.groupedExercises.has(model.activePart)
       ? model.activePart
       : [...model.groupedExercises.keys()][0];
+
+  function requestDeleteExercise(exerciseId: string) {
+    const exercise = [...model.groupedExercises.values()]
+      .flat()
+      .find((item) => item.id === exerciseId);
+    if (exercise) setDeleteTarget(exercise);
+  }
+
+  function confirmDeleteExercise() {
+    if (!deleteTarget) return;
+    model.onDeleteExercise(deleteTarget.id);
+    setDeleteTarget(null);
+  }
 
   return (
     <section className="screen active">
@@ -54,12 +71,32 @@ function ExerciseListScreen({ mode }: { mode: ExerciseListMode }) {
         }
         mode={isManageMode ? 'manage' : 'single'}
         partColors={model.partColors}
-        onDeleteExercise={model.onDeleteExercise}
+        onDeleteExercise={requestDeleteExercise}
         onEditExercise={model.onOpenExerciseEditor}
         onReorder={model.onReorder}
         onSelectExercise={model.onAddExercise}
         onSelectPart={model.onSelectPart}
       />
+      {deleteTarget && (
+        <ConfirmDialog
+          title="種目を削除しますか？"
+          labelledBy="exercise-delete-title"
+          onClose={() => setDeleteTarget(null)}
+        >
+          <p>
+            「{deleteTarget.name}
+            」を削除します。登録されているトレーニングメニューからも削除されます。
+          </p>
+          <div className="confirm-actions">
+            <button className="small-outline" type="button" onClick={() => setDeleteTarget(null)}>
+              キャンセル
+            </button>
+            <button className="danger-button" type="button" onClick={confirmDeleteExercise}>
+              削除
+            </button>
+          </div>
+        </ConfirmDialog>
+      )}
     </section>
   );
 }
