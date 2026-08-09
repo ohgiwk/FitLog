@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   CloudBackup,
+  cloudAuthErrorMessage,
+  cloudBackupErrorMessage,
   cloudBackupAvailable,
   createCloudBackup,
   deleteCloudAccount,
@@ -159,8 +161,9 @@ export function useBackup({
     if (!cloudEnabled || !cloudUserEmail) return;
     try {
       setCloudBackups(await listCloudBackups());
-    } catch {
-      showToast('クラウドバックアップの取得に失敗しました');
+    } catch (error) {
+      console.error('Cloud backup list failed', error);
+      showToast(cloudBackupErrorMessage(error));
     }
   }, [cloudEnabled, cloudUserEmail, showToast]);
 
@@ -197,8 +200,8 @@ export function useBackup({
       }
       showToast('登録しました。確認メールを送信しました');
       return true;
-    } catch {
-      showToast('新規登録に失敗しました');
+    } catch (error) {
+      showToast(cloudAuthErrorMessage(error, 'signUp'));
       return false;
     }
   }
@@ -217,8 +220,8 @@ export function useBackup({
       await signInWithPassword(fields.email, fields.password);
       showToast('ログインしました');
       return true;
-    } catch {
-      showToast('ログインに失敗しました');
+    } catch (error) {
+      showToast(cloudAuthErrorMessage(error, 'signIn'));
       return false;
     }
   }
@@ -271,8 +274,8 @@ export function useBackup({
       await sendCloudPasswordReset(email);
       showToast('パスワード再設定メールを送信しました');
       return true;
-    } catch {
-      showToast('パスワード再設定メールの送信に失敗しました');
+    } catch (error) {
+      showToast(cloudAuthErrorMessage(error, 'passwordReset'));
       return false;
     } finally {
       setCloudLoading(false);
@@ -308,16 +311,7 @@ export function useBackup({
       showToast('クラウドへバックアップしました');
     } catch (error) {
       console.error('Cloud backup failed', error);
-      const message = error instanceof Error ? error.message : '';
-      if (message.includes('Missing or insufficient permissions')) {
-        showToast('Firestoreの権限設定を確認してください');
-        return;
-      }
-      if (message.includes('Unsupported field value')) {
-        showToast('保存データの形式を確認してください');
-        return;
-      }
-      showToast('クラウドバックアップに失敗しました');
+      showToast(cloudBackupErrorMessage(error));
     }
   }
 
@@ -338,8 +332,9 @@ export function useBackup({
       setCurrentPresetId(normalized.presets[0]?.id || null);
       setSelectedDate(localDate(new Date()));
       showToast('クラウドバックアップを復元しました');
-    } catch {
-      showToast('クラウド復元に失敗しました');
+    } catch (error) {
+      console.error('Cloud restore failed', error);
+      showToast(cloudBackupErrorMessage(error));
     }
   }
 
@@ -351,8 +346,9 @@ export function useBackup({
       await deleteCloudBackup(backupId);
       setCloudBackups((current) => current.filter((backup) => backup.id !== backupId));
       showToast('クラウドバックアップを削除しました');
-    } catch {
-      showToast('クラウドバックアップの削除に失敗しました');
+    } catch (error) {
+      console.error('Cloud backup deletion failed', error);
+      showToast(cloudBackupErrorMessage(error));
     }
   }
 

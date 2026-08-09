@@ -1,4 +1,4 @@
-import { ChangeEvent, useRef, useState, useActionState } from 'react';
+import { ChangeEvent, FormEvent, useRef, useState, useActionState } from 'react';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ExportIcon, ImportIcon, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
@@ -64,8 +64,10 @@ export function BackupScreen() {
   const cloud = actions.cloud;
   const pendingImport = actions.pendingImport;
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const authFormRef = useRef<HTMLFormElement | null>(null);
   const [restoreTarget, setRestoreTarget] = useState<CloudBackupItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CloudBackupItem | null>(null);
+  const [authPending, setAuthPending] = useState<'signIn' | 'signUp' | null>(null);
 
   /**
    * 選択されたバックアップファイルを読み込み処理へ渡す
@@ -77,14 +79,25 @@ export function BackupScreen() {
     await actions.importState(file);
   }
 
-  const [, signInAction, signInPending] = useActionState(
-    async (_: boolean, formData: FormData) => cloud.signIn(formData),
-    false,
-  );
-  const [, signUpAction, signUpPending] = useActionState(
-    async (_: boolean, formData: FormData) => cloud.signUp(formData),
-    false,
-  );
+  /**
+   * iOS WebView でも送信状態が確実に解除される形で認証処理を実行する
+   */
+  async function submitAuth(operation: 'signIn' | 'signUp') {
+    if (!authFormRef.current || authPending) return;
+    setAuthPending(operation);
+    try {
+      const formData = new FormData(authFormRef.current);
+      if (operation === 'signIn') await cloud.signIn(formData);
+      else await cloud.signUp(formData);
+    } finally {
+      setAuthPending(null);
+    }
+  }
+
+  function handleSignIn(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void submitAuth('signIn');
+  }
   const [, backupAction, backupPending] = useActionState(async () => {
     await cloud.backupToCloud();
     return null;
@@ -112,8 +125,7 @@ export function BackupScreen() {
     return null;
   }, null);
   const cloudPending =
-    signInPending ||
-    signUpPending ||
+    authPending !== null ||
     backupPending ||
     refreshPending ||
     restorePending ||
@@ -163,7 +175,7 @@ export function BackupScreen() {
               </p>
             </div>
           ) : !cloud.userEmail ? (
-            <form className="settings-cloud-panel">
+            <form ref={authFormRef} className="settings-cloud-panel" onSubmit={handleSignIn}>
               <p className="settings-help">
                 機種変更やバックアップが必要な場合だけログインしてください。未ログインでも記録は端末内に保存されます。
               </p>
@@ -192,20 +204,19 @@ export function BackupScreen() {
                 className="settings-primary-button settings-auth-submit"
                 type="submit"
                 disabled={cloudPending}
-                formAction={signInAction}
               >
-                ログイン
+                {authPending === 'signIn' ? 'ログイン中…' : 'ログイン'}
               </button>
               <div className="settings-auth-divider" aria-hidden="true">
                 または
               </div>
               <button
                 className="settings-small-button"
-                type="submit"
+                type="button"
                 disabled={cloudPending}
-                formAction={signUpAction}
+                onClick={() => void submitAuth('signUp')}
               >
-                新規登録
+                {authPending === 'signUp' ? '登録中…' : '新規登録'}
               </button>
               <button
                 className="settings-text-button"

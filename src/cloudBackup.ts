@@ -41,6 +41,24 @@ export type SignUpResult = {
   alreadyRegistered: boolean;
 };
 
+type CloudAuthOperation = 'signUp' | 'signIn' | 'passwordReset';
+
+const authRequestTimeoutMs = 15_000;
+
+/**
+ * WebView 上で認証通信が完了しない場合も画面を待機状態のままにしない
+ */
+function withAuthTimeout<T>(request: Promise<T>) {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      const error = new Error('Authentication request timed out') as Error & { code: string };
+      error.code = 'auth/request-timeout';
+      reject(error);
+    }, authRequestTimeoutMs);
+    request.then(resolve, reject).finally(() => window.clearTimeout(timeoutId));
+  });
+}
+
 type CloudBackupRow = {
   id: string;
   deviceId: string | null;
@@ -51,6 +69,67 @@ type CloudBackupRow = {
 
 function isUserAlreadyRegisteredError(error: unknown) {
   return error instanceof FirebaseError && error.code === 'auth/email-already-in-use';
+}
+
+/**
+ * Firebase Authentication のエラーを操作内容に合わせた案内へ変換する
+ */
+export function cloudAuthErrorMessage(error: unknown, operation: CloudAuthOperation) {
+  const code =
+    error instanceof FirebaseError
+      ? error.code
+      : typeof error === 'object' && error !== null && 'code' in error
+        ? String(error.code)
+        : '';
+
+  if (code === 'auth/invalid-email') return 'メールアドレスの形式を確認してください';
+  if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
+    return 'メールアドレスまたはパスワードが正しくありません';
+  }
+  if (code === 'auth/user-disabled') return 'このアカウントは無効になっています';
+  if (code === 'auth/too-many-requests') {
+    return '試行回数が多すぎます。時間をおいて再度お試しください';
+  }
+  if (code === 'auth/network-request-failed') {
+    return '通信に失敗しました。インターネット接続を確認してください';
+  }
+  if (code === 'auth/request-timeout') {
+    return '認証サーバーから応答がありません。通信環境を確認して再度お試しください';
+  }
+  if (code === 'auth/operation-not-allowed') {
+    return 'メールアドレス認証が有効になっていません';
+  }
+  if (code === 'auth/weak-password') return 'より安全なパスワードを設定してください';
+
+  if (operation === 'signUp') return '新規登録に失敗しました';
+  if (operation === 'signIn') return 'ログインに失敗しました';
+  return 'パスワード再設定メールの送信に失敗しました';
+}
+
+/**
+ * Firestore のエラーをバックアップ画面向けの案内へ変換する
+ */
+export function cloudBackupErrorMessage(error: unknown) {
+  const code =
+    error instanceof FirebaseError
+      ? error.code
+      : typeof error === 'object' && error !== null && 'code' in error
+        ? String(error.code)
+        : '';
+  const message = error instanceof Error ? error.message : '';
+
+  if (code === 'permission-denied' || message.includes('Missing or insufficient permissions')) {
+    return 'Firestoreの権限設定を確認してください';
+  }
+  if (code === 'unavailable' || code === 'deadline-exceeded') {
+    return 'クラウドへ接続できませんでした。通信環境を確認して再度お試しください';
+  }
+  if (code === 'resource-exhausted') {
+    return 'クラウドの利用上限に達しています';
+  }
+  if (message.includes('Unsupported field value')) return '保存データの形式を確認してください';
+  const detail = code || message || 'unknown';
+  return `クラウドバックアップに失敗しました（${detail.slice(0, 120)}）`;
 }
 
 type CloudSession = {
@@ -107,9 +186,8 @@ export function onCloudAuthChange(callback: (session: CloudSession | null) => vo
 export async function signUpWithPassword(email: string, password: string) {
   const { auth } = requireFirebaseClient();
   try {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    const url = `${window.location.origin}${import.meta.env.BASE_URL}`;
-    await sendEmailVerification(result.user, { url, handleCodeInApp: false });
+    const result = await withAuthTimeout(createUserWithEmailAndPassword(auth, email, password));
+    await withAuthTimeout(sendEmailVerification(result.user));
   } catch (error) {
     if (isUserAlreadyRegisteredError(error)) return { alreadyRegistered: true };
     throw error;
@@ -122,7 +200,7 @@ export async function signUpWithPassword(email: string, password: string) {
  */
 export async function signInWithPassword(email: string, password: string) {
   const { auth } = requireFirebaseClient();
-  await signInWithEmailAndPassword(auth, email, password);
+  await withAuthTimeout(signInWithEmailAndPassword(auth, email, password));
 }
 
 /**
@@ -139,8 +217,7 @@ export async function updateCloudPassword(password: string) {
  */
 export async function sendCloudPasswordReset(email: string) {
   const { auth } = requireFirebaseClient();
-  const url = `${window.location.origin}${import.meta.env.BASE_URL}`;
-  await sendPasswordResetEmail(auth, email, { url, handleCodeInApp: false });
+  await withAuthTimeout(sendPasswordResetEmail(auth, email));
 }
 
 /**

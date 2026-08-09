@@ -1,6 +1,7 @@
 import { FirebaseApp, getApps, initializeApp } from 'firebase/app';
-import { Auth, getAuth } from 'firebase/auth';
+import { Auth, browserLocalPersistence, getAuth, initializeAuth } from 'firebase/auth';
 import { Firestore, getFirestore, initializeFirestore } from 'firebase/firestore';
+import { Capacitor } from '@capacitor/core';
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
@@ -58,9 +59,17 @@ export function getFirebaseClient() {
         storageBucket,
         messagingSenderId,
       });
-    auth = getAuth(app);
+    auth = Capacitor.isNativePlatform()
+      ? initializeAuth(app, {
+          persistence: browserLocalPersistence,
+          popupRedirectResolver: undefined,
+        })
+      : getAuth(app);
     try {
-      db = initializeFirestore(app, { ignoreUndefinedProperties: true });
+      db = initializeFirestore(app, {
+        ignoreUndefinedProperties: true,
+        experimentalForceLongPolling: Capacitor.isNativePlatform(),
+      });
     } catch {
       db = getFirestore(app);
     }
