@@ -20,11 +20,12 @@
   border-left: 4px solid var(--red);
   padding: 11px 10px;
   background: var(--surface);
+  user-select: none;
 }
 
 .part-edit-head {
   display: grid;
-  grid-template-columns: 18px 1fr auto auto;
+  grid-template-columns: 32px 18px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
 }
@@ -44,25 +45,28 @@
   white-space: nowrap;
 }
 
-.part-edit-order {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
+.part-edit-row .drag-handle {
+  cursor: grab;
+  touch-action: none;
 }
 
-.part-edit-order button {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--text-secondary-strong);
+.part-edit-row .drag-handle:active {
+  cursor: grabbing;
 }
 
-.part-edit-order button:disabled {
-  color: var(--disabled-text);
-  opacity: 0.5;
+.part-edit-row.dragging {
+  background: var(--surface-muted);
+  opacity: 0.22;
+}
+
+.part-edit-drag-overlay {
+  position: fixed;
+  z-index: 1000;
+  box-shadow: var(--elevation-dragging);
+  opacity: 0.98;
+  pointer-events: none;
+  transform: scale(1.025);
+  transform-origin: center;
 }
 
 .part-edit-delete {

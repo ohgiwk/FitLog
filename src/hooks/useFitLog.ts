@@ -365,7 +365,7 @@ export function useFitLog() {
       startPreset: presets.startPreset,
       addPart: part.addPart,
       deletePart: part.deletePart,
-      movePart: part.movePart,
+      reorderParts: part.reorderParts,
       setPartColor: part.setPartColor,
       selectPart: ui.selectPart,
       updateExercise: exercise.updateExercise,

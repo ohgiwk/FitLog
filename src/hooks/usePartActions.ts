@@ -94,17 +94,19 @@ export function usePartActions({ state, saveState, showToast }: PartActionsDeps)
   }
 
   /**
-   * 部位の表示順を 1 つ前後に動かす
+   * 部位名の配列どおりに表示順をまとめて変更する
    */
-  function movePart(name: string, direction: -1 | 1) {
+  function reorderParts(names: string[]) {
     saveState((prev) => {
       const parts = orderedPartsOf(prev);
-      const index = parts.findIndex((part) => part.name === name);
-      const target = index + direction;
-      if (index < 0 || target < 0 || target >= parts.length) return prev;
-      const next = [...parts];
-      [next[index], next[target]] = [next[target], next[index]];
-      return { ...prev, parts: next };
+      const byName = new Map(parts.map((part) => [part.name, part]));
+      const reordered = names.flatMap((name) => {
+        const part = byName.get(name);
+        if (!part) return [];
+        byName.delete(name);
+        return [part];
+      });
+      return { ...prev, parts: [...reordered, ...byName.values()] };
     });
   }
 
@@ -118,5 +120,5 @@ export function usePartActions({ state, saveState, showToast }: PartActionsDeps)
     }));
   }
 
-  return { addPart, deletePart, movePart, setPartColor };
+  return { addPart, deletePart, reorderParts, setPartColor };
 }

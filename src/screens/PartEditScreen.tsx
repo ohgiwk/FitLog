@@ -1,9 +1,11 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { PartSetting } from '../types';
 import { partColorPalette } from '../data/partColors';
-import { ChevronDown, ChevronUp, TrashIcon } from '../icons';
+import { DragHandle, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useFlatReorder } from '../hooks/useFlatReorder';
 
 /**
  * 部位の編集画面が必要とする state・操作を Context から組み立てる view-model フック
@@ -14,7 +16,7 @@ function usePartEditScreenModel() {
     orderedParts,
     onAddPart: actions.addPart,
     onDeletePart: actions.deletePart,
-    onMovePart: actions.movePart,
+    onReorderParts: actions.reorderParts,
     onSetPartColor: actions.setPartColor,
   };
 }
@@ -28,9 +30,15 @@ type PartEditScreenProps = {
 };
 
 export function PartEditScreen({ addDialogOpen, onCloseAddDialog }: PartEditScreenProps) {
-  const { orderedParts, onAddPart, onDeletePart, onMovePart, onSetPartColor } =
+  const { orderedParts, onAddPart, onDeletePart, onReorderParts, onSetPartColor } =
     usePartEditScreenModel();
   const [newPartName, setNewPartName] = useState('');
+  const reorder = useFlatReorder({
+    items: orderedParts.map((part) => part.name),
+    onCommit: onReorderParts,
+  });
+  const partsByName = new Map(orderedParts.map((part) => [part.name, part]));
+  const draggedPart = reorder.draggingId ? partsByName.get(reorder.draggingId) : undefined;
 
   useEffect(() => {
     if (addDialogOpen) setNewPartName('');
@@ -55,19 +63,23 @@ export function PartEditScreen({ addDialogOpen, onCloseAddDialog }: PartEditScre
         {!orderedParts.length ? (
           <div className="part-edit-empty">部位がありません</div>
         ) : (
-          <div className="part-edit-list">
-            {orderedParts.map((part, index) => (
-              <PartEditRow
-                key={part.name}
-                part={part}
-                isFirst={index === 0}
-                isLast={index === orderedParts.length - 1}
-                onMoveUp={() => onMovePart(part.name, -1)}
-                onMoveDown={() => onMovePart(part.name, 1)}
-                onDelete={() => onDeletePart(part.name)}
-                onSelectColor={(color) => onSetPartColor(part.name, color)}
-              />
-            ))}
+          <div className="part-edit-list" ref={reorder.listRef}>
+            {reorder.activeItems.map((name) => {
+              const part = partsByName.get(name);
+              if (!part) return null;
+              return (
+                <PartEditRow
+                  key={part.name}
+                  part={part}
+                  dragging={reorder.draggingId === part.name}
+                  onPointerDown={(event) => reorder.onPointerDown(event, part.name)}
+                  onPointerMove={reorder.onPointerMove}
+                  onPointerUp={reorder.onPointerUp}
+                  onDelete={() => onDeletePart(part.name)}
+                  onSelectColor={(color) => onSetPartColor(part.name, color)}
+                />
+              );
+            })}
           </div>
         )}
       </div>
@@ -102,16 +114,39 @@ export function PartEditScreen({ addDialogOpen, onCloseAddDialog }: PartEditScre
           </form>
         </div>
       )}
+      {draggedPart &&
+        reorder.dragOverlay &&
+        createPortal(
+          <div
+            className="part-edit-row part-edit-drag-overlay"
+            style={{
+              borderLeftColor: draggedPart.color,
+              left: reorder.dragOverlay.left,
+              top: reorder.dragOverlay.top,
+              width: reorder.dragOverlay.width,
+            }}
+            aria-hidden="true"
+          >
+            <div className="part-edit-head">
+              <span className="drag-handle"><DragHandle /></span>
+              <span className="part-edit-swatch" style={{ background: draggedPart.color }} />
+              <span className="part-edit-name">{draggedPart.name}</span>
+              <span className="part-edit-delete"><TrashIcon /></span>
+            </div>
+            <PartColorPicker part={draggedPart} />
+          </div>,
+          document.body,
+        )}
     </section>
   );
 }
 
 type PartEditRowProps = {
   part: PartSetting;
-  isFirst: boolean;
-  isLast: boolean;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
+  dragging: boolean;
+  onPointerDown: React.PointerEventHandler<HTMLDivElement>;
+  onPointerMove: React.PointerEventHandler<HTMLDivElement>;
+  onPointerUp: React.PointerEventHandler<HTMLDivElement>;
   onDelete: () => void;
   onSelectColor: (color: string) => void;
 };
@@ -121,26 +156,29 @@ type PartEditRowProps = {
  */
 function PartEditRow({
   part,
-  isFirst,
-  isLast,
-  onMoveUp,
-  onMoveDown,
+  dragging,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
   onDelete,
   onSelectColor,
 }: PartEditRowProps) {
   return (
-    <div className="part-edit-row" style={{ borderLeftColor: part.color }}>
+    <div
+      className={`part-edit-row ${dragging ? 'dragging' : ''}`}
+      data-reorder-row={part.name}
+      style={{ borderLeftColor: part.color }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+    >
       <div className="part-edit-head">
+        <span className="drag-handle" data-drag-handle aria-hidden="true">
+          <DragHandle />
+        </span>
         <span className="part-edit-swatch" style={{ background: part.color }} aria-hidden="true" />
         <span className="part-edit-name">{part.name}</span>
-        <div className="part-edit-order">
-          <button type="button" aria-label="上へ" disabled={isFirst} onClick={onMoveUp}>
-            <ChevronUp />
-          </button>
-          <button type="button" aria-label="下へ" disabled={isLast} onClick={onMoveDown}>
-            <ChevronDown />
-          </button>
-        </div>
         <button
           className="part-edit-delete"
           type="button"
@@ -150,19 +188,31 @@ function PartEditRow({
           <TrashIcon />
         </button>
       </div>
-      <div className="part-color-picker" role="group" aria-label={`${part.name}の色`}>
-        {partColorPalette.map((color) => (
-          <button
-            className={`part-color-swatch ${part.color === color ? 'active' : ''}`}
-            key={color}
-            type="button"
-            aria-label={`色 ${color}`}
-            aria-pressed={part.color === color}
-            style={{ background: color }}
-            onClick={() => onSelectColor(color)}
-          />
-        ))}
-      </div>
+      <PartColorPicker part={part} onSelectColor={onSelectColor} />
+    </div>
+  );
+}
+
+function PartColorPicker({
+  part,
+  onSelectColor,
+}: {
+  part: PartSetting;
+  onSelectColor?: (color: string) => void;
+}) {
+  return (
+    <div className="part-color-picker" role="group" aria-label={`${part.name}の色`}>
+      {partColorPalette.map((color) => (
+        <button
+          className={`part-color-swatch ${part.color === color ? 'active' : ''}`}
+          key={color}
+          type="button"
+          aria-label={`色 ${color}`}
+          aria-pressed={part.color === color}
+          style={{ background: color }}
+          onClick={onSelectColor ? () => onSelectColor(color) : undefined}
+        />
+      ))}
     </div>
   );
 }
