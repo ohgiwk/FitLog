@@ -12,9 +12,9 @@ import {
 } from '../utils';
 import { HomeSetRow } from '../components/HomeSetRow';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 import { HomeCalendar, type HomeCalendarOverlayState } from '../components/HomeCalendar';
-import { scheduledPresetsForDate } from '../selectors/fitLogSelectors';
+import { scheduledPresetsForDate } from '../selectors/smithNoteSelectors';
 import { setAuthEntryMode, type AuthEntryMode } from '../authState';
 
 type WorkoutSummary = {
@@ -180,7 +180,7 @@ function useHomeDaySwipe(selectedDate: string, onSelectDateBySwipe: (date: strin
  */
 function useHomeScreenModel() {
   const { selectedDate, state, selectedWorkouts, currentPreset, partColors, actions } =
-    useFitLogContext();
+    useSmithNoteContext();
 
   return {
     selectedDate,

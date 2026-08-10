@@ -1,11 +1,11 @@
 import { ChangeEvent, useRef, useState, useActionState } from 'react';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ExportIcon, ImportIcon, TrashIcon } from '../icons';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 
-type CloudBackupItem = ReturnType<typeof useFitLogContext>['actions']['cloud']['backups'][number];
+type CloudBackupItem = ReturnType<typeof useSmithNoteContext>['actions']['cloud']['backups'][number];
 type ImportSummary = NonNullable<
-  ReturnType<typeof useFitLogContext>['actions']['pendingImport']
+  ReturnType<typeof useSmithNoteContext>['actions']['pendingImport']
 >['currentSummary'];
 
 /**
@@ -60,7 +60,7 @@ function ImportSummaryRows({
  * ローカルとクラウドのバックアップ操作をまとめて扱う画面
  */
 export function BackupScreen() {
-  const { actions } = useFitLogContext();
+  const { actions } = useSmithNoteContext();
   const cloud = actions.cloud;
   const pendingImport = actions.pendingImport;
   const importInputRef = useRef<HTMLInputElement | null>(null);

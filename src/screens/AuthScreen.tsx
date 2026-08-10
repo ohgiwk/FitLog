@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { completeAuthIntro, consumeAuthEntryMode } from '../authState';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 
 type AuthMode = 'signIn' | 'signUp' | 'forgotPassword';
 
@@ -8,7 +8,7 @@ type AuthMode = 'signIn' | 'signUp' | 'forgotPassword';
  * ログインと新規登録を切り替えて扱う独立認証画面
  */
 export function AuthScreen() {
-  const { actions } = useFitLogContext();
+  const { actions } = useSmithNoteContext();
   const cloud = actions.cloud;
   const formRef = useRef<HTMLFormElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);

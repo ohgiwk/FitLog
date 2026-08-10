@@ -84,7 +84,7 @@ export async function sendTestWorkoutReminderNotification(): Promise<Notificatio
 
   new Notification(notificationTitle, {
     body: notificationBody,
-    tag: 'fitlog-workout-reminder-test',
+    tag: 'smithnote-workout-reminder-test',
   });
   return 'granted';
 }
@@ -135,7 +135,7 @@ function scheduleBrowserNotification(target: Date) {
     if (document.visibilityState === 'visible') return;
     new Notification(notificationTitle, {
       body: notificationBody,
-      tag: `fitlog-workout-reminder-${localDate(target)}`,
+      tag: `smithnote-workout-reminder-${localDate(target)}`,
     });
   }, delay);
 

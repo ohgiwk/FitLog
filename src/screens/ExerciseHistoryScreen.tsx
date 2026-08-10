@@ -14,13 +14,13 @@ import {
   number,
   weightUnitLabel,
 } from '../utils';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 
 /**
  * 種目別の履歴画面が必要とする state・操作を Context から組み立てる view-model フック
  */
 function useExerciseHistoryScreenModel() {
-  const { currentWorkout, state, actions } = useFitLogContext();
+  const { currentWorkout, state, actions } = useSmithNoteContext();
 
   return {
     workout: currentWorkout,

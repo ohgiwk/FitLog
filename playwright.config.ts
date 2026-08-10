@@ -5,12 +5,12 @@ export default defineConfig({
   fullyParallel: true,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://127.0.0.1:5174',
+    baseURL: 'http://127.0.0.1:5184',
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 5174',
-    url: 'http://127.0.0.1:5174/FitLog/',
+    command: 'npm run dev:app -- --host 127.0.0.1 --port 5184 --strictPort',
+    url: 'http://127.0.0.1:5184/',
     reuseExistingServer: !process.env.CI,
   },
   projects: [

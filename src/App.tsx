@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type AnimationEvent } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import type { HomeCalendarOverlayState } from './components/HomeCalendar';
-import { FitLogProvider } from './hooks/FitLogContext';
-import { useFitLogContext } from './hooks/useFitLogContext';
+import { SmithNoteProvider } from './hooks/SmithNoteContext';
+import { useSmithNoteContext } from './hooks/useSmithNoteContext';
 import { DetailScreen } from './screens/DetailScreen';
 import { ExerciseHistoryScreen } from './screens/ExerciseHistoryScreen';
 import { ExerciseEditScreen } from './screens/ExerciseEditScreen';
@@ -35,13 +35,11 @@ import {
   weightUnitLabel,
 } from './utils';
 
-type UpdateServiceWorker = (reloadPage?: boolean) => Promise<void>;
-
 export function App() {
   return (
-    <FitLogProvider>
+    <SmithNoteProvider>
       <AppShell />
-    </FitLogProvider>
+    </SmithNoteProvider>
   );
 }
 
@@ -63,10 +61,8 @@ function AppShell() {
     goalAchievement,
     state,
     actions,
-  } = useFitLogContext();
+  } = useSmithNoteContext();
   const appRef = useRef<HTMLElement>(null);
-  const [updateServiceWorker, setUpdateServiceWorker] = useState<UpdateServiceWorker | null>(null);
-  const [updating, setUpdating] = useState(false);
   const [fabFaded, setFabFaded] = useState(false);
   const [partAddDialogOpen, setPartAddDialogOpen] = useState(false);
   const [homeOverlayState, setHomeOverlayState] = useState<HomeCalendarOverlayState>({
@@ -123,16 +119,6 @@ function AppShell() {
     const timeoutId = window.setTimeout(actions.clearScreenTransition, 320);
     return () => window.clearTimeout(timeoutId);
   }, [actions.clearScreenTransition, transitionFrom]);
-
-  useEffect(() => {
-    const onPwaUpdate = (event: Event) => {
-      const { detail } = event as CustomEvent<{ updateSW: UpdateServiceWorker }>;
-      setUpdateServiceWorker(() => detail.updateSW);
-    };
-
-    window.addEventListener('fitlog:pwa-update', onPwaUpdate);
-    return () => window.removeEventListener('fitlog:pwa-update', onPwaUpdate);
-  }, []);
 
   useLayoutEffect(() => {
     if (!showFab) {
@@ -226,12 +212,6 @@ function AppShell() {
     if (screen === 'home') return;
     setHomeOverlayState({ calendarBackdropState: 'closed', drawerState: 'closed' });
   }, [screen]);
-
-  async function applyUpdate() {
-    if (!updateServiceWorker) return;
-    setUpdating(true);
-    await updateServiceWorker(true);
-  }
 
   function clearScreenTransition(event: AnimationEvent<HTMLDivElement>) {
     if (event.currentTarget !== event.target) return;
@@ -386,19 +366,6 @@ function AppShell() {
           <PlusIcon />
         </button>
       )}
-      {updateServiceWorker && (
-        <div className="update-banner" role="status" aria-live="polite">
-          <span>新しいバージョンがあります</span>
-          <button
-            className="update-button"
-            type="button"
-            disabled={updating}
-            onClick={() => void applyUpdate()}
-          >
-            {updating ? '更新中' : '更新'}
-          </button>
-        </div>
-      )}
       {goalAchievement && (
         <NextGoalDialog
           achievement={goalAchievement}
@@ -420,7 +387,7 @@ function NextGoalDialog({
   onClose,
   onSave,
 }: {
-  achievement: NonNullable<ReturnType<typeof useFitLogContext>['goalAchievement']>;
+  achievement: NonNullable<ReturnType<typeof useSmithNoteContext>['goalAchievement']>;
   weightUnit: 'kg' | 'lbs';
   onClose: () => void;
   onSave: (goal: { weight: number; recordValue: number }) => void;

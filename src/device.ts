@@ -1,6 +1,6 @@
 import { uid } from './utils';
 
-export const deviceIdKey = 'fit-log-device-id';
+export const deviceIdKey = 'smithnote-device-id';
 
 /**
  * 端末ごとの識別子を localStorage に保存して取得する

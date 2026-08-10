@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { Screen, State } from '../types';
 import { isBlank, localDate, parseDate } from '../utils';
-import { findCurrentWorkout } from '../selectors/fitLogSelectors';
+import { findCurrentWorkout } from '../selectors/smithNoteSelectors';
 import { screenFromPath, screenPaths } from '../routes';
-import { GoalAchievement } from './useFitLogUi';
+import { GoalAchievement } from './useSmithNoteUi';
 import { appendGoalAchievement, findGoalAchievement } from './goalAchievement';
 
 export type ScreenTransitionDirection = 'forward' | 'back' | 'none';

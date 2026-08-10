@@ -1,6 +1,6 @@
 import { State, Workout } from '../types';
 import { findExerciseGoalAchievementSet, number, uid } from '../utils';
-import { GoalAchievement } from './useFitLogUi';
+import { GoalAchievement } from './useSmithNoteUi';
 
 export function findGoalAchievement(
   state: State,

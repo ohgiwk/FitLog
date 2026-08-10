@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { useFlatReorder } from '../hooks/useFlatReorder';
 import { DragHandle, PlusIcon, TrashIcon } from '../icons';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 import { PresetSchedule, TrainingPlanMode } from '../types';
 import { parseDate, weekdayLabels } from '../utils';
 
@@ -11,7 +11,7 @@ import { parseDate, weekdayLabels } from '../utils';
  * プリセット編集画面が必要とする state・操作を Context から組み立てる view-model フック
  */
 function usePresetEditScreenModel() {
-  const { presetDraft, presetDraftMode, selectedDate, state, actions } = useFitLogContext();
+  const { presetDraft, presetDraftMode, selectedDate, state, actions } = useSmithNoteContext();
 
   return {
     preset: presetDraft,

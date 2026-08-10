@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FitLogContext, FitLogContextValue } from '../hooks/useFitLogContext';
+import { SmithNoteContext, SmithNoteContextValue } from '../hooks/useSmithNoteContext';
 import { createDefaultState } from '../storageNormalization';
 import { AnalysisScreen } from './AnalysisScreen';
 
@@ -18,12 +18,12 @@ describe('AnalysisScreen', () => {
       actions: {
         goBack: vi.fn(),
       },
-    } as unknown as FitLogContextValue;
+    } as unknown as SmithNoteContextValue;
 
     render(
-      <FitLogContext.Provider value={value}>
+      <SmithNoteContext.Provider value={value}>
         <AnalysisScreen />
-      </FitLogContext.Provider>,
+      </SmithNoteContext.Provider>,
     );
 
     expect(screen.getByText('分析一覧', { selector: '.bar-title' })).toBeTruthy();
@@ -43,12 +43,12 @@ describe('AnalysisScreen', () => {
         actions: {
           goBack: vi.fn(),
         },
-      } as unknown as FitLogContextValue;
+      } as unknown as SmithNoteContextValue;
 
       render(
-        <FitLogContext.Provider value={value}>
+        <SmithNoteContext.Provider value={value}>
           <AnalysisScreen />
-        </FitLogContext.Provider>,
+        </SmithNoteContext.Provider>,
       );
 
       fireEvent.click(screen.getByRole('button', { name: new RegExp(pageTitle) }));

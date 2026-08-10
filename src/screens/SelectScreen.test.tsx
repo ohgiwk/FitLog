@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { FitLogContext, FitLogContextValue } from '../hooks/useFitLogContext';
+import { SmithNoteContext, SmithNoteContextValue } from '../hooks/useSmithNoteContext';
 import type { Exercise } from '../types';
 import { ExerciseManageScreen } from './SelectScreen';
 
@@ -28,12 +28,12 @@ describe('ExerciseManageScreen', () => {
         openExerciseEditor: vi.fn(),
         selectPart: vi.fn(),
       },
-    } as unknown as FitLogContextValue;
+    } as unknown as SmithNoteContextValue;
 
     render(
-      <FitLogContext.Provider value={value}>
+      <SmithNoteContext.Provider value={value}>
         <ExerciseManageScreen />
-      </FitLogContext.Provider>,
+      </SmithNoteContext.Provider>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: '種目を削除' }));

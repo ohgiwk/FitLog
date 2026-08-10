@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { CalendarIcon, EditIcon, TrashIcon } from '../icons';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 import { Preset } from '../types';
 import { weekdayLabels } from '../utils';
 
@@ -9,7 +9,7 @@ import { weekdayLabels } from '../utils';
  * トレーニングメニュー画面が必要とする state・操作を Context から組み立てる
  */
 function useTrainingMenuScreenModel() {
-  const { state, actions } = useFitLogContext();
+  const { state, actions } = useSmithNoteContext();
 
   return {
     presets: state.presets,

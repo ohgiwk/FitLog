@@ -1,16 +1,16 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useFitLogCore } from './useFitLogCore';
+import { useSmithNoteCore } from './useSmithNoteCore';
 
-type CoreValue = ReturnType<typeof useFitLogCore>;
+type CoreValue = ReturnType<typeof useSmithNoteCore>;
 
 function CoreProbe({ onRender }: { onRender: (core: CoreValue) => void }) {
-  const core = useFitLogCore();
+  const core = useSmithNoteCore();
   onRender(core);
   return <div>{core.toast?.message ?? 'toastなし'}</div>;
 }
 
-describe('useFitLogCore toast queue', () => {
+describe('useSmithNoteCore toast queue', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.useFakeTimers();

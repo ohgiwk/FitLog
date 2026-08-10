@@ -1,15 +1,15 @@
-# FitLog ドキュメント
+# SmithNote ドキュメント
 
-FitLog の仕様・設計ドキュメントの入口です。
+SmithNote の仕様・設計ドキュメントの入口です。
 
-## FitLog とは
+## SmithNote とは
 
-- React + Vite + TypeScript で作られた筋トレ記録 **PWA** です。
-- Capacitor で iOS アプリとしてビルドできる構成も持ちます。
+- React + Vite + TypeScript で作られた筋トレ記録モバイルアプリです。
+- アプリ本体は Capacitor で iOS 向けにビルドし、Webでは配信しません。
 - 通常の記録データは端末の `localStorage` に保存され、未ログインでもローカル完結で使えます。
 - Firebase設定がある環境では、希望するユーザーだけメールアドレス・パスワードでログインし、手動クラウドバックアップ/復元を利用できます。
 - モバイル優先で、起動直後から選択日のトレーニングを記録できます。
-- GitHub Pages で公開し、公開パスは `/FitLog/`。`main` への push でデプロイが自動実行されます。
+- GitHub Pagesではランディングページ、プライバシーポリシー、利用規約を `/SmithNote/` で公開します。`main` への push でデプロイが自動実行されます。
 
 ## ドキュメント一覧
 
@@ -19,6 +19,7 @@ FitLog の仕様・設計ドキュメントの入口です。
 | [`test-specification.md`](./test-specification.md) | 自動テストの対象・観点・未カバー範囲 |
 | [`firebase-backup.md`](./firebase-backup.md) | Firebase クラウドバックアップの構成・運用メモ |
 | [`store-release.md`](./store-release.md) | iOS App Store / Google Play 公開に向けた準備メモ |
+| [`brand-migration.md`](./brand-migration.md) | リポジトリ、App Store、Firebaseのブランド移行手順 |
 | [`improvements.md`](./improvements.md) | 今後の改善候補（備忘録） |
 
 > リポジトリ運用ルール（コミット方針・コーディング方針など）は、ルートの [`AGENTS.md`](../AGENTS.md) を参照してください。
@@ -60,14 +61,14 @@ FitLog の仕様・設計ドキュメントの入口です。
 ## アーキテクチャ概略
 
 ```
-useFitLogCore (state + 永続化 + トースト)
-   ├─ useNavigation / useFitLogUi / useFitLogSelectors
+useSmithNoteCore (state + 永続化 + トースト)
+   ├─ useNavigation / useSmithNoteUi / useSmithNoteSelectors
    └─ usePresetActions / useWorkoutActions / useExerciseActions
       / usePartActions / useBackup
             │
-        useFitLog (統合)
+        useSmithNote (統合)
             │
-      FitLogContext (配布)
+      SmithNoteContext (配布)
             │
    各画面の useXScreenModel (view-model)
 ```
@@ -78,7 +79,8 @@ useFitLogCore (state + 永続化 + トースト)
 
 ```bash
 npm run dev          # 開発サーバー
-npm run build        # tsc + vite build（PWA 生成を含む）
+npm run dev:app      # モバイルアプリ本体の開発サーバー
+npm run build        # ランディングページ生成
 npm run build:ios    # Capacitor/iOS 向けの Web アセット生成
 npm run cap:sync:ios # build:ios 後に iOS プロジェクトへ同期
 npm run cap:open:ios # Xcode で ios プロジェクトを開く
@@ -98,4 +100,4 @@ npm run cap:sync:ios
 npm run cap:open:ios
 ```
 
-`npm run build` は GitHub Pages 用に `/FitLog/` を base とする PWA を生成します。iOS へ同期する場合は `npm run build:ios` を含む `npm run cap:sync:ios` を使い、Capacitor の WebView で読み込める相対パスのアセットを生成します。
+`npm run build` は GitHub Pages 用に `/SmithNote/` をbaseとするランディングページを生成します。iOSへ同期する場合は `npm run cap:sync:ios` を使い、モバイルアプリ本体を相対パスで生成してCapacitorへ同期します。

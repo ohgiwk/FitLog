@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useBackup } from './useBackup';
 import { useExerciseActions } from './useExerciseActions';
-import { useFitLogCore } from './useFitLogCore';
-import { useFitLogSelectors } from './useFitLogSelectors';
-import { useFitLogUi } from './useFitLogUi';
+import { useSmithNoteCore } from './useSmithNoteCore';
+import { useSmithNoteSelectors } from './useSmithNoteSelectors';
+import { useSmithNoteUi } from './useSmithNoteUi';
 import { useNavigation } from './useNavigation';
 import { usePartActions } from './usePartActions';
 import { usePresetActions } from './usePresetActions';
@@ -20,16 +20,16 @@ import { uid } from '../utils';
 /**
  * 各フックを束ね、画面に渡す state・派生値・操作(actions)をまとめる統合フック
  */
-export function useFitLog() {
-  const core = useFitLogCore();
-  const ui = useFitLogUi();
+export function useSmithNote() {
+  const core = useSmithNoteCore();
+  const ui = useSmithNoteUi();
   const nav = useNavigation({
     state: core.state,
     saveState: core.saveState,
     setEditMode: ui.setEditMode,
     setGoalAchievement: ui.setGoalAchievement,
   });
-  const selectors = useFitLogSelectors(core.state, nav.selectedDate);
+  const selectors = useSmithNoteSelectors(core.state, nav.selectedDate);
 
   const presets = usePresetActions({
     state: core.state,

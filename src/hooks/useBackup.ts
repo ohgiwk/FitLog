@@ -53,7 +53,7 @@ export type PendingImport = {
 export type CloudSyncStatus = 'idle' | 'pending' | 'syncing' | 'synced' | 'error' | 'conflict';
 
 const cloudResolutionKey = (userId: string) =>
-  `fit-log-cloud-resolution:${userId}:${getDeviceId()}`;
+  `smithnote-cloud-resolution:${userId}:${getDeviceId()}`;
 
 /**
  * データのエクスポート(バックアップ)とインポート(復元)を担うフック

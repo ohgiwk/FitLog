@@ -1,11 +1,11 @@
 import { ScreenHeader } from '../components/ScreenHeader';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 
 /**
  * トレーニング未記録時のリマインダー通知を設定する画面
  */
 export function NotificationSettingsScreen() {
-  const { state, actions } = useFitLogContext();
+  const { state, actions } = useSmithNoteContext();
   const enabled = state.notificationSettings.enabled;
 
   return (

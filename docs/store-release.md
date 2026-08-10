@@ -1,20 +1,20 @@
 # iOS / Android ストア公開準備メモ
 
-このメモは、FitLog を iOS App Store / Google Play で公開するために必要な準備を整理したものです。調査日は 2026-06-29 です。ストア要件は変わるため、着手前に公式ドキュメントを再確認してください。
+このメモは、SmithNote を iOS App Store / Google Play で公開するために必要な準備を整理したものです。調査日は 2026-06-29 です。ストア要件は変わるため、着手前に公式ドキュメントを再確認してください。
 
 ## 1. 現状と前提
 
-- FitLog は React + Vite + TypeScript の PWA で、現在の公開先は GitHub Pages の `/FitLog/` です。
+- SmithNoteのアプリ本体はCapacitor製のiOSアプリです。GitHub Pagesの `/SmithNote/` ではランディングページと公開文書だけを配信します。
 - 通常データは端末の `localStorage` に保存し、任意で Firebase のメールアドレス・パスワード認証によるクラウドバックアップを使います。
-- App Store / Google Play へ出すには、PWA をそのまま提出するのではなく、Capacitor などで iOS / Android のネイティブプロジェクトへ包み、各ストア用のビルド成果物を作る必要があります。
-- ストア版では `base: '/FitLog/'` のままではパス解決が合わない可能性が高いため、Web版とストア版で Vite の `base` や PWA 設定を切り替える方針を先に決めます。
+- iOSは `com.keiya.smithnote` の新規アプリとしてApp Store Connectへ登録します。旧アプリからの更新・データ移行は行いません。
+- Androidは近日公開とし、ネイティブプロジェクトは未作成です。将来のapplication IDは `com.keiya.smithnote` とします。
 
 ## 2. 共通で必要な準備
 
 ### アプリとしての基本情報
 
 - アプリ名、サブタイトル / 短い説明、説明文、カテゴリ、対象年齢、サポートURL、マーケティングURLを用意する。
-- プライバシーポリシーURLを用意する。FitLog は `localStorage` に健康・運動系の記録を保存し、任意ログイン時はメールアドレスとバックアップデータを Firebase に保存するため、収集・保存・削除・問い合わせ方法を明記する。
+- プライバシーポリシーURLを用意する。SmithNote は `localStorage` に健康・運動系の記録を保存し、任意ログイン時はメールアドレスとバックアップデータを Firebase に保存するため、収集・保存・削除・問い合わせ方法を明記する。
 - 利用規約または免責文を用意する。筋トレ記録アプリなので、医療・健康上の助言ではないこと、運動は自己判断または専門家の助言に従うことを明記する。
 - アプリアイコン、ストア用スクリーンショット、プロモーション画像を各ストアのサイズに合わせて作成する。
 - サポート用メールアドレスを用意する。
@@ -24,17 +24,17 @@
 - ネイティブ化の候補を決める。現状の React/Vite 資産を活かすなら Capacitor が第一候補。
 - iOS / Android プロジェクトを追加し、Webビルド成果物をネイティブ WebView に取り込む。
 - Web版とストア版の環境差分を整理する。
-  - GitHub Pages 用 `base: '/FitLog/'`
-  - ストア版用の相対パスまたは専用 `base`
+  - GitHub Pages LP用 `base: '/SmithNote/'`
+  - Capacitor用 `base: './'`
   - Firebase 環境変数
-  - PWA Service Worker をストア版で使うかどうか
+  - App Store URL、問い合わせ先、canonical URL
 - `localStorage` が WebView 内に閉じることを前提に、機種変更・再インストール時の復元導線としてクラウドバックアップ / JSONバックアップをストア版でも確認する。
 - オフライン起動、画面回転、Safe Area、キーボード表示、戻る操作、音アラート、ファイルダウンロード / インポートを実機で確認する。
 
 ### プライバシー・データ削除
 
 - App Store Connect の App Privacy、Google Play Console の Data safety に回答できるよう、扱うデータを分類する。
-- FitLog で想定されるデータ:
+- SmithNote で想定されるデータ:
   - トレーニング記録、身体活動に近いユーザー生成データ
   - メールアドレス、認証情報
   - 端末ID相当のローカル識別子
@@ -91,7 +91,7 @@
 - WebView 内 `localStorage` の永続性、アプリ更新時のデータ維持、端末移行時の復元導線を確認する。
 - 画面幅 360px 前後、キーボード表示、Safe Area / ナビゲーションバー重なりを確認する。
 
-## 5. FitLog 固有の追加タスク
+## 5. SmithNote 固有の追加タスク
 
 ### 優先度高
 

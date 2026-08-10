@@ -1,6 +1,6 @@
 import { PartSetting, State } from '../types';
 import { paletteColorAt } from '../data/partColors';
-import { buildOrderedParts } from '../selectors/fitLogSelectors';
+import { buildOrderedParts } from '../selectors/smithNoteSelectors';
 
 type PartActionsDeps = {
   state: State;

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { AnalysisIcon } from '../icons';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 import {
   ExerciseGrowthMetric,
   ExerciseGrowthSeries,
@@ -10,7 +10,7 @@ import {
   buildExerciseGrowthSeries,
   buildPartCounts,
   buildWeeklyVolumeSeries,
-} from '../selectors/fitLogSelectors';
+} from '../selectors/smithNoteSelectors';
 import { formatWeight, weightUnitLabel } from '../utils';
 
 type AnalysisPage = 'menu' | 'growth' | 'volume' | 'bests' | 'counts';
@@ -31,7 +31,7 @@ type AnalysisPageTransition = {
  * 保存済みの記録を成長グラフと実施回数で表示する分析画面
  */
 export function AnalysisScreen() {
-  const { state, partColors, analysisTargetExerciseId, actions } = useFitLogContext();
+  const { state, partColors, analysisTargetExerciseId, actions } = useSmithNoteContext();
   const [activePage, setActivePage] = useState<AnalysisPage>('menu');
   const [pageTransition, setPageTransition] = useState<AnalysisPageTransition | null>(null);
   const [activeView, setActiveView] = useState<'exercise' | 'part'>('exercise');

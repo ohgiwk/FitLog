@@ -1,8 +1,8 @@
 import { State } from './types';
 import { createDefaultState, normalizeState, parseImportedState } from './storageNormalization';
 
-export const storeKey = 'fit-log-v2';
-export const corruptStoreKey = 'fit-log-v2-corrupt';
+export const storeKey = 'smithnote-v1';
+export const corruptStoreKey = 'smithnote-v1-corrupt';
 
 export type LoadResult = {
   state: State;

@@ -7,12 +7,12 @@ import {
   buildPartRecentLabels,
   buildSplitPartOptions,
   scheduledPresetsForDate,
-} from '../selectors/fitLogSelectors';
+} from '../selectors/smithNoteSelectors';
 
 /**
  * state から画面表示用の派生データを計算してメモ化するフック
  */
-export function useFitLogSelectors(state: State, selectedDate: string) {
+export function useSmithNoteSelectors(state: State, selectedDate: string) {
   /**
    * 表示順つきの部位一覧(明示設定＋データ由来)
    */

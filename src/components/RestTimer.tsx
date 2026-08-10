@@ -10,7 +10,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 
 const exitAnimationMilliseconds = 420;
 const alarmSoundPath = `${import.meta.env.BASE_URL}Clock-Alarm.wav`;
-export const restTimerStartEvent = 'fitlog:start-rest-timer';
+export const restTimerStartEvent = 'smithnote:start-rest-timer';
 
 type RestTimerProps = {
   defaultSeconds: number;

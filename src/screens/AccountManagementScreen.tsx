@@ -1,12 +1,12 @@
 import { useRef, useState, useActionState } from 'react';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 
 /**
  * クラウドアカウントのパスワード変更と削除を行う画面
  */
 export function AccountManagementScreen() {
-  const { actions } = useFitLogContext();
+  const { actions } = useSmithNoteContext();
   const cloud = actions.cloud;
   const passwordFormRef = useRef<HTMLFormElement | null>(null);
   const [accountDeleteOpen, setAccountDeleteOpen] = useState(false);

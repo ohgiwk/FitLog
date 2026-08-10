@@ -2,13 +2,13 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { TrophyIcon } from '../icons';
 import { ExerciseGoalAchievement } from '../types';
 import { formatWeight, measurementUnit, weightUnitLabel } from '../utils';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 
 /**
  * 目標達成記録画面が必要とするデータと操作を Context から組み立てる
  */
 function useGoalAchievementScreenModel() {
-  const { state } = useFitLogContext();
+  const { state } = useSmithNoteContext();
   return {
     achievements: state.goalAchievements,
     weightUnit: state.weightUnit,

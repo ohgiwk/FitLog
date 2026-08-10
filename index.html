@@ -1,24 +1,32 @@
 <!doctype html>
-<html lang="ja" style="background: #0f1115">
+<html lang="ja">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#ef2331" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#0b0c10" />
+    <meta name="description" content="SmithNoteは、トレーニングの記録から成長を見つける筋トレ管理アプリです。履歴、自己ベスト、目標、分析をひとつに。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SmithNote" />
+    <meta property="og:title" content="SmithNote — 記録が、成長の証になる。" />
+    <meta property="og:description" content="履歴、自己ベスト、目標、分析。積み重ねたトレーニングを、次の一回につなげる筋トレ管理アプリ。" />
+    <meta property="og:image" content="https://ohgiwk.github.io/SmithNote/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" href="https://ohgiwk.github.io/SmithNote/" />
     <link rel="icon" type="image/png" href="%BASE_URL%favicon.png" />
     <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
-    <link rel="apple-touch-startup-image" href="%BASE_URL%splash.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Libertinus+Serif:wght@400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap"
       rel="stylesheet"
     />
-    <title>SmithNote</title>
+    <title>SmithNote — 記録が、成長の証になる。</title>
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"MobileApplication","name":"SmithNote","operatingSystem":"iOS","applicationCategory":"HealthApplication","description":"トレーニングの記録から成長を見つける筋トレ管理アプリ"}
+    </script>
   </head>
-  <body style="background: #0f1115">
+  <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/entry.ts"></script>
   </body>
 </html>

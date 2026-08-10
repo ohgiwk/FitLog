@@ -1,7 +1,7 @@
 import { fireEvent, render, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { restTimerStartEvent } from '../components/RestTimer';
-import { FitLogContext, FitLogContextValue } from '../hooks/useFitLogContext';
+import { SmithNoteContext, SmithNoteContextValue } from '../hooks/useSmithNoteContext';
 import { State, Workout } from '../types';
 import { DetailScreen } from './DetailScreen';
 
@@ -94,12 +94,12 @@ function renderDetailScreen({
       setRestTimerDefaultSeconds: vi.fn(),
       setRestTimerAutoStart: vi.fn(),
     },
-  } as unknown as FitLogContextValue;
+  } as unknown as SmithNoteContextValue;
 
   return render(
-    <FitLogContext.Provider value={value}>
+    <SmithNoteContext.Provider value={value}>
       <DetailScreen />
-    </FitLogContext.Provider>,
+    </SmithNoteContext.Provider>,
   );
 }
 

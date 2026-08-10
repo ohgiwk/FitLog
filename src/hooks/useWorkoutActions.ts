@@ -9,7 +9,7 @@ import {
   WorkoutSet,
 } from '../types';
 import { formatTimeOfDay, isUnstartedWorkout, newSet } from '../utils';
-import { createWorkout } from '../selectors/fitLogSelectors';
+import { createWorkout } from '../selectors/smithNoteSelectors';
 
 type WorkoutActionsDeps = {
   state: State;

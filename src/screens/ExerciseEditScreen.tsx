@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { ExerciseForm, ExerciseFormValue } from '../components/ExerciseForm';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 import { allGripStyleTypes, allGripTypes } from '../utils';
 
 /**
  * 種目の追加・編集を行う専用画面
  */
 export function ExerciseEditScreen() {
-  const { exerciseEditor, orderedParts, state, actions } = useFitLogContext();
+  const { exerciseEditor, orderedParts, state, actions } = useSmithNoteContext();
   const exercise = exerciseEditor?.exerciseId
     ? state.exercises.find((item) => item.id === exerciseEditor.exerciseId)
     : undefined;

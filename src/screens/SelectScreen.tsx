@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 import type { Exercise } from '../types';
 
 type ExerciseListMode = 'select' | 'manage';
 
 function useSelectScreenModel() {
   const { groupedExercises, partRecentLabels, partColors, activePart, actions } =
-    useFitLogContext();
+    useSmithNoteContext();
   return {
     groupedExercises,
     partRecentLabels,

@@ -16,14 +16,14 @@ import {
 } from '../utils';
 import { IntensityIcon } from '../components/IntensityIcon';
 import { restTimerStartEvent } from '../components/RestTimer';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 import { GripStyleType, GripType, SetIntensity, WeightUnit, Workout } from '../types';
 
 /**
  * 種目詳細画面が必要とする state・操作を Context から組み立てる view-model フック
  */
 function useDetailScreenModel() {
-  const { currentWorkout, state, actions } = useFitLogContext();
+  const { currentWorkout, state, actions } = useSmithNoteContext();
   const exercise = currentWorkout
     ? state.exercises.find((item) => item.id === currentWorkout.exerciseId)
     : undefined;

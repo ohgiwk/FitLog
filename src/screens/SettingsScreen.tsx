@@ -9,7 +9,7 @@ import {
 } from '../icons';
 import { ThemeMode, WeightUnit } from '../types';
 import { weightUnitLabel } from '../utils';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 import { appVersion } from '../version';
 
 const unitOptions: WeightUnit[] = ['kg', 'lbs'];
@@ -22,7 +22,7 @@ const themeOptions: { value: ThemeMode; label: string }[] = [
  * 設定画面が必要とする state・操作を Context から組み立てる view-model フック
  */
 function useSettingsScreenModel() {
-  const { state, actions } = useFitLogContext();
+  const { state, actions } = useSmithNoteContext();
 
   return {
     weightUnit: state.weightUnit,

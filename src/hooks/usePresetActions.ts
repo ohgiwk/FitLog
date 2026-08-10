@@ -4,7 +4,7 @@ import {
   createWorkout,
   findCurrentPreset,
   scheduledPresetsForDate,
-} from '../selectors/fitLogSelectors';
+} from '../selectors/smithNoteSelectors';
 import { formatTimeOfDay } from '../utils';
 
 type PresetActionsDeps = {

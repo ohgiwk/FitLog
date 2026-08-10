@@ -1,12 +1,12 @@
 import { ExercisePicker } from '../components/ExercisePicker';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 
 /**
  * プリセット下書きへ追加する種目を部位・カテゴリ別に複数選択する画面
  */
 export function PresetExerciseSelectScreen() {
-  const { presetDraft, groupedExercises, partColors, activePart, actions } = useFitLogContext();
+  const { presetDraft, groupedExercises, partColors, activePart, actions } = useSmithNoteContext();
 
   if (!presetDraft) return null;
 

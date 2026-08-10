@@ -1,6 +1,6 @@
-# FitLog 詳細仕様書
+# SmithNote 詳細仕様書
 
-本書は FitLog の実装に基づく詳細仕様を記述します。概要と索引は [`README.md`](./README.md) を参照してください。
+本書は SmithNote の実装に基づく詳細仕様を記述します。概要と索引は [`README.md`](./README.md) を参照してください。
 
 対象バージョンの基準: `src/` の現行実装。
 
@@ -23,17 +23,17 @@
 
 ## 1. プロジェクト概要
 
-- **FitLog** は React + Vite + TypeScript で作られた筋トレ記録 PWA です。
-- Capacitor を使い、同じ React アプリを iOS アプリとしてビルドできます。
+- **SmithNote** は React + Vite + TypeScript で作られた筋トレ記録モバイルアプリです。
+- アプリ本体はCapacitorを使ってiOS向けにビルドし、Webでは公開しません。
 - 通常の記録データは端末の `localStorage` に保存され、未ログインでもローカル完結で利用できます。
 - Firebase設定がある環境では、希望するユーザーだけメールアドレス・パスワードでログインし、手動クラウドバックアップ/復元を利用できます。
-- モバイル優先のレイアウトで、起動直後から記録を始められます（ランディングページは持ちません）。
-- GitHub Pages で公開し、公開パスは `/FitLog/` です。`main` ブランチへの push でデプロイ workflow が自動実行されます。
+- モバイル優先のレイアウトで、起動直後から記録を始められます。
+- GitHub Pagesでは `/SmithNote/` にランディングページ、`#/privacy` と `#/terms` に公開文書を配信します。
 
 ### 1.1 設計思想
 
 - 起動後すぐに「選択日のトレーニング一覧」を表示し、最短手数で記録できる。
-- ネットワークなしでも完全に動作する（PWA + localStorage）。
+- ネットワークなしでも記録機能が動作する（Capacitor WebView + localStorage）。
 - 状態管理は単一の `State` ツリーに集約し、保存データとの互換性を最優先する。
 - 画面コンポーネントは小さく保ち、状態と操作はフック層に閉じ込める。
 
@@ -47,7 +47,7 @@
 | ルーティング | React Router（Declarative Mode / `HashRouter`） |
 | ビルド | Vite |
 | 言語 | TypeScript |
-| PWA | `vite-plugin-pwa`（workbox） |
+| Web公開 | React製ランディングページ（GitHub Pages） |
 | ネイティブアプリ | Capacitor iOS |
 | クラウドバックアップ | Firebase Authentication / Cloud Firestore |
 | アイコン | `@tabler/icons-react` |
@@ -58,7 +58,8 @@
 
 ```bash
 npm run dev          # 開発サーバー
-npm run build        # tsc + vite build（PWA 生成を含む）
+npm run dev:app      # モバイルアプリ本体の開発サーバー
+npm run build        # GitHub Pages用ランディングページ生成
 npm run build:ios    # Capacitor/iOS 向け Web アセット生成
 npm run cap:sync:ios # build:ios 後に iOS プロジェクトへ同期
 npm run cap:open:ios # Xcode で ios プロジェクトを開く
@@ -71,8 +72,7 @@ npm run lint         # eslint
 npm run format       # prettier --write
 ```
 
-- `npm run build` は `tsc -b` でアプリ本体と `vite.config.ts` の両方を型チェックした後に
-  `vite build` を実行し、PWA の Service Worker と manifest を生成します。
+- `npm run build` は型チェック後、GitHub Pages用ランディングページを生成します。アプリ本体やService Workerは含みません。
 - `npm run build:ios` は `vite build --mode capacitor` を実行し、Capacitor の WebView で読み込める相対パスの Web アセットを生成します。
 - `npm run cap:sync:ios` は `build:ios` の後に `cap sync ios` で `dist/` を `ios/` プロジェクトへ同期します。
 
@@ -80,23 +80,20 @@ npm run format       # prettier --write
 
 | 区分 | 設定 | 内容 |
 | --- | --- | --- |
-| 通常ビルド | `base: '/FitLog/'` | GitHub Pages の公開パスに合わせる |
-| Capacitor ビルド | `mode: 'capacitor'` / `base: './'` | Capacitor の WebView で読み込める相対パスにし、PWA 生成を無効化する |
-| PWA manifest | `id` / `start_url` / `scope` | いずれも `/FitLog/` |
-| PWA manifest | `display` / `orientation` | `display: 'standalone'`、`orientation: 'portrait'` |
-| PWA manifest | `theme_color` / `background_color` / `lang` | `theme_color: '#ef2331'`、`background_color: '#0f1115'`、`lang: 'ja'` |
-| PWA manifest | `icons` | `pwa-192x192.png`（any）、`pwa-512x512.png`（any maskable） |
-| favicon | `favicon.png` | `public/logo.png` から生成し、二重 base パス互換用に `public/FitLog/favicon.png` にも同じ画像を置く |
-| PWA / iOS アイコン | `apple-touch-icon.png` / `pwa-192x192.png` / `pwa-512x512.png` / `AppIcon-512@2x.png` | `public/image.png` から生成した画像を使う |
-| スプラッシュ画像 | `apple-touch-startup-image` / `Splash.imageset` | PWA は `public/splash.png` を参照し、iOS は `ios/App/App/Assets.xcassets/Splash.imageset/` の LaunchScreen 用画像を使う |
+| 通常ビルド | `base: '/SmithNote/'` | LPエントリを使い、GitHub Pagesの公開パスへ合わせる |
+| Capacitor ビルド | `mode: 'capacitor'` / `base: './'` | アプリ本体エントリを使い、WebView向け相対パスにする |
+| エントリ分岐 | `__CAPACITOR_BUILD__` | 通常時はLP、Capacitor modeではモバイルアプリだけをバンドルする |
+| LP設定 | `src/landing/config.ts` | App Store URL、問い合わせ先、canonical URL、文書更新日を集約する |
+| LP公開文書 | `#/privacy` / `#/terms` | プライバシーポリシーと利用規約をハッシュルートで公開する |
+| アイコン | `favicon.png` / `apple-touch-icon.png` / `AppIcon-512@2x.png` | `public/image.png` を元画像として使う |
+| スプラッシュ画像 | `Splash.imageset` | iOSのLaunchScreen用画像を使う |
 | iOS 画面向き | `UISupportedInterfaceOrientations` | `ios/App/App/Info.plist` でポートレート表示のみに限定する |
-| Service Worker | `registerType: 'prompt'` | 新しい Service Worker を検出したらアプリ側で更新通知を表示し、更新ボタンで取り込む |
-| Workbox | `navigateFallback` / `globPatterns` | `navigateFallback: '/FitLog/index.html'`、`globPatterns` に `js,css,html,svg,png,ico` をプリキャッシュ |
 
-### 2.3 エントリポイント（`src/main.tsx`）
+### 2.3 エントリポイント
 
-- `React.StrictMode` → `HashRouter` → `ErrorBoundary` → `App` の順に包む。
-- `registerSW({ immediate: true, onNeedRefresh })` で Service Worker を即時登録し、新しい Service Worker を検出したらアプリへ更新イベントを通知する。
+- `src/entry.ts` がbuild modeに応じて `src/landing/main.tsx` または `src/mobile.tsx` を読み込む。
+- モバイル側は `React.StrictMode` → `HashRouter` → `ErrorBoundary` → `App` の順に包む。
+- 通常ビルドではPWAやアプリ本体を配信しない。
 
 ### 2.4 プロジェクト構成 / 主要ファイル
 
@@ -105,7 +102,7 @@ npm run format       # prettier --write
 | `index.html` | HTML エントリー |
 | `package.json` | 依存とスクリプト |
 | `capacitor.config.ts` | Capacitor の appId / appName / webDir 設定 |
-| `vite.config.ts` | Vite + PWA 設定（base: `/FitLog/`） |
+| `vite.config.ts` | LP / Capacitorエントリとbaseの切り替え |
 | `vitest.config.ts` | Vitest 設定（jsdom） |
 | `tsconfig.json` | TypeScript プロジェクト参照の統括設定 |
 | `tsconfig.app.json` | アプリ本体の TypeScript 設定 |
@@ -114,7 +111,9 @@ npm run format       # prettier --write
 | `.github/workflows/deploy-pages.yml` | GitHub Pages デプロイ workflow |
 | `ios/` | Capacitor が生成した iOS / Xcode プロジェクト |
 | `docs/` | 仕様・設計ドキュメント |
-| `src/main.tsx` | エントリー（`HashRouter` + `ErrorBoundary` + PWA 登録） |
+| `src/entry.ts` | build modeに応じたエントリ分岐 |
+| `src/mobile.tsx` | モバイルアプリのエントリ（`HashRouter` + `ErrorBoundary`） |
+| `src/landing/` | LP、公開文書、スタイル、外部リンク設定 |
 | `src/App.tsx` | 画面切り替え・ボトムナビ・トースト |
 | `src/routes.ts` | 画面とハッシュURLの対応、パスから画面への変換 |
 | `src/types.ts` | 共通の TypeScript 型 |
@@ -124,8 +123,8 @@ npm run format       # prettier --write
 | `src/icons.tsx` | アイコン |
 | `src/styles.css` | CSS の入口（`src/styles/` を読み込む） |
 | `src/hooks/` | 状態管理・操作フック、Context Provider・参照フック |
-| `src/hooks/useFitLog.ts` | 各ドメインフックを束ねる統合フック |
-| `src/selectors/fitLogSelectors.ts` | React 非依存の純粋な派生値計算（セレクタ） |
+| `src/hooks/useSmithNote.ts` | 各ドメインフックを束ねる統合フック |
+| `src/selectors/smithNoteSelectors.ts` | React 非依存の純粋な派生値計算（セレクタ） |
 | `src/screens/` | 各画面コンポーネント（view-model フックで Context から取得） |
 | `src/components/` | 小さな再利用コンポーネント（共通画面ヘッダ・エラー境界・セット行・強度アイコンなど） |
 | `src/data/starterExercises.ts` | 初期種目マスタとカタログ版 |
@@ -134,11 +133,11 @@ npm run format       # prettier --write
 | `src/*.test.ts` | テスト対象の隣に置く Vitest のテスト |
 
 ```text
-FitLog/
+SmithNote/
 ├── index.html                # HTML エントリー
 ├── package.json              # 依存とスクリプト
 ├── capacitor.config.ts       # Capacitor 設定
-├── vite.config.ts            # Vite + PWA 設定(base: /FitLog/)
+├── vite.config.ts            # LP / Capacitor ビルド設定
 ├── vitest.config.ts          # Vitest 設定(jsdom)
 ├── tsconfig.json             # TypeScript 設定
 ├── eslint.config.mjs         # ESLint 設定
@@ -151,7 +150,9 @@ FitLog/
 │   ├── specification.md      # 詳細仕様
 │   └── improvements.md       # 改善候補の備忘録
 └── src/
-    ├── main.tsx              # エントリー(HashRouter + ErrorBoundary + PWA 登録)
+    ├── entry.ts              # build modeに応じたエントリ分岐
+    ├── mobile.tsx            # モバイルアプリのエントリ
+    ├── landing/              # LP、公開文書、設定、スタイル
     ├── App.tsx               # 画面切り替え・ナビ・トースト
     ├── routes.ts             # 画面とハッシュURLの対応
     ├── types.ts              # 共通の型
@@ -177,47 +178,47 @@ FitLog/
 
 ```mermaid
 flowchart TD
-  browser["Browser / PWA / iOS WebView"]
+  browser["Capacitor / iOS WebView"]
   app["App.tsx\n画面切り替え・共通UI"]
-  provider["FitLogProvider\nFitLogContext"]
-  useFitLog["useFitLog\n統合フック"]
-  core["useFitLogCore\nState・保存・トースト"]
+  provider["SmithNoteProvider\nSmithNoteContext"]
+  useSmithNote["useSmithNote\n統合フック"]
+  core["useSmithNoteCore\nState・保存・トースト"]
   navigation["useNavigation\n画面遷移・選択日"]
-  ui["useFitLogUi\n保存しないUI状態"]
-  selectors["useFitLogSelectors\n派生値"]
+  ui["useSmithNoteUi\n保存しないUI状態"]
+  selectors["useSmithNoteSelectors\n派生値"]
   actions["各ドメイン actions\nWorkout / Exercise / Part / TrainingMenu(Preset) / Backup"]
   model["useXScreenModel\n画面別 view-model"]
   screen["各 Screen component\n表示・ローカルUI状態"]
-  storage["localStorage\nfit-log-v2"]
+  storage["localStorage\nsmithnote-v2"]
 
   browser --> app
   app --> provider
-  provider --> useFitLog
-  useFitLog --> core
-  useFitLog --> navigation
-  useFitLog --> ui
-  useFitLog --> selectors
-  useFitLog --> actions
+  provider --> useSmithNote
+  useSmithNote --> core
+  useSmithNote --> navigation
+  useSmithNote --> ui
+  useSmithNote --> selectors
+  useSmithNote --> actions
   core <--> storage
   provider --> model
   model --> screen
 ```
 
 ```
-useFitLogCore (state + 永続化 + トースト)
+useSmithNoteCore (state + 永続化 + トースト)
         │
         ├─ useNavigation     (画面遷移・選択日・対象ワークアウト)
-        ├─ useFitLogUi       (保存対象外の一時 UI 状態)
-        ├─ useFitLogSelectors / selectors/fitLogSelectors.ts (派生値)
+        ├─ useSmithNoteUi       (保存対象外の一時 UI 状態)
+        ├─ useSmithNoteSelectors / selectors/smithNoteSelectors.ts (派生値)
         ├─ usePresetActions
         ├─ useWorkoutActions
         ├─ useExerciseActions
         ├─ usePartActions
         └─ useBackup
         │
-   useFitLog (上記を統合し state・派生値・actions を組み立てる)
+   useSmithNote (上記を統合し state・派生値・actions を組み立てる)
         │
-   FitLogContext (Provider で全体へ配布)
+   SmithNoteContext (Provider で全体へ配布)
         │
    各画面の useXScreenModel (Context から必要な値だけ取り出す view-model)
         │
@@ -228,23 +229,23 @@ useFitLogCore (state + 永続化 + トースト)
 
 | フック | ファイル | 責務 |
 | --- | --- | --- |
-| `useFitLogCore` | `hooks/useFitLogCore.ts` | `State` の保持、`localStorage` 保存（デバウンス・flush・失敗通知）、トースト管理、`saveState` / `setState` 提供 |
+| `useSmithNoteCore` | `hooks/useSmithNoteCore.ts` | `State` の保持、`localStorage` 保存（デバウンス・flush・失敗通知）、トースト管理、`saveState` / `setState` 提供 |
 | `useNavigation` | `hooks/useNavigation.ts` | React Router の現在パスから導出する `screen`、`transitionFrom` / `transitionDirection` / `selectedDate` / `currentWorkoutId` の管理、進む・戻る画面遷移、日付・月移動、離脱時の空セット掃除 |
 | `useHomeCalendar` | `hooks/useHomeCalendar.ts` | ホームの週/月カレンダー表示、スワイプ遷移、選択日の同期 |
 | `useExerciseReorder` | `hooks/useExerciseReorder.ts` | 種目のドラッグ中レイアウトとカテゴリを管理し、終了時に確定 |
-| `useFitLogUi` | `hooks/useFitLogUi.ts` | 保存しない一時 UI 状態（編集モード、部位タブ、履歴フィルタ、トレーニングメニュー下書き） |
-| `useFitLogSelectors` | `hooks/useFitLogSelectors.ts` | `state` と `selectedDate` から派生値を `useMemo` で計算 |
+| `useSmithNoteUi` | `hooks/useSmithNoteUi.ts` | 保存しない一時 UI 状態（編集モード、部位タブ、履歴フィルタ、トレーニングメニュー下書き） |
+| `useSmithNoteSelectors` | `hooks/useSmithNoteSelectors.ts` | `state` と `selectedDate` から派生値を `useMemo` で計算 |
 | `usePresetActions` | `hooks/usePresetActions.ts` | トレーニングメニューの選択・下書き保存・削除・一括投入 |
 | `useWorkoutActions` | `hooks/useWorkoutActions.ts` | ワークアウト/セットの追加・更新・削除・並び替え・詳細を開く |
 | `useExerciseActions` | `hooks/useExerciseActions.ts` | 種目マスタの追加・計測方法変更・削除・ドラッグ並び替え |
 | `usePartActions` | `hooks/usePartActions.ts` | 部位の追加・削除・並び替え・表示色変更 |
 | `useBackup` | `hooks/useBackup.ts` | JSON エクスポート / インポート |
-| `useFitLog` | `hooks/useFitLog.ts` | 上記を束ね、画面へ渡す値と `actions` をまとめる統合フック |
+| `useSmithNote` | `hooks/useSmithNote.ts` | 上記を束ね、画面へ渡す値と `actions` をまとめる統合フック |
 
 ### 3.3 配布と view-model パターン
 
-- `FitLogProvider`（`hooks/FitLogContext.tsx`）が `useFitLog()` の戻り値を Context へ流す。
-- `useFitLogContext()`（`hooks/useFitLogContext.ts`）は Provider 外で呼ぶと例外を投げる。
+- `SmithNoteProvider`（`hooks/SmithNoteContext.tsx`）が `useSmithNote()` の戻り値を Context へ流す。
+- `useSmithNoteContext()`（`hooks/useSmithNoteContext.ts`）は Provider 外で呼ぶと例外を投げる。
 - 各画面は props を受け取らず、画面固有の `useXScreenModel()` フックで Context から必要な値・操作だけを取り出す。
 - 画面ローカルの一時状態（削除確認ダイアログの対象、カレンダー開閉など）は画面コンポーネント内の `useState` で持つ。
 
@@ -394,7 +395,7 @@ type PartSetting = {
 
 ### 4.4 データ構造図
 
-`State` は保存対象の全体ツリーです。画面ローカルの開閉状態や下書きなど、保存しない一時状態は `useFitLogUi` や各画面コンポーネントに置きます。
+`State` は保存対象の全体ツリーです。画面ローカルの開閉状態や下書きなど、保存しない一時状態は `useSmithNoteUi` や各画面コンポーネントに置きます。
 
 ```mermaid
 classDiagram
@@ -493,7 +494,7 @@ classDiagram
 
 ## 5. データ永続化・移行
 
-実装は `src/storage.ts`、`src/storageNormalization.ts`、`hooks/useFitLogCore.ts`。
+実装は `src/storage.ts`、`src/storageNormalization.ts`、`hooks/useSmithNoteCore.ts`。
 
 ### 5.1 読み込み・保存フロー図
 
@@ -502,18 +503,18 @@ classDiagram
 ```mermaid
 flowchart TD
   start["アプリ起動"]
-  read["localStorage fit-log-v2 を読む"]
+  read["localStorage smithnote-v2 を読む"]
   exists{"保存データがある?"}
   parse["JSON.parse"]
   normalize["normalizeState"]
   valid{"正規化に成功?"}
   defaultState["createDefaultState"]
-  corrupt["fit-log-v2-corrupt へ退避"]
+  corrupt["smithnote-v2-corrupt へ退避"]
   appState["State として起動"]
   change["ユーザー操作で state 更新"]
   debounce["400ms debounce"]
   conflict{"updatedAt が競合?"}
-  save["localStorage fit-log-v2 へ保存"]
+  save["localStorage smithnote-v2 へ保存"]
   toast["トースト表示"]
   import["JSONインポート / クラウド復元"]
 
@@ -539,11 +540,11 @@ flowchart TD
 
 | キー | 用途 |
 | --- | --- |
-| `fit-log-v2` | 通常の保存データ |
-| `fit-log-v2-corrupt` | 読み込みに失敗した壊れたデータの退避先 |
-| `fit-log-device-id` | クラウドバックアップ時に作成元端末を識別する端末ID |
+| `smithnote-v2` | 通常の保存データ |
+| `smithnote-v2-corrupt` | 読み込みに失敗した壊れたデータの退避先 |
+| `smithnote-device-id` | クラウドバックアップ時に作成元端末を識別する端末ID |
 
-### 5.3 保存戦略（`useFitLogCore`）
+### 5.3 保存戦略（`useSmithNoteCore`）
 
 - `state` 変化のたびに **400ms デバウンス**（`SAVE_DEBOUNCE_MS`）でまとめて書き込む。
 - **初回マウント時の保存はスキップ**（読み込んだ内容を書き戻すだけのため）。
@@ -560,9 +561,9 @@ flowchart TD
 1. `localStorage.getItem` 自体が例外 → 既定状態で起動（復旧フラグ false）。
 2. 値が無い / `'null'` → 既定状態で起動。
 3. `JSON.parse` + `normalizeState` が成功 → その state で起動。
-4. 解析・正規化に失敗 → 元データを `fit-log-v2-corrupt` へ退避（`removeItem` はしない）し、既定状態で起動（復旧フラグ true）。
+4. 解析・正規化に失敗 → 元データを `smithnote-v2-corrupt` へ退避（`removeItem` はしない）し、既定状態で起動（復旧フラグ true）。
    - 復旧フラグが true のときは「保存データを読み込めませんでした。旧データは退避済みです」をトースト表示。
-   - 退避自体に失敗しても元データは `fit-log-v2` 側に残るため握りつぶす。
+   - 退避自体に失敗しても元データは `smithnote-v2` 側に残るため握りつぶす。
 
 ### 5.5 既定状態（`createDefaultState`）
 
@@ -724,9 +725,8 @@ flowchart TD
 - 種目選択から種目詳細への遷移は同じ画面階層でも進む遷移として扱い、種目選択の履歴を詳細で置き換える。
 - ボトムナビは設けず、ホームを画面遷移の起点にする。
 - トースト領域は `role="status"` `aria-live="polite"`。削除後の Undo など、任意の操作ボタンを表示できる。
-- 新しい Service Worker を検出したときは、画面下部に更新通知を表示する。「更新」ボタンを押すと新しい Service Worker を有効化し、ページを再読み込みする。
 - `detail` / `exerciseHistory` は `currentWorkout` がある場合のみ描画。
-- PWA の下部 Safe Area は `env(safe-area-inset-bottom)` を使い、メインコンテンツの下余白・FAB・トーストなどの下端オフセットを同じ基準で揃える。
+- iOS WebViewの下部Safe Areaは `env(safe-area-inset-bottom)` を使い、メインコンテンツの下余白・FAB・トーストなどの下端オフセットを同じ基準で揃える。
 - FAB は画面または用途が切り替わるたびに一度非表示状態からフェードインし、画面遷移後の操作対象が変わったことを示す。
 - 画面階層は `screenDepth` で管理し、種目マスタ編集（`exerciseManage`）から個別の種目追加 / 編集（`exerciseEdit`）へ進むときは進む遷移として扱う。
 
@@ -917,14 +917,14 @@ flowchart TD
 ### 6.15 プライバシーポリシー（`PrivacyPolicyScreen`）
 
 - 設定画面の「プライバシーポリシー」から遷移する。
-- FitLogが扱う情報、利用目的、保存場所、第三者提供、データ管理、問い合わせ、改定について表示する。
+- SmithNoteが扱う情報、利用目的、保存場所、第三者提供、データ管理、問い合わせ、改定について表示する。
 - 通常の記録データは端末内に保存され、クラウドバックアップは任意操作時だけクラウド上に保存されることを明記する。
 
 ### 6.16 利用規約（`TermsOfServiceScreen`）
 
 - 設定画面の「利用規約」から遷移する。
 - 適用、サービス内容、利用上の注意、データ管理、禁止事項、免責事項、規約の変更、問い合わせについて表示する。
-- FitLogはトレーニング記録の管理補助アプリであり、医療・健康・運動指導の専門的助言ではないことを明記する。
+- SmithNoteはトレーニング記録の管理補助アプリであり、医療・健康・運動指導の専門的助言ではないことを明記する。
 
 ### 6.17 バックアップ（`BackupScreen`）
 
@@ -957,7 +957,7 @@ flowchart TD
 
 ## 7. ロジック・計算仕様
 
-実装は `src/utils.ts` と `src/selectors/fitLogSelectors.ts`。
+実装は `src/utils.ts` と `src/selectors/smithNoteSelectors.ts`。
 
 ### 7.1 1RM（`calcRm`）
 
@@ -1058,7 +1058,7 @@ weight === 0 または reps === 0 → '0.0'
 
 - `currentPreset`: 選択中トレーニングメニュー（無ければ先頭）。メニュー増減に応じて選択 ID を補正し、選択日に予定されたメニューがあれば一覧で最初のものへ切り替える。
 - `savePreset`: 編集下書きを正規化し、同じ ID があれば置換、無ければ新規トレーニングメニューとして先頭へ追加する。名称が空なら「名称未設定」、種目 ID は重複排除する。
-- 下書きの作成・更新・破棄、複数種目の選択は `useFitLog` と `useFitLogUi` が担当し、「保存」までは永続 state を変更しない。
+- 下書きの作成・更新・破棄、複数種目の選択は `useSmithNote` と `useSmithNoteUi` が担当し、「保存」までは永続 state を変更しない。
 - `deletePreset`: トレーニングメニュー一覧から指定メニューを削除する。トーストの「元に戻す」で元の位置へ復元できる。
 - `startPreset`: 選択日にトレーニングメニューの種目を一括投入。
   - メニューが空 →「メニューに種目を追加してください」。
@@ -1073,7 +1073,7 @@ weight === 0 または reps === 0 → '0.0'
 - `deletePart(name)`: その部位の種目が残っていれば不可（トースト）。可能なら `parts` から除外し、`hiddenParts` へ追加して履歴・実施日由来の復活を止め、その部位の `trainingPlans` も削除。トーストの「元に戻す」で部位設定・非表示状態・分割計画を復元できる。
 - `reorderParts(names)`: 部位名の配列どおりに表示順をまとめて変更。未登録名は無視し、配列に無い既存部位は末尾に保持する。
 - `setPartColor(name, color)`: 表示色を変更。
-- 関連セレクタ（`fitLogSelectors`）: `buildOrderedParts`（明示設定＋データ由来の部位を統合し表示順で返す。「レスト」と `hiddenParts` は除外）、`buildPartColorMap`（部位名→色）。`addExerciseToPart` で新規部位を作る場合は `state.parts` に追記し、同名の非表示状態を解除する。
+- 関連セレクタ（`smithNoteSelectors`）: `buildOrderedParts`（明示設定＋データ由来の部位を統合し表示順で返す。「レスト」と `hiddenParts` は除外）、`buildPartColorMap`（部位名→色）。`addExerciseToPart` で新規部位を作る場合は `state.parts` に追記し、同名の非表示状態を解除する。
 
 ### 8.5 レストタイマー（`RestTimer`）
 

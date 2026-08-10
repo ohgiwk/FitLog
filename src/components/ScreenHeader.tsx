@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 import { ChevronLeft } from '../icons';
 
 type ScreenHeaderProps = {
@@ -13,7 +13,7 @@ type ScreenHeaderProps = {
  * 各画面で共通利用する、戻る操作付きのトップヘッダー
  */
 export function ScreenHeader({ title, right, backLabel = '戻る', onBack }: ScreenHeaderProps) {
-  const { actions } = useFitLogContext();
+  const { actions } = useSmithNoteContext();
 
   return (
     <header className="topbar">

@@ -1,12 +1,12 @@
 import { useRef, useActionState } from 'react';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 
 /**
  * パスワード再設定メールを送信する画面
  */
 export function ForgotPasswordScreen() {
-  const { actions } = useFitLogContext();
+  const { actions } = useSmithNoteContext();
   const cloud = actions.cloud;
   const formRef = useRef<HTMLFormElement | null>(null);
   const [, resetPasswordAction, resetPasswordPending] = useActionState(

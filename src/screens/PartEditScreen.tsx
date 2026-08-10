@@ -4,14 +4,14 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { PartSetting } from '../types';
 import { partColorPalette } from '../data/partColors';
 import { DragHandle, TrashIcon } from '../icons';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 import { useFlatReorder } from '../hooks/useFlatReorder';
 
 /**
  * 部位の編集画面が必要とする state・操作を Context から組み立てる view-model フック
  */
 function usePartEditScreenModel() {
-  const { orderedParts, actions } = useFitLogContext();
+  const { orderedParts, actions } = useSmithNoteContext();
   return {
     orderedParts,
     onAddPart: actions.addPart,

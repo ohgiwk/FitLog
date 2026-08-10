@@ -1,5 +1,5 @@
-export const authIntroCompletedKey = 'fit-log-auth-intro-completed';
-const authEntryModeKey = 'fit-log-auth-entry-mode';
+export const authIntroCompletedKey = 'smithnote-auth-intro-completed';
+const authEntryModeKey = 'smithnote-auth-entry-mode';
 
 export type AuthEntryMode = 'signIn' | 'signUp';
 

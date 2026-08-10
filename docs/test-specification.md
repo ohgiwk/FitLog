@@ -1,6 +1,6 @@
 # テスト仕様書
 
-このドキュメントは、FitLog の自動テストが「どこの何を、どの観点で確認しているか」を把握するための仕様書です。
+このドキュメントは、SmithNote の自動テストが「どこの何を、どの観点で確認しているか」を把握するための仕様書です。
 
 ## 実行方法
 
@@ -11,8 +11,8 @@
 | `npm run test:e2e` | Playwright で主要導線の E2E テストを実行する |
 | `npm run test:e2e:ui` | Playwright の UI モードで E2E テストを実行する |
 
-テスト設定は [`vitest.config.ts`](../vitest.config.ts) にあります。`vite.config.ts` の PWA プラグインを読み込まない独立設定で、`localStorage` を使うテストのために `jsdom` 環境を使います。対象ファイルは `src/**/*.test.ts` と `src/**/*.test.tsx` です。画面操作テストでは React Testing Library と user-event を使います。
-E2E テスト設定は [`playwright.config.ts`](../playwright.config.ts) にあり、Vite の開発サーバーを `http://127.0.0.1:5174/FitLog/` で起動して、狭いスマホ幅の Chromium で確認します。対象ファイルは `e2e/**/*.spec.ts` です。
+テスト設定は [`vitest.config.ts`](../vitest.config.ts) にあります。`localStorage` を使うテストのために `jsdom` 環境を使います。対象ファイルは `src/**/*.test.ts` と `src/**/*.test.tsx` です。画面操作テストでは React Testing Library と user-event を使います。
+E2E テスト設定は [`playwright.config.ts`](../playwright.config.ts) にあり、`capacitor` modeの開発サーバーを `http://127.0.0.1:5184/` で起動して、狭いスマホ幅のChromiumでモバイルアプリ本体を確認します。対象ファイルは `e2e/**/*.spec.ts` です。
 
 ## テスト範囲の全体像
 
@@ -20,11 +20,11 @@ E2E テスト設定は [`playwright.config.ts`](../playwright.config.ts) にあ�
 | --- | --- | --- |
 | [`src/storage.test.ts`](../src/storage.test.ts) | `loadState` / `normalizeState` / `parseImportedState` / `getDeviceId` | 保存データの読み込み、破損時復旧、旧データ移行、設定値の正規化、端末 ID の永続化 |
 | [`src/utils.test.ts`](../src/utils.test.ts) | `src/utils.ts` の計算・整形・判定ヘルパー | 1RM、重量変換、目標達成判定、未開始判定、日付・カレンダー、トレーニング時間、部位グループ化 |
-| [`src/selectors/fitLogSelectors.test.ts`](../src/selectors/fitLogSelectors.test.ts) | 履歴・予定・分析用 selector | 表示履歴、予定判定、表示部位、週別ボリューム、自己ベスト、成長推移、種目別/部位別回数 |
+| [`src/selectors/smithNoteSelectors.test.ts`](../src/selectors/smithNoteSelectors.test.ts) | 履歴・予定・分析用 selector | 表示履歴、予定判定、表示部位、週別ボリューム、自己ベスト、成長推移、種目別/部位別回数 |
 | [`src/hooks/useExerciseReorder.test.ts`](../src/hooks/useExerciseReorder.test.ts) | 種目並び替えヘルパー | 並び順差分の判定、ドラッグ挿入位置の計算 |
 | [`src/components/ConfirmDialog.test.tsx`](../src/components/ConfirmDialog.test.tsx) | `ConfirmDialog` | 背景クリック、Escape、ダイアログ内クリック、ARIA 属性 |
 | [`src/screens/DetailScreen.test.tsx`](../src/screens/DetailScreen.test.tsx) | `DetailScreen` のセット入力 | 入力中文字列の保持、空入力の `null` 保存、lbs 入力の kg 保存 |
-| [`src/hooks/useFitLogCore.test.tsx`](../src/hooks/useFitLogCore.test.tsx) | `useFitLogCore` の toast | 表示中 toast のキューイングと順次表示 |
+| [`src/hooks/useSmithNoteCore.test.tsx`](../src/hooks/useSmithNoteCore.test.tsx) | `useSmithNoteCore` の toast | 表示中 toast のキューイングと順次表示 |
 | [`e2e/home.spec.ts`](../e2e/home.spec.ts) | ホーム起点の主要導線 | 起動、種目開始、セット入力、リロード後の永続化、狭幅でのカレンダー・ドロワー・FAB、設定のバックアップ導線、JSON 復元、終了/再開、履歴/分析反映、種目マスタ、メニュー開始 |
 
 ## `src/storage.test.ts`
@@ -83,11 +83,11 @@ E2E テスト設定は [`playwright.config.ts`](../playwright.config.ts) にあ�
 - `null` の未入力値は、目標達成や集計で記録済みとして扱わない。
 - カレンダーは固定 42 セル版と、必要週だけ返す compact 版の両方を保証する。
 
-## `src/selectors/fitLogSelectors.test.ts`
+## `src/selectors/smithNoteSelectors.test.ts`
 
 ### 対象
 
-- [`src/selectors/fitLogSelectors.ts`](../src/selectors/fitLogSelectors.ts)
+- [`src/selectors/smithNoteSelectors.ts`](../src/selectors/smithNoteSelectors.ts)
 
 ### テスト観点
 
@@ -132,7 +132,7 @@ E2E テスト設定は [`playwright.config.ts`](../playwright.config.ts) にあ�
 
 - [`src/components/ConfirmDialog.tsx`](../src/components/ConfirmDialog.tsx)
 - [`src/screens/DetailScreen.tsx`](../src/screens/DetailScreen.tsx)
-- [`src/hooks/useFitLogCore.ts`](../src/hooks/useFitLogCore.ts)
+- [`src/hooks/useSmithNoteCore.ts`](../src/hooks/useSmithNoteCore.ts)
 
 ### テスト観点
 
@@ -140,7 +140,7 @@ E2E テスト設定は [`playwright.config.ts`](../playwright.config.ts) にあ�
 | --- | --- | --- |
 | `ConfirmDialog` | 背景クリック、Escape、ダイアログ内クリック、`aria-modal` / `aria-labelledby` | 共通確認ダイアログの閉じる操作とアクセシビリティ属性を固定する |
 | `DetailScreen` 入力 | 小数の重量入力、空の回数入力、lbs 入力 | 画面上の入力文字列と保存値の分離を固定する |
-| `useFitLogCore` toast | 1 件目表示中に 2 件目・3 件目を追加、手動 clear、自動 timer | 複数通知が順番に表示されることを固定する |
+| `useSmithNoteCore` toast | 1 件目表示中に 2 件目・3 件目を追加、手動 clear、自動 timer | 複数通知が順番に表示されることを固定する |
 
 ### 重点的に守っている挙動
 
@@ -159,7 +159,7 @@ E2E テスト設定は [`playwright.config.ts`](../playwright.config.ts) にあ�
 
 | グループ | 代表ケース | 目的 |
 | --- | --- | --- |
-| 起動 | `/FitLog/` を開き、ホームの開始パネル・メニュー・今日ボタンを確認する | アプリが起動直後からホームとして使えることを保証する |
+| 起動 | `/` を開き、ホームの開始パネル・メニュー・今日ボタンを確認する | Capacitor向けアプリが起動直後からホームとして使えることを保証する |
 | 記録開始と永続化 | 種目選択からベンチプレスを開始し、1セット目へ重量・回数を入力してリロードする | 実ブラウザで入力導線と `localStorage` 保存がつながっていることを保証する |
 | 狭幅操作 | 390px 幅でカレンダー月表示、ドロワー、ホーム FAB を操作する | モバイル幅の主要オーバーレイと浮動ボタンがタップできることを保証する |
 | 設定・バックアップ | ドロワーから設定へ進み、データ管理のバックアップ画面を開く | ローカルバックアップとクラウドバックアップ導線が表示できることを保証する |
@@ -181,7 +181,7 @@ E2E テスト設定は [`playwright.config.ts`](../playwright.config.ts) にあ�
 | 領域 | 状態 |
 | --- | --- |
 | React コンポーネントの DOM 操作 | 共通ダイアログと Detail の主要入力は確認済み。Home の基本導線、ドロワ、FAB、終了/再開、種目マスタ、メニュー作成は E2E で主要操作を確認済み。細かな確認ダイアログはまだ薄い |
-| PWA / Service Worker | `npm run build` で生成までは確認するが、キャッシュ更新挙動は自動テスト対象外 |
+| ランディングページ | レスポンシブ表示、公開文書、ストアURL設定のブラウザ確認は手動 |
 | Firebase クラウドバックアップ | provider や環境変数に依存する実通信は自動テスト対象外 |
 | 通知・音・ブラウザ権限 | ローカル通知、Audio、権限 UI は自動テスト対象外 |
 | 視覚回帰 | モバイル幅のレイアウト崩れや色の見え方は、必要に応じてブラウザ確認で補う |
@@ -190,6 +190,6 @@ E2E テスト設定は [`playwright.config.ts`](../playwright.config.ts) にあ�
 
 - 保存データの形、型、移行、正規化を変える場合は `src/storage.test.ts` に追加する。
 - 日付、計算、表示文字列、単位変換、未開始判定を変える場合は `src/utils.test.ts` に追加する。
-- ホーム履歴、分析、予定、部位表示の算出を変える場合は `src/selectors/fitLogSelectors.test.ts` に追加する。
+- ホーム履歴、分析、予定、部位表示の算出を変える場合は `src/selectors/smithNoteSelectors.test.ts` に追加する。
 - 種目並び替えのドラッグ位置や比較条件を変える場合は `src/hooks/useExerciseReorder.test.ts` に追加する。
 - 画面操作そのものを保証したい場合は、既存の関数テストに加えて、React Testing Library やブラウザベースの確認を導入する余地がある。

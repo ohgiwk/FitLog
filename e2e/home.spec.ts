@@ -1,14 +1,17 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const appPath = '/FitLog/';
+const appPath = '/';
 const exerciseName = 'ベンチプレス';
 const secondExerciseName = 'スクワット';
-const storeKey = 'fit-log-v2';
+const storeKey = 'smithnote-v1';
 
 async function openFreshApp(page: Page) {
   await page.goto(appPath);
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
+  const skipAuthButton = page.getByRole('button', { name: 'あとで' });
+  await skipAuthButton.waitFor({ state: 'visible' });
+  if (await skipAuthButton.isVisible()) await skipAuthButton.click();
   await expect(page.getByRole('heading', { name: 'トレーニングを開始' })).toBeVisible();
 }
 

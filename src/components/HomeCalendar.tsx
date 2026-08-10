@@ -4,9 +4,9 @@ import { AnalysisIcon, CalendarIcon, MenuIcon, SettingsIcon, TrophyIcon } from '
 import { useHomeCalendar } from '../hooks/useHomeCalendar';
 import { localDate, weekdayLabels } from '../utils';
 import { Workout } from '../types';
-import { useFitLogContext } from '../hooks/useFitLogContext';
+import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 
-type CloudActions = ReturnType<typeof useFitLogContext>['actions']['cloud'];
+type CloudActions = ReturnType<typeof useSmithNoteContext>['actions']['cloud'];
 
 type HomeCalendarProps = {
   selectedDate: string;

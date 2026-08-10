@@ -2,7 +2,7 @@
 
 作成日: 2026-07-03
 
-FitLog は端末内の `localStorage` を正本にし、希望するユーザーだけ Firebase Authentication と Cloud Firestore を使って手動クラウドバックアップ/復元を利用する。
+SmithNote は端末内の `localStorage` を正本にし、希望するユーザーだけ Firebase Authentication と Cloud Firestore を使って手動クラウドバックアップ/復元を利用する。
 
 ## 役割
 

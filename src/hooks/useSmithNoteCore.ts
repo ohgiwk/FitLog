@@ -71,7 +71,7 @@ function persistState({
 /**
  * アプリの保存対象データ(state)とトースト表示を一元管理する土台フック
  */
-export function useFitLogCore() {
+export function useSmithNoteCore() {
   /**
    * 起動時に1度だけ localStorage から読み込み、復旧フラグも保持する
    */

@@ -9,7 +9,7 @@ import {
   buildVisibleHistory,
   plannedPartsForDate,
   scheduledPresetsForDate,
-} from './fitLogSelectors';
+} from './smithNoteSelectors';
 import { Preset, TrainingPlan, Workout } from '../types';
 
 const workout: Workout = {

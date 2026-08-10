@@ -13,7 +13,7 @@ export type GoalAchievement = {
 /**
  * 保存対象ではない、画面操作のための一時的な UI 状態をまとめるフック
  */
-export function useFitLogUi() {
+export function useSmithNoteUi() {
   const [presetDraft, setPresetDraft] = useState<Preset | null>(null);
   const [presetDraftMode, setPresetDraftMode] = useState<'menu' | 'start'>('menu');
   const [editMode, setEditMode] = useState(false);
