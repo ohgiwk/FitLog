@@ -170,7 +170,7 @@ export function BackupScreen() {
               </div>
               <div className="settings-cloud-list" aria-label="クラウドバックアップ一覧">
                 <div className="settings-cloud-list-head">
-                  <span>端末別の最新バックアップ</span>
+                  <span>アカウントの最新バックアップ</span>
                 </div>
                 {cloud.backups.length === 0 ? (
                   <p className="settings-help">まだクラウドバックアップはありません。</p>
@@ -180,7 +180,11 @@ export function BackupScreen() {
                       <div className="settings-label">
                         <span>{formatBackupDate(backup.createdAt)}</span>
                         <span>
-                          {backup.source === 'device' ? '端末バックアップ' : '旧バックアップ'}
+                          {backup.source === 'account'
+                            ? 'アカウントバックアップ'
+                            : backup.source === 'device'
+                              ? '旧端末バックアップ'
+                              : '旧バックアップ'}
                         </span>
                         <strong>
                           種目{backup.exerciseCount}件 / 記録{backup.workoutCount}件

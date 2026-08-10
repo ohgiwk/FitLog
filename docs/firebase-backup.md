@@ -47,6 +47,8 @@ users/{uid}
     createdAt
 ```
 
+現在の自動バックアップは `backups/current` にアカウント単位で1件保存する。`devices/{deviceId}.stateJson` とランダムIDの `backups/{backupId}` は旧形式として読み取り互換性を維持する。
+
 `firestore.rules` は `users/{uid}` 配下をログイン中の同一ユーザーだけ読み書きできるように制限する。Rules を更新する場合は Firebase CLI で `firebase deploy --only firestore:rules --project <project-id>` を実行する。
 
 ## 実装ポイント
@@ -56,7 +58,8 @@ users/{uid}
 - iOS の Firestore 通信は long-polling を強制し、WKWebView と WebChannel の互換性問題でバックアップ通信が失敗しないようにする。Web では自動判定を使う。
 - Firestore は `State` 全体の保存に備えて `ignoreUndefinedProperties` を有効にする。
 - クラウド操作は `src/cloudBackup.ts` にまとめ、画面側は `useBackup` 経由で呼び出す。
-- ログイン後に復元方針が確定すると、変更から3秒後に `devices/{deviceId}` の最新版を上書きする。通信失敗時はオンライン復帰後に再試行する。
+- ログイン後に復元方針が確定すると、変更から3秒後にアカウント共通の `backups/current` を上書きする。通信失敗時はオンライン復帰後に再試行する。
+- 旧 `devices/{deviceId}` は削除せず、移行用の復元候補として引き続き読み取る。
 - ログイン時に既存データがあれば、クラウド復元または端末優先を選択するまで自動保存を開始しない。
 - 旧 `backups/{backupId}` は削除せず、復元候補として引き続き読み取る。
 - `deleteCloudAccount` は Firestore の `users/{uid}` 配下を削除してから Firebase Auth のユーザーを削除する。

@@ -35,7 +35,7 @@ import { uid } from './utils';
 
 export type CloudBackup = {
   id: string;
-  source: 'device' | 'legacy';
+  source: 'account' | 'device' | 'legacy';
   createdAt: string;
   deviceId: string | null;
   deviceName: string | null;
@@ -335,25 +335,21 @@ export async function createCloudBackup(state: State) {
 }
 
 /**
- * 現在端末の固定ドキュメントへ最新版を上書き保存する
+ * アカウント共通の固定ドキュメントへ最新版を上書き保存する
  */
-export async function saveDeviceCloudBackup(state: State) {
+export async function saveAccountCloudBackup(state: State) {
   const { db } = requireFirebaseClient();
   const session = await getCloudSession();
   if (!session) throw new Error('Not signed in');
-  const deviceId = getDeviceId();
   const now = new Date().toISOString();
   await setDoc(
-    doc(db, ...getUserDevicesPath(session.user.uid), deviceId),
+    doc(db, ...getUserBackupsPath(session.user.uid), 'current'),
     {
-      name: navigator.userAgent,
-      platform: navigator.platform,
-      lastSeenAt: now,
-      backupUpdatedAt: now,
+      deviceId: getDeviceId(),
       stateJson: state,
       stateSchemaVersion: state.schemaVersion,
+      createdAt: now,
     },
-    { merge: true },
   );
   await setDoc(
     doc(db, ...getUserDocPath(session.user.uid)),
@@ -380,16 +376,29 @@ export async function listCloudBackups(): Promise<CloudBackup[]> {
     )),
     getDocs(collection(client.db, ...getUserDevicesPath(session.user.uid))),
   ]);
-  const legacyBackups = legacySnapshot.docs.map((backupDoc) => {
+  const accountBackups = legacySnapshot.docs.flatMap((backupDoc) => {
     const row = { id: backupDoc.id, ...backupDoc.data() } as CloudBackupRow;
+    if (row.id !== 'current') return [];
     return {
+      id: row.id,
+      source: 'account' as const,
+      createdAt: row.createdAt,
+      deviceId: row.deviceId,
+      deviceName: null,
+      ...summarizeState(row.stateJson),
+    };
+  });
+  const legacyBackups = legacySnapshot.docs.flatMap((backupDoc) => {
+    const row = { id: backupDoc.id, ...backupDoc.data() } as CloudBackupRow;
+    if (row.id === 'current') return [];
+    return [{
       id: row.id,
       source: 'legacy' as const,
       createdAt: row.createdAt,
       deviceId: row.deviceId,
       deviceName: null,
       ...summarizeState(row.stateJson),
-    };
+    }];
   });
   const deviceBackups = deviceSnapshot.docs.flatMap((deviceDoc) => {
     const row = deviceDoc.data() as DeviceBackupRow;
@@ -403,7 +412,7 @@ export async function listCloudBackups(): Promise<CloudBackup[]> {
       ...summarizeState(row.stateJson),
     }];
   });
-  return [...deviceBackups, ...legacyBackups].sort((a, b) =>
+  return [...accountBackups, ...deviceBackups, ...legacyBackups].sort((a, b) =>
     b.createdAt.localeCompare(a.createdAt),
   );
 }

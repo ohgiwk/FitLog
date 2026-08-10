@@ -11,7 +11,7 @@ import {
   getCloudSession,
   listCloudBackups,
   onCloudAuthChange,
-  saveDeviceCloudBackup,
+  saveAccountCloudBackup,
   sendCloudPasswordReset,
   signInWithPassword,
   signInWithGoogle,
@@ -498,7 +498,7 @@ export function useBackup({
   }, [cloudEnabled, cloudUserId, refreshCloudBackups]);
 
   /**
-   * 変更が落ち着いた後、現在端末の固定バックアップへ自動保存する
+   * 変更が落ち着いた後、アカウント共通の固定バックアップへ自動保存する
    */
   useEffect(() => {
     if (!cloudEnabled || !cloudUserId || !cloudSyncAllowed || cloudConflict) return undefined;
@@ -509,7 +509,7 @@ export function useBackup({
       setCloudSyncError(null);
       flushState();
       try {
-        const syncedAt = await saveDeviceCloudBackup(state);
+        const syncedAt = await saveAccountCloudBackup(state);
         lastSyncedStateUpdatedAtRef.current = state.updatedAt;
         setCloudLastSyncedAt(syncedAt);
         setCloudSyncStatus('synced');
