@@ -19,6 +19,7 @@ import {
   IconTrophy,
   IconTrash,
   IconUpload,
+  IconUserCircle,
 } from '@tabler/icons-react';
 
 export function ChevronUp() {
@@ -99,4 +100,8 @@ export function ImportIcon() {
 
 export function PartsIcon() {
   return <IconCategory />;
+}
+
+export function AccountIcon() {
+  return <IconUserCircle />;
 }

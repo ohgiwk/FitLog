@@ -7,7 +7,8 @@ FitLog は端末内の `localStorage` を正本にし、希望するユーザー
 ## 役割
 
 - 未ログインでもアプリ本体は通常どおり使える。
-- ログインはバックアップ、復元、機種変更時だけ必要。
+- 初回起動時に認証画面を表示するが、「あとで」を選べば未ログインのまま利用できる。
+- メールアドレス・パスワードまたはGoogleアカウントでログインできる。
 - 新規登録時は Firebase Auth の確認メールを送信する。
 - 確認メールとパスワード再設定メールは Firebase 標準のメールアクション画面を使い、Capacitor のカスタムスキームを継続 URL として渡さない。
 - クラウドには `State` 全体のスナップショットを保存する。
@@ -22,6 +23,7 @@ FitLog は端末内の `localStorage` を正本にし、希望するユーザー
 - `VITE_FIREBASE_APP_ID`
 - `VITE_FIREBASE_STORAGE_BUCKET` 任意
 - `VITE_FIREBASE_MESSAGING_SENDER_ID` 任意
+- `VITE_GOOGLE_WEB_CLIENT_ID`（iOSのGoogleログインで使用）
 
 必須の 4 項目が揃っていない場合、クラウドバックアップだけ無効になる。ローカル保存と JSON エクスポート/インポートは引き続き利用できる。
 
@@ -35,6 +37,9 @@ users/{uid}
     name
     platform
     lastSeenAt
+    backupUpdatedAt
+    stateJson
+    stateSchemaVersion
   backups/{backupId}
     deviceId
     stateJson
@@ -51,10 +56,18 @@ users/{uid}
 - iOS の Firestore 通信は long-polling を強制し、WKWebView と WebChannel の互換性問題でバックアップ通信が失敗しないようにする。Web では自動判定を使う。
 - Firestore は `State` 全体の保存に備えて `ignoreUndefinedProperties` を有効にする。
 - クラウド操作は `src/cloudBackup.ts` にまとめ、画面側は `useBackup` 経由で呼び出す。
-- `createCloudBackup` はバックアップ作成後、最新 5 件だけ残して古いバックアップを削除する。
+- ログイン後に復元方針が確定すると、変更から3秒後に `devices/{deviceId}` の最新版を上書きする。通信失敗時はオンライン復帰後に再試行する。
+- ログイン時に既存データがあれば、クラウド復元または端末優先を選択するまで自動保存を開始しない。
+- 旧 `backups/{backupId}` は削除せず、復元候補として引き続き読み取る。
 - `deleteCloudAccount` は Firestore の `users/{uid}` 配下を削除してから Firebase Auth のユーザーを削除する。
 - Firebase Auth の仕様上、パスワード変更やアカウント削除は最近ログインしていないと失敗することがある。その場合は再ログインしてから操作する。
 
 ## GitHub Pages
 
 `.github/workflows/deploy-pages.yml` の Build step で Firebase 用の `VITE_` 環境変数を渡す。Repository secrets に同名の値を設定する。
+
+## GoogleログインのiOS設定
+
+- Firebase AuthenticationでGoogleプロバイダーを有効にする。
+- XcodeのUser-Defined Settingsに `GOOGLE_IOS_CLIENT_ID` と `GOOGLE_IOS_REVERSED_CLIENT_ID` を設定する。`Info.plist` の `GIDClientID` とURL Schemeから参照される。
+- Web OAuthクライアントIDを `VITE_GOOGLE_WEB_CLIENT_ID` に設定する。

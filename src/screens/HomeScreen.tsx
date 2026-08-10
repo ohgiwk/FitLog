@@ -15,6 +15,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useFitLogContext } from '../hooks/useFitLogContext';
 import { HomeCalendar, type HomeCalendarOverlayState } from '../components/HomeCalendar';
 import { scheduledPresetsForDate } from '../selectors/fitLogSelectors';
+import { setAuthEntryMode, type AuthEntryMode } from '../authState';
 
 type WorkoutSummary = {
   startTime: string;
@@ -212,6 +213,10 @@ function useHomeScreenModel() {
     onOpenAnalysis: actions.openAnalysis,
     onOpenSettings: () => actions.setScreen('settings'),
     onOpenGoalAchievements: () => actions.setScreen('goalAchievements'),
+    onOpenAuth: (mode: AuthEntryMode) => {
+      setAuthEntryMode(mode);
+      actions.setScreen('auth');
+    },
     onOpenDetail: actions.openWorkoutDetail,
     onDeleteWorkout: actions.deleteWorkout,
     cloud: actions.cloud,
@@ -250,6 +255,7 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
     onOpenAnalysis,
     onOpenSettings,
     onOpenGoalAchievements,
+    onOpenAuth,
     onOpenDetail,
     onDeleteWorkout,
     cloud,
@@ -567,6 +573,7 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
         onOpenAnalysis={onOpenAnalysis}
         onOpenSettings={onOpenSettings}
         onOpenGoalAchievements={onOpenGoalAchievements}
+        onOpenAuth={onOpenAuth}
         onOverlayStateChange={onOverlayStateChange}
         cloud={cloud}
       />

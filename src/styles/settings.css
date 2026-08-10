@@ -235,6 +235,33 @@
   gap: 10px;
 }
 
+.settings-sync-status {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.settings-sync-status strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.settings-sync-status.error,
+.settings-sync-status.error strong,
+.settings-sync-status.error p {
+  color: var(--red);
+}
+
+.settings-sync-status p {
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+
 .settings-cloud-action-form {
   display: grid;
 }

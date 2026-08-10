@@ -50,6 +50,35 @@ describe('useNavigation routing', () => {
     expect(result.current.transitionDirection).toBe('forward');
   });
 
+  it('認証画面への遷移では画面スライドを使わない', async () => {
+    const { result } = renderHook(
+      () =>
+        useNavigation({
+          state: createDefaultState(),
+          saveState: vi.fn(),
+          setEditMode: vi.fn(),
+          setGoalAchievement: vi.fn(),
+        }),
+      { wrapper },
+    );
+
+    act(() => {
+      result.current.showScreen('auth');
+    });
+
+    await waitFor(() => expect(result.current.screen).toBe('auth'));
+    expect(result.current.transitionFrom).toBeNull();
+    expect(result.current.transitionDirection).toBe('none');
+
+    act(() => {
+      result.current.showScreen('home');
+    });
+
+    await waitFor(() => expect(result.current.screen).toBe('home'));
+    expect(result.current.transitionFrom).toBeNull();
+    expect(result.current.transitionDirection).toBe('none');
+  });
+
   it('goBackで直前に表示していた画面へ戻る', async () => {
     const { result } = renderHook(
       () =>

@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   CloudBackup,
   cloudAuthErrorMessage,
   cloudBackupErrorMessage,
   cloudBackupAvailable,
-  createCloudBackup,
   deleteCloudAccount,
   deleteCloudBackup,
   ensureCloudProfile,
@@ -12,12 +11,15 @@ import {
   getCloudSession,
   listCloudBackups,
   onCloudAuthChange,
+  saveDeviceCloudBackup,
   sendCloudPasswordReset,
   signInWithPassword,
+  signInWithGoogle,
   signOutCloud,
   signUpWithPassword,
   updateCloudPassword,
 } from '../cloudBackup';
+import { getDeviceId } from '../device';
 import { parseImportedState } from '../storage';
 import { normalizeState } from '../storageNormalization';
 import { State } from '../types';
@@ -48,6 +50,11 @@ export type PendingImport = {
   incomingSummary: ImportSummary;
 };
 
+export type CloudSyncStatus = 'idle' | 'pending' | 'syncing' | 'synced' | 'error' | 'conflict';
+
+const cloudResolutionKey = (userId: string) =>
+  `fit-log-cloud-resolution:${userId}:${getDeviceId()}`;
+
 /**
  * データのエクスポート(バックアップ)とインポート(復元)を担うフック
  */
@@ -63,8 +70,17 @@ export function useBackup({
 }: BackupDeps) {
   const [cloudEnabled] = useState(cloudBackupAvailable);
   const [cloudUserEmail, setCloudUserEmail] = useState<string | null>(null);
+  const [cloudUserId, setCloudUserId] = useState<string | null>(null);
   const [cloudBackups, setCloudBackups] = useState<CloudBackup[]>([]);
   const [cloudLoading, setCloudLoading] = useState(false);
+  const [cloudAuthReady, setCloudAuthReady] = useState(!cloudEnabled);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>('idle');
+  const [cloudSyncError, setCloudSyncError] = useState<string | null>(null);
+  const [cloudLastSyncedAt, setCloudLastSyncedAt] = useState<string | null>(null);
+  const [cloudConflict, setCloudConflict] = useState<CloudBackup | null>(null);
+  const [cloudSyncAllowed, setCloudSyncAllowed] = useState(false);
+  const [retryVersion, setRetryVersion] = useState(0);
+  const lastSyncedStateUpdatedAtRef = useRef<string | null>(null);
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
 
   /**
@@ -158,14 +174,14 @@ export function useBackup({
    * クラウドバックアップ一覧を読み込む
    */
   const refreshCloudBackups = useCallback(async () => {
-    if (!cloudEnabled || !cloudUserEmail) return;
+    if (!cloudEnabled || !cloudUserId) return;
     try {
       setCloudBackups(await listCloudBackups());
     } catch (error) {
       console.error('Cloud backup list failed', error);
       showToast(cloudBackupErrorMessage(error));
     }
-  }, [cloudEnabled, cloudUserEmail, showToast]);
+  }, [cloudEnabled, cloudUserId, showToast]);
 
   /**
    * 認証フォームの入力値を取り出して検証する
@@ -223,6 +239,23 @@ export function useBackup({
     } catch (error) {
       showToast(cloudAuthErrorMessage(error, 'signIn'));
       return false;
+    }
+  }
+
+  /**
+   * Googleアカウントでログインする
+   */
+  async function googleSignIn() {
+    setCloudLoading(true);
+    try {
+      await signInWithGoogle();
+      showToast('Googleアカウントでログインしました');
+      return true;
+    } catch (error) {
+      showToast(cloudAuthErrorMessage(error, 'googleSignIn'));
+      return false;
+    } finally {
+      setCloudLoading(false);
     }
   }
 
@@ -290,7 +323,11 @@ export function useBackup({
     try {
       await signOutCloud();
       setCloudUserEmail(null);
+      setCloudUserId(null);
       setCloudBackups([]);
+      setCloudSyncAllowed(false);
+      setCloudConflict(null);
+      setCloudSyncStatus('idle');
       showToast('ログアウトしました');
     } catch {
       showToast('ログアウトに失敗しました');
@@ -300,27 +337,11 @@ export function useBackup({
   }
 
   /**
-   * 現在の state をクラウドへ保存する
-   */
-  async function backupToCloud() {
-    if (!cloudUserEmail) return showToast('ログインしてください');
-    flushState();
-    try {
-      await createCloudBackup(state);
-      setCloudBackups(await listCloudBackups());
-      showToast('クラウドへバックアップしました');
-    } catch (error) {
-      console.error('Cloud backup failed', error);
-      showToast(cloudBackupErrorMessage(error));
-    }
-  }
-
-  /**
    * クラウドバックアップからローカル state を復元する
    */
-  async function restoreFromCloud(backupId: string) {
+  async function restoreFromCloud(backupId: string, source: CloudBackup['source'] = 'legacy') {
     try {
-      const cloudState = await fetchCloudBackupState(backupId);
+      const cloudState = await fetchCloudBackupState(backupId, source);
       const normalized = normalizeState(cloudState);
       if (!normalized) {
         showToast('復元できるデータが見つかりません');
@@ -341,10 +362,12 @@ export function useBackup({
   /**
    * 指定したクラウドバックアップを削除する
    */
-  async function deleteBackupFromCloud(backupId: string) {
+  async function deleteBackupFromCloud(backupId: string, source: CloudBackup['source'] = 'legacy') {
     try {
-      await deleteCloudBackup(backupId);
-      setCloudBackups((current) => current.filter((backup) => backup.id !== backupId));
+      await deleteCloudBackup(backupId, source);
+      setCloudBackups((current) =>
+        current.filter((backup) => backup.id !== backupId || backup.source !== source),
+      );
       showToast('クラウドバックアップを削除しました');
     } catch (error) {
       console.error('Cloud backup deletion failed', error);
@@ -360,12 +383,70 @@ export function useBackup({
     try {
       await deleteCloudAccount();
       setCloudUserEmail(null);
+      setCloudUserId(null);
       setCloudBackups([]);
       showToast('クラウドアカウントを削除しました');
       return true;
     } catch {
       showToast('クラウドアカウントの削除に失敗しました');
       return false;
+    } finally {
+      setCloudLoading(false);
+    }
+  }
+
+  /**
+   * ログインした端末で同期開始前の復元要否を判定する
+   */
+  const prepareCloudSession = useCallback(
+    async (session: Awaited<ReturnType<typeof getCloudSession>>) => {
+      if (!session) return;
+      setCloudUserId(session.user.uid);
+      setCloudUserEmail(session.user.email ?? 'Googleアカウント');
+      await ensureCloudProfile(session.user);
+      const backups = await listCloudBackups();
+      setCloudBackups(backups);
+      const resolved = localStorage.getItem(cloudResolutionKey(session.user.uid)) === 'resolved';
+      if (backups.length > 0 && !resolved) {
+        setCloudConflict(backups[0]);
+        setCloudSyncAllowed(false);
+        setCloudSyncStatus('conflict');
+        return;
+      }
+      if (!resolved) localStorage.setItem(cloudResolutionKey(session.user.uid), 'resolved');
+      setCloudConflict(null);
+      setCloudSyncAllowed(true);
+      setCloudSyncStatus('pending');
+    },
+    [],
+  );
+
+  /**
+   * クラウド復元または端末優先を確定して自動同期を開始する
+   */
+  async function resolveCloudConflict(choice: 'cloud' | 'device') {
+    if (!cloudUserId || !cloudConflict) return;
+    setCloudLoading(true);
+    try {
+      if (choice === 'cloud') {
+        const cloudState = await fetchCloudBackupState(cloudConflict.id, cloudConflict.source);
+        const normalized = normalizeState(cloudState);
+        if (!normalized) throw new Error('Backup is invalid');
+        downloadStateBackup(state, `smithnote-before-cloud-restore-${localDate(new Date())}.json`);
+        setState(normalized);
+        setCurrentWorkoutId(null);
+        setCurrentPresetId(normalized.presets[0]?.id || null);
+        setSelectedDate(localDate(new Date()));
+        lastSyncedStateUpdatedAtRef.current = normalized.updatedAt;
+      }
+      localStorage.setItem(cloudResolutionKey(cloudUserId), 'resolved');
+      setCloudConflict(null);
+      setCloudSyncAllowed(true);
+      setCloudSyncStatus(choice === 'cloud' ? 'synced' : 'pending');
+      showToast(choice === 'cloud' ? 'クラウドデータを復元しました' : 'この端末のデータを使用します');
+    } catch (error) {
+      console.error('Cloud conflict resolution failed', error);
+      showToast(cloudBackupErrorMessage(error));
     } finally {
       setCloudLoading(false);
     }
@@ -380,35 +461,73 @@ export function useBackup({
     getCloudSession()
       .then(async (session) => {
         if (cancelled) return;
-        setCloudUserEmail(session?.user.email ?? null);
-        if (session) await ensureCloudProfile(session.user);
+        if (session) await prepareCloudSession(session);
+        else {
+          setCloudUserEmail(null);
+          setCloudUserId(null);
+        }
       })
       .catch(() => showToast('ログイン状態の確認に失敗しました'));
     const unsubscribe = onCloudAuthChange((session) => {
-      setCloudUserEmail(session?.user.email ?? null);
       if (session) {
         window.setTimeout(() => {
-          ensureCloudProfile(session.user).catch(() =>
-            showToast('ユーザー情報の更新に失敗しました'),
-          );
+          prepareCloudSession(session).catch(() => showToast('ユーザー情報の更新に失敗しました'));
         }, 0);
       } else {
+        setCloudUserEmail(null);
+        setCloudUserId(null);
         setCloudBackups([]);
+        setCloudSyncAllowed(false);
+        setCloudConflict(null);
+        setCloudSyncStatus('idle');
       }
+      setCloudAuthReady(true);
     });
     return () => {
       cancelled = true;
       unsubscribe();
     };
-  }, [cloudEnabled, showToast]);
+  }, [cloudEnabled, prepareCloudSession, showToast]);
 
   /**
    * ログイン後にバックアップ一覧を取得する
    */
   useEffect(() => {
-    if (!cloudEnabled || !cloudUserEmail) return;
+    if (!cloudEnabled || !cloudUserId) return;
     void refreshCloudBackups();
-  }, [cloudEnabled, cloudUserEmail, refreshCloudBackups]);
+  }, [cloudEnabled, cloudUserId, refreshCloudBackups]);
+
+  /**
+   * 変更が落ち着いた後、現在端末の固定バックアップへ自動保存する
+   */
+  useEffect(() => {
+    if (!cloudEnabled || !cloudUserId || !cloudSyncAllowed || cloudConflict) return undefined;
+    if (lastSyncedStateUpdatedAtRef.current === state.updatedAt) return undefined;
+    setCloudSyncStatus('pending');
+    const timer = window.setTimeout(async () => {
+      setCloudSyncStatus('syncing');
+      setCloudSyncError(null);
+      flushState();
+      try {
+        const syncedAt = await saveDeviceCloudBackup(state);
+        lastSyncedStateUpdatedAtRef.current = state.updatedAt;
+        setCloudLastSyncedAt(syncedAt);
+        setCloudSyncStatus('synced');
+        setCloudBackups(await listCloudBackups());
+      } catch (error) {
+        console.error('Automatic cloud backup failed', error);
+        setCloudSyncError(cloudBackupErrorMessage(error));
+        setCloudSyncStatus('error');
+      }
+    }, 3000);
+    return () => window.clearTimeout(timer);
+  }, [cloudConflict, cloudEnabled, cloudSyncAllowed, cloudUserId, flushState, retryVersion, state]);
+
+  useEffect(() => {
+    const retry = () => setRetryVersion((current) => current + 1);
+    window.addEventListener('online', retry);
+    return () => window.removeEventListener('online', retry);
+  }, []);
 
   return {
     exportState,
@@ -418,19 +537,26 @@ export function useBackup({
     cancelImportState,
     cloud: {
       enabled: cloudEnabled,
+      authReady: cloudAuthReady,
+      signedIn: Boolean(cloudUserId),
       userEmail: cloudUserEmail,
       backups: cloudBackups,
       loading: cloudLoading,
+      syncStatus: cloudSyncStatus,
+      syncError: cloudSyncError,
+      lastSyncedAt: cloudLastSyncedAt,
+      conflict: cloudConflict,
       signUp,
       signIn,
+      googleSignIn,
       changePassword,
       resetPassword,
       signOut,
-      backupToCloud,
       restoreFromCloud,
       deleteBackupFromCloud,
       deleteAccountFromCloud,
       refreshBackups: refreshCloudBackups,
+      resolveConflict: resolveCloudConflict,
     },
   };
 }

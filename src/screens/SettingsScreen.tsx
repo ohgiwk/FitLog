@@ -1,5 +1,12 @@
 import { ScreenHeader } from '../components/ScreenHeader';
-import { EditIcon, ExportIcon, NotificationIcon, PartsIcon, PrivacyIcon } from '../icons';
+import {
+  AccountIcon,
+  EditIcon,
+  ExportIcon,
+  NotificationIcon,
+  PartsIcon,
+  PrivacyIcon,
+} from '../icons';
 import { ThemeMode, WeightUnit } from '../types';
 import { weightUnitLabel } from '../utils';
 import { useFitLogContext } from '../hooks/useFitLogContext';
@@ -26,6 +33,7 @@ function useSettingsScreenModel() {
     onChangeThemeMode: actions.setThemeMode,
     onOpenNotificationSettings: () => actions.setScreen('notificationSettings'),
     onOpenBackup: () => actions.setScreen('backup'),
+    onOpenAccountSettings: () => actions.setScreen('accountManagement'),
     onOpenPrivacyPolicy: () => actions.setScreen('privacyPolicy'),
     onOpenTermsOfService: () => actions.setScreen('termsOfService'),
   };
@@ -44,6 +52,7 @@ export function SettingsScreen() {
     onChangeThemeMode,
     onOpenNotificationSettings,
     onOpenBackup,
+    onOpenAccountSettings,
     onOpenPrivacyPolicy,
     onOpenTermsOfService,
   } = useSettingsScreenModel();
@@ -114,6 +123,15 @@ export function SettingsScreen() {
           <button className="settings-link-row" type="button" onClick={onOpenBackup}>
             <ExportIcon />
             <span>バックアップ</span>
+          </button>
+        </section>
+        <section className="settings-section" aria-labelledby="account-settings-title">
+          <h2 className="settings-section-title" id="account-settings-title">
+            アカウント
+          </h2>
+          <button className="settings-link-row" type="button" onClick={onOpenAccountSettings}>
+            <AccountIcon />
+            <span>アカウント設定</span>
           </button>
         </section>
         <section className="settings-section" aria-labelledby="notification-settings-title">

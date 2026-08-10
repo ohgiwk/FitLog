@@ -568,7 +568,8 @@
   grid-template-rows: auto repeat(4, auto) 1fr auto;
   width: min(78vw, 320px);
   min-height: 100dvh;
-  padding: max(18px, env(safe-area-inset-top)) 14px 18px;
+  padding: max(18px, env(safe-area-inset-top)) 14px
+    max(18px, env(safe-area-inset-bottom));
   background: var(--panel);
   color: var(--ink);
   box-shadow: var(--elevation-side-right);
@@ -764,6 +765,31 @@
 .drawer-logout:disabled {
   background: var(--disabled-bg);
   color: var(--disabled-text);
+}
+
+.drawer-auth-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.drawer-login {
+  min-height: 48px;
+  border-radius: 8px;
+  background: var(--red);
+  color: var(--text-on-primary);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.drawer-signup {
+  min-height: 48px;
+  border: 2px solid var(--red);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--red);
+  font-size: 14px;
+  font-weight: 900;
 }
 
 .drawer-spacer {

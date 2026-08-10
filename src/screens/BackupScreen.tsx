@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useRef, useState, useActionState } from 'react';
+import { ChangeEvent, useRef, useState, useActionState } from 'react';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ExportIcon, ImportIcon, TrashIcon } from '../icons';
 import { useFitLogContext } from '../hooks/useFitLogContext';
@@ -64,10 +64,8 @@ export function BackupScreen() {
   const cloud = actions.cloud;
   const pendingImport = actions.pendingImport;
   const importInputRef = useRef<HTMLInputElement | null>(null);
-  const authFormRef = useRef<HTMLFormElement | null>(null);
   const [restoreTarget, setRestoreTarget] = useState<CloudBackupItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CloudBackupItem | null>(null);
-  const [authPending, setAuthPending] = useState<'signIn' | 'signUp' | null>(null);
 
   /**
    * 選択されたバックアップファイルを読み込み処理へ渡す
@@ -79,59 +77,23 @@ export function BackupScreen() {
     await actions.importState(file);
   }
 
-  /**
-   * iOS WebView でも送信状態が確実に解除される形で認証処理を実行する
-   */
-  async function submitAuth(operation: 'signIn' | 'signUp') {
-    if (!authFormRef.current || authPending) return;
-    setAuthPending(operation);
-    try {
-      const formData = new FormData(authFormRef.current);
-      if (operation === 'signIn') await cloud.signIn(formData);
-      else await cloud.signUp(formData);
-    } finally {
-      setAuthPending(null);
-    }
-  }
-
-  function handleSignIn(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    void submitAuth('signIn');
-  }
-  const [, backupAction, backupPending] = useActionState(async () => {
-    await cloud.backupToCloud();
-    return null;
-  }, null);
-  const [, refreshAction, refreshPending] = useActionState(async () => {
-    await cloud.refreshBackups();
-    return null;
-  }, null);
   const [, restoreAction, restorePending] = useActionState(async (_: null, formData: FormData) => {
     const targetId = readFormString(formData, 'backupId');
+    const source = readFormString(formData, 'source') as CloudBackupItem['source'];
     if (!targetId) return null;
     setRestoreTarget(null);
-    await cloud.restoreFromCloud(targetId);
+    await cloud.restoreFromCloud(targetId, source);
     return null;
   }, null);
   const [, deleteAction, deletePending] = useActionState(async (_: null, formData: FormData) => {
     const targetId = readFormString(formData, 'backupId');
+    const source = readFormString(formData, 'source') as CloudBackupItem['source'];
     if (!targetId) return null;
     setDeleteTarget(null);
-    await cloud.deleteBackupFromCloud(targetId);
+    await cloud.deleteBackupFromCloud(targetId, source);
     return null;
   }, null);
-  const [, signOutAction, signOutPending] = useActionState(async () => {
-    await cloud.signOut();
-    return null;
-  }, null);
-  const cloudPending =
-    authPending !== null ||
-    backupPending ||
-    refreshPending ||
-    restorePending ||
-    deletePending ||
-    signOutPending ||
-    cloud.loading;
+  const cloudPending = restorePending || deletePending || cloud.loading;
 
   return (
     <section className="screen active settings-screen">
@@ -174,73 +136,41 @@ export function BackupScreen() {
                 Firebaseの設定がないため、クラウドバックアップは無効です。ローカル保存とJSONバックアップはそのまま使えます。
               </p>
             </div>
-          ) : !cloud.userEmail ? (
-            <form ref={authFormRef} className="settings-cloud-panel" onSubmit={handleSignIn}>
+          ) : !cloud.signedIn ? (
+            <div className="settings-cloud-panel">
               <p className="settings-help">
-                機種変更やバックアップが必要な場合だけログインしてください。未ログインでも記録は端末内に保存されます。
+                ログインすると、記録の変更後にクラウドへ自動バックアップします。
               </p>
-              <label className="form-field settings-cloud-email">
-                <span>メールアドレス</span>
-                <input
-                  className="form-input"
-                  name="email"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  placeholder="you@example.com"
-                />
-              </label>
-              <label className="form-field settings-cloud-email">
-                <span>パスワード</span>
-                <input
-                  className="form-input"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="6文字以上"
-                />
-              </label>
               <button
-                className="settings-primary-button settings-auth-submit"
-                type="submit"
-                disabled={cloudPending}
-              >
-                {authPending === 'signIn' ? 'ログイン中…' : 'ログイン'}
-              </button>
-              <div className="settings-auth-divider" aria-hidden="true">
-                または
-              </div>
-              <button
-                className="settings-small-button"
+                className="settings-primary-button"
                 type="button"
-                disabled={cloudPending}
-                onClick={() => void submitAuth('signUp')}
+                onClick={() => actions.setScreen('auth')}
               >
-                {authPending === 'signUp' ? '登録中…' : '新規登録'}
+                ログイン・新規登録
               </button>
-              <button
-                className="settings-text-button"
-                type="button"
-                onClick={() => actions.setScreen('forgotPassword')}
-              >
-                パスワードを忘れた場合
-              </button>
-            </form>
+            </div>
           ) : (
             <div className="settings-cloud-panel">
-              <form className="settings-cloud-action-form" action={backupAction}>
-                <button className="settings-primary-button" type="submit" disabled={cloudPending}>
-                  今すぐクラウドへバックアップ
-                </button>
-              </form>
+              <div className={`settings-sync-status ${cloud.syncStatus}`} role="status">
+                <strong>
+                  {cloud.syncStatus === 'syncing'
+                    ? '同期中…'
+                    : cloud.syncStatus === 'pending'
+                      ? '変更をバックアップ待ち'
+                      : cloud.syncStatus === 'error'
+                        ? '自動バックアップに失敗'
+                        : cloud.syncStatus === 'conflict'
+                          ? '復元方法を選択してください'
+                          : cloud.syncStatus === 'synced'
+                            ? '自動バックアップ済み'
+                            : '自動バックアップ待機中'}
+                </strong>
+                {cloud.lastSyncedAt && <span>最終同期 {formatBackupDate(cloud.lastSyncedAt)}</span>}
+                {cloud.syncError && <p>{cloud.syncError}</p>}
+              </div>
               <div className="settings-cloud-list" aria-label="クラウドバックアップ一覧">
                 <div className="settings-cloud-list-head">
-                  <span>最新バックアップ</span>
-                  <form action={refreshAction}>
-                    <button className="settings-text-button" type="submit" disabled={cloudPending}>
-                      更新
-                    </button>
-                  </form>
+                  <span>端末別の最新バックアップ</span>
                 </div>
                 {cloud.backups.length === 0 ? (
                   <p className="settings-help">まだクラウドバックアップはありません。</p>
@@ -249,6 +179,9 @@ export function BackupScreen() {
                     <div className="settings-backup-row" key={backup.id}>
                       <div className="settings-label">
                         <span>{formatBackupDate(backup.createdAt)}</span>
+                        <span>
+                          {backup.source === 'device' ? '端末バックアップ' : '旧バックアップ'}
+                        </span>
                         <strong>
                           種目{backup.exerciseCount}件 / 記録{backup.workoutCount}件
                           {backup.lastWorkoutDate ? ` / 最終 ${backup.lastWorkoutDate}` : ''}
@@ -280,35 +213,6 @@ export function BackupScreen() {
             </div>
           )}
         </section>
-        {cloud.enabled && cloud.userEmail && (
-          <section className="settings-section" aria-labelledby="account-management-title">
-            <h2 className="settings-section-title" id="account-management-title">
-              アカウント
-            </h2>
-            <div className="settings-cloud-panel">
-              <div className="settings-cloud-account">
-                <div className="settings-label">
-                  <span>ログイン中</span>
-                  <strong>{cloud.userEmail}</strong>
-                </div>
-                <div className="settings-account-actions">
-                  <button
-                    className="settings-small-button"
-                    type="button"
-                    onClick={() => actions.setScreen('accountManagement')}
-                  >
-                    管理
-                  </button>
-                  <form action={signOutAction}>
-                    <button className="settings-small-button" type="submit" disabled={cloudPending}>
-                      ログアウト
-                    </button>
-                  </form>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
       </div>
       {restoreTarget && (
         <div className="dialog-backdrop" role="presentation">
@@ -327,6 +231,7 @@ export function BackupScreen() {
             </p>
             <form className="confirm-actions" action={restoreAction}>
               <input name="backupId" type="hidden" value={restoreTarget.id} />
+              <input name="source" type="hidden" value={restoreTarget.source} />
               <button
                 className="small-outline"
                 type="button"
@@ -399,6 +304,7 @@ export function BackupScreen() {
             </p>
             <form className="confirm-actions" action={deleteAction}>
               <input name="backupId" type="hidden" value={deleteTarget.id} />
+              <input name="source" type="hidden" value={deleteTarget.source} />
               <button
                 className="small-outline"
                 type="button"

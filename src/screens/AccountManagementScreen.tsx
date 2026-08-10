@@ -28,7 +28,7 @@ export function AccountManagementScreen() {
 
   return (
     <section className="screen active settings-screen">
-      <ScreenHeader title="アカウント管理" />
+      <ScreenHeader title="アカウント設定" />
       <div className="settings-content">
         {!cloud.enabled ? (
           <section className="settings-section" aria-labelledby="account-disabled-title">
@@ -48,14 +48,14 @@ export function AccountManagementScreen() {
             </h2>
             <div className="settings-cloud-panel">
               <p className="settings-help">
-                パスワード変更とアカウント削除にはログインが必要です。バックアップ画面からログインしてください。
+                パスワード変更とアカウント削除にはログインが必要です。
               </p>
               <button
                 className="settings-primary-button"
                 type="button"
-                onClick={() => actions.setScreen('backup')}
+                onClick={() => actions.setScreen('auth')}
               >
-                バックアップへ戻る
+                ログイン・新規登録
               </button>
             </div>
           </section>

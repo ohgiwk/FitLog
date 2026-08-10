@@ -17,6 +17,7 @@ type NavigationDeps = {
 };
 
 const screenDepth: Record<Screen, number> = {
+  auth: 0,
   home: 0,
   select: 1,
   trainingMenu: 1,
@@ -39,6 +40,7 @@ const screenDepth: Record<Screen, number> = {
 };
 
 const fallbackBackScreens: Record<Screen, Screen> = {
+  auth: 'home',
   home: 'home',
   select: 'home',
   trainingMenu: 'home',
@@ -56,12 +58,13 @@ const fallbackBackScreens: Record<Screen, Screen> = {
   privacyPolicy: 'settings',
   termsOfService: 'settings',
   backup: 'settings',
-  accountManagement: 'backup',
+  accountManagement: 'settings',
   forgotPassword: 'backup',
 };
 
 function getTransitionDirection(current: Screen, next: Screen): ScreenTransitionDirection {
   if (current === next) return 'none';
+  if (current === 'auth' || next === 'auth') return 'none';
   return screenDepth[next] > screenDepth[current] ? 'forward' : 'back';
 }
 

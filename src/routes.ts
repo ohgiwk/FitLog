@@ -1,6 +1,7 @@
 import type { Screen } from './types';
 
 export const screenPaths: Record<Screen, string> = {
+  auth: '/auth',
   home: '/',
   select: '/exercises/select',
   exerciseEdit: '/exercises/edit',
@@ -17,7 +18,7 @@ export const screenPaths: Record<Screen, string> = {
   notificationSettings: '/settings/notifications',
   privacyPolicy: '/settings/privacy',
   termsOfService: '/settings/terms',
-  accountManagement: '/settings/backup/account',
+  accountManagement: '/settings/account',
   forgotPassword: '/settings/backup/password',
   backup: '/settings/backup',
 };

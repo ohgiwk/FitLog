@@ -1,5 +1,6 @@
 import { FirebaseError } from 'firebase/app';
 import {
+  GoogleAuthProvider,
   User,
   createUserWithEmailAndPassword,
   deleteUser,
@@ -7,9 +8,13 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  signInWithCredential,
+  signInWithPopup,
   signOut,
   updatePassword,
 } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
+import { GoogleSignIn } from '@capawesome/capacitor-google-sign-in';
 import {
   Firestore,
   collection,
@@ -30,8 +35,10 @@ import { uid } from './utils';
 
 export type CloudBackup = {
   id: string;
+  source: 'device' | 'legacy';
   createdAt: string;
   deviceId: string | null;
+  deviceName: string | null;
   exerciseCount: number;
   workoutCount: number;
   lastWorkoutDate: string | null;
@@ -41,7 +48,7 @@ export type SignUpResult = {
   alreadyRegistered: boolean;
 };
 
-type CloudAuthOperation = 'signUp' | 'signIn' | 'passwordReset';
+type CloudAuthOperation = 'signUp' | 'signIn' | 'googleSignIn' | 'passwordReset';
 
 const authRequestTimeoutMs = 15_000;
 
@@ -65,6 +72,13 @@ type CloudBackupRow = {
   stateJson: State;
   stateSchemaVersion: number;
   createdAt: string;
+};
+
+type DeviceBackupRow = {
+  name?: string;
+  stateJson?: State;
+  stateSchemaVersion?: number;
+  backupUpdatedAt?: string;
 };
 
 function isUserAlreadyRegisteredError(error: unknown) {
@@ -97,12 +111,18 @@ export function cloudAuthErrorMessage(error: unknown, operation: CloudAuthOperat
     return '認証サーバーから応答がありません。通信環境を確認して再度お試しください';
   }
   if (code === 'auth/operation-not-allowed') {
-    return 'メールアドレス認証が有効になっていません';
+    return operation === 'googleSignIn'
+      ? 'Googleログインが有効になっていません'
+      : 'メールアドレス認証が有効になっていません';
+  }
+  if (code === 'auth/popup-closed-by-user' || code === 'SIGN_IN_CANCELLED') {
+    return 'Googleログインをキャンセルしました';
   }
   if (code === 'auth/weak-password') return 'より安全なパスワードを設定してください';
 
   if (operation === 'signUp') return '新規登録に失敗しました';
   if (operation === 'signIn') return 'ログインに失敗しました';
+  if (operation === 'googleSignIn') return 'Googleログインに失敗しました';
   return 'パスワード再設定メールの送信に失敗しました';
 }
 
@@ -204,6 +224,30 @@ export async function signInWithPassword(email: string, password: string) {
 }
 
 /**
+ * WebまたはiOSのGoogleアカウントでFirebaseへログインする
+ */
+export async function signInWithGoogle() {
+  const { auth } = requireFirebaseClient();
+  if (!Capacitor.isNativePlatform()) {
+    await withAuthTimeout(signInWithPopup(auth, new GoogleAuthProvider()));
+    return;
+  }
+  const clientId =
+    typeof import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID === 'string'
+      ? import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID
+      : '';
+  if (!clientId) {
+    const error = new Error('Google web client ID is not configured') as Error & { code: string };
+    error.code = 'auth/operation-not-allowed';
+    throw error;
+  }
+  await GoogleSignIn.initialize({ clientId });
+  const result = await GoogleSignIn.signIn();
+  const credential = GoogleAuthProvider.credential(result.idToken);
+  await withAuthTimeout(signInWithCredential(auth, credential));
+}
+
+/**
  * ログイン中ユーザーのパスワードを変更する
  */
 export async function updateCloudPassword(password: string) {
@@ -227,6 +271,9 @@ export async function signOutCloud() {
   const client = getFirebaseClient();
   if (!client) return;
   await signOut(client.auth);
+  if (Capacitor.isNativePlatform()) {
+    await GoogleSignIn.signOut().catch(() => undefined);
+  }
 }
 
 /**
@@ -245,11 +292,15 @@ export async function ensureCloudProfile(user: User) {
     },
     { merge: true },
   );
-  await setDoc(doc(client.db, ...getUserDevicesPath(user.uid), deviceId), {
-    name: navigator.userAgent,
-    platform: navigator.platform,
-    lastSeenAt: now,
-  });
+  await setDoc(
+    doc(client.db, ...getUserDevicesPath(user.uid), deviceId),
+    {
+      name: navigator.userAgent,
+      platform: navigator.platform,
+      lastSeenAt: now,
+    },
+    { merge: true },
+  );
 }
 
 /**
@@ -284,6 +335,35 @@ export async function createCloudBackup(state: State) {
 }
 
 /**
+ * 現在端末の固定ドキュメントへ最新版を上書き保存する
+ */
+export async function saveDeviceCloudBackup(state: State) {
+  const { db } = requireFirebaseClient();
+  const session = await getCloudSession();
+  if (!session) throw new Error('Not signed in');
+  const deviceId = getDeviceId();
+  const now = new Date().toISOString();
+  await setDoc(
+    doc(db, ...getUserDevicesPath(session.user.uid), deviceId),
+    {
+      name: navigator.userAgent,
+      platform: navigator.platform,
+      lastSeenAt: now,
+      backupUpdatedAt: now,
+      stateJson: state,
+      stateSchemaVersion: state.schemaVersion,
+    },
+    { merge: true },
+  );
+  await setDoc(
+    doc(db, ...getUserDocPath(session.user.uid)),
+    { email: session.user.email ?? null, updatedAt: now },
+    { merge: true },
+  );
+  return now;
+}
+
+/**
  * 最新バックアップ一覧を取得する
  */
 export async function listCloudBackups(): Promise<CloudBackup[]> {
@@ -291,45 +371,71 @@ export async function listCloudBackups(): Promise<CloudBackup[]> {
   if (!client) return [];
   const session = await getCloudSession();
   if (!session) return [];
-  const snapshot = await getDocs(
+  const [legacySnapshot, deviceSnapshot] = await Promise.all([
+    getDocs(
     query(
       collection(client.db, ...getUserBackupsPath(session.user.uid)),
       orderBy('createdAt', 'desc'),
       limit(5),
-    ),
-  );
-  return snapshot.docs.map((backupDoc) => {
+    )),
+    getDocs(collection(client.db, ...getUserDevicesPath(session.user.uid))),
+  ]);
+  const legacyBackups = legacySnapshot.docs.map((backupDoc) => {
     const row = { id: backupDoc.id, ...backupDoc.data() } as CloudBackupRow;
     return {
       id: row.id,
+      source: 'legacy' as const,
       createdAt: row.createdAt,
       deviceId: row.deviceId,
+      deviceName: null,
       ...summarizeState(row.stateJson),
     };
   });
+  const deviceBackups = deviceSnapshot.docs.flatMap((deviceDoc) => {
+    const row = deviceDoc.data() as DeviceBackupRow;
+    if (!row.stateJson || !row.backupUpdatedAt) return [];
+    return [{
+      id: deviceDoc.id,
+      source: 'device' as const,
+      createdAt: row.backupUpdatedAt,
+      deviceId: deviceDoc.id,
+      deviceName: row.name ?? null,
+      ...summarizeState(row.stateJson),
+    }];
+  });
+  return [...deviceBackups, ...legacyBackups].sort((a, b) =>
+    b.createdAt.localeCompare(a.createdAt),
+  );
 }
 
 /**
  * 指定したバックアップのStateを取得する
  */
-export async function fetchCloudBackupState(id: string): Promise<State> {
+export async function fetchCloudBackupState(id: string, source: CloudBackup['source'] = 'legacy'): Promise<State> {
   const { db } = requireFirebaseClient();
   const session = await getCloudSession();
   if (!session) throw new Error('Not signed in');
-  const backupSnapshot = await getDoc(doc(db, ...getUserBackupsPath(session.user.uid), id));
+  const backupRef = source === 'device'
+    ? doc(db, ...getUserDevicesPath(session.user.uid), id)
+    : doc(db, ...getUserBackupsPath(session.user.uid), id);
+  const backupSnapshot = await getDoc(backupRef);
   if (!backupSnapshot.exists()) throw new Error('Backup not found');
-  const row = { id: backupSnapshot.id, ...backupSnapshot.data() } as CloudBackupRow;
+  const row = backupSnapshot.data() as CloudBackupRow | DeviceBackupRow;
+  if (!row.stateJson) throw new Error('Backup not found');
   return row.stateJson;
 }
 
 /**
  * 指定したクラウドバックアップを削除する
  */
-export async function deleteCloudBackup(id: string) {
+export async function deleteCloudBackup(id: string, source: CloudBackup['source'] = 'legacy') {
   const { db } = requireFirebaseClient();
   const session = await getCloudSession();
   if (!session) throw new Error('Not signed in');
-  await deleteDoc(doc(db, ...getUserBackupsPath(session.user.uid), id));
+  const backupRef = source === 'device'
+    ? doc(db, ...getUserDevicesPath(session.user.uid), id)
+    : doc(db, ...getUserBackupsPath(session.user.uid), id);
+  await deleteDoc(backupRef);
 }
 
 /**

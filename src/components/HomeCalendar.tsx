@@ -16,6 +16,7 @@ type HomeCalendarProps = {
   onOpenAnalysis: () => void;
   onOpenSettings: () => void;
   onOpenGoalAchievements: () => void;
+  onOpenAuth: (mode: 'signIn' | 'signUp') => void;
   onOverlayStateChange: (state: HomeCalendarOverlayState) => void;
   cloud: CloudActions;
 };
@@ -33,6 +34,7 @@ export function HomeCalendar({
   onOpenAnalysis,
   onOpenSettings,
   onOpenGoalAchievements,
+  onOpenAuth,
   onOverlayStateChange,
   cloud,
 }: HomeCalendarProps) {
@@ -93,7 +95,11 @@ export function HomeCalendar({
   }
 
   const drawerLayer = drawerVisible ? (
-    <div className={`drawer-layer ${drawerState}`} role="presentation" onClick={() => closeDrawer()}>
+    <div
+      className={`drawer-layer ${drawerState}`}
+      role="presentation"
+      onClick={() => closeDrawer()}
+    >
       <aside
         className={`home-drawer ${drawerState}`}
         role="dialog"
@@ -131,17 +137,25 @@ export function HomeCalendar({
           <TrophyIcon />
           <span>目標達成記録</span>
         </button>
-        <button className="drawer-link" type="button" onClick={() => openFromDrawer(onOpenAnalysis)}>
+        <button
+          className="drawer-link"
+          type="button"
+          onClick={() => openFromDrawer(onOpenAnalysis)}
+        >
           <AnalysisIcon />
           <span>分析</span>
         </button>
-        <button className="drawer-link" type="button" onClick={() => openFromDrawer(onOpenSettings)}>
+        <button
+          className="drawer-link"
+          type="button"
+          onClick={() => openFromDrawer(onOpenSettings)}
+        >
           <SettingsIcon />
           <span>設定</span>
         </button>
-        {cloud.userEmail && (
+        <div className="drawer-spacer" aria-hidden="true" />
+        {cloud.signedIn ? (
           <>
-            <div className="drawer-spacer" aria-hidden="true" />
             <div className="drawer-account" aria-label="ログイン状態">
               <div>
                 <span>ログイン中</span>
@@ -157,6 +171,23 @@ export function HomeCalendar({
               </button>
             </div>
           </>
+        ) : (
+          <div className="drawer-auth-actions">
+            <button
+              className="drawer-login"
+              type="button"
+              onClick={() => openFromDrawer(() => onOpenAuth('signIn'))}
+            >
+              ログイン
+            </button>
+            <button
+              className="drawer-signup"
+              type="button"
+              onClick={() => openFromDrawer(() => onOpenAuth('signUp'))}
+            >
+              新規登録
+            </button>
+          </div>
         )}
       </aside>
     </div>

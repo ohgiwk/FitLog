@@ -1,4 +1,5 @@
 export type Screen =
+  | 'auth'
   | 'home'
   | 'select'
   | 'exerciseEdit'

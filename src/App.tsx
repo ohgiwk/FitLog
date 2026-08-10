@@ -17,6 +17,7 @@ import { NotificationSettingsScreen } from './screens/NotificationSettingsScreen
 import { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from './screens/TermsOfServiceScreen';
 import { BackupScreen } from './screens/BackupScreen';
+import { AuthScreen } from './screens/AuthScreen';
 import { AccountManagementScreen } from './screens/AccountManagementScreen';
 import { ForgotPasswordScreen } from './screens/ForgotPasswordScreen';
 import { AnalysisScreen } from './screens/AnalysisScreen';
@@ -25,6 +26,7 @@ import { PlusIcon } from './icons';
 import { RestTimer } from './components/RestTimer';
 import type { Screen } from './types';
 import { screenPaths } from './routes';
+import { completeAuthIntro, hasCompletedAuthIntro } from './authState';
 import {
   formatStoredWeightInput,
   formatWeightForStorageInput,
@@ -72,6 +74,7 @@ function AppShell() {
     drawerState: 'closed',
   });
   const workoutEndTime = state.workoutEndTimes[selectedDate];
+  const cloud = actions.cloud;
   const currentExerciseManagePart =
     activePart && groupedExercises.has(activePart) ? activePart : [...groupedExercises.keys()][0];
   const showHomeFab = screen === 'home' && !workoutEndTime && selectedWorkouts.length > 0;
@@ -210,6 +213,16 @@ function AppShell() {
   }, [screen]);
 
   useEffect(() => {
+    if (!cloud.authReady) return;
+    if (cloud.signedIn) {
+      completeAuthIntro();
+      if (screen === 'auth') actions.setScreen('home');
+      return;
+    }
+    if (!hasCompletedAuthIntro() && screen !== 'auth') actions.setScreen('auth');
+  }, [actions, cloud.authReady, cloud.signedIn, screen]);
+
+  useEffect(() => {
     if (screen === 'home') return;
     setHomeOverlayState({ calendarBackdropState: 'closed', drawerState: 'closed' });
   }, [screen]);
@@ -226,6 +239,16 @@ function AppShell() {
   }
 
   function renderScreen(targetScreen: Screen) {
+    if (targetScreen === 'auth') {
+      return (
+        <div className="auth-overlay-stack">
+          <div className="auth-home-background" aria-hidden="true" inert>
+            <HomeScreen onOverlayStateChange={setHomeOverlayState} />
+          </div>
+          <AuthScreen />
+        </div>
+      );
+    }
     if (targetScreen === 'home') {
       return <HomeScreen onOverlayStateChange={setHomeOverlayState} />;
     }
@@ -293,13 +316,13 @@ function AppShell() {
         </div>
       </main>
 
-      <RestTimer
+      {screen !== 'auth' && <RestTimer
         defaultSeconds={state.restTimerSettings.defaultSeconds}
         autoStartOnIntensity={state.restTimerSettings.autoStartOnIntensity}
         showIdle={showRestTimerIdle}
         onChangeDefaultSeconds={actions.setRestTimerDefaultSeconds}
         onChangeAutoStart={actions.setRestTimerAutoStart}
-      />
+      />}
       {drawerOverlayVisible && (
         <div className={`home-app-backdrop ${drawerOverlayClass}`} aria-hidden="true" />
       )}
@@ -324,6 +347,34 @@ function AppShell() {
           </div>
         )}
       </div>
+      {cloud.conflict && (
+        <div className="dialog-backdrop" role="presentation">
+          <div className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="cloud-conflict-title">
+            <div className="confirm-title" id="cloud-conflict-title">使用する記録を選択</div>
+            <p>
+              クラウドに既存のバックアップがあります。自動バックアップを始める前に、使用するデータを選んでください。
+            </p>
+            <div className="confirm-actions cloud-conflict-actions">
+              <button
+                className="small-outline"
+                type="button"
+                disabled={cloud.loading}
+                onClick={() => void cloud.resolveConflict('device')}
+              >
+                この端末を優先
+              </button>
+              <button
+                className="primary-button"
+                type="button"
+                disabled={cloud.loading}
+                onClick={() => void cloud.resolveConflict('cloud')}
+              >
+                クラウドから復元
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {fabAction && (
         <button
           key={fabKey}
