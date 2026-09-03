@@ -584,7 +584,7 @@ export function DetailScreen() {
     setRecordInputs((current) => ({ ...current, ...nextRecordInputs }));
   }
   return (
-    <section className="screen active">
+    <section className="screen active detail-screen">
       <ScreenHeader
         title={workout.name}
         right={

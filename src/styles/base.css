@@ -221,10 +221,6 @@ input {
   background: var(--bg);
 }
 
-.app.rest-timer-visible {
-  padding-bottom: calc(var(--safe-area-bottom) + 78px);
-}
-
 .app::-webkit-scrollbar {
   display: none;
 }
@@ -339,6 +335,10 @@ input {
 
 .detail-screen .content {
   padding-top: 28px;
+}
+
+.app.rest-timer-visible .detail-screen .content {
+  padding-bottom: calc(var(--safe-area-bottom) + 104px);
 }
 
 .empty {

@@ -122,7 +122,9 @@ test('種目詳細の末尾がレストタイマーに隠れず、リロード�
 
   const addTodayNoteButton = page.getByRole('button', { name: '本日のメモを追加' });
   const restTimer = page.getByLabel('レストタイマー', { exact: true });
-  await addTodayNoteButton.scrollIntoViewIfNeeded();
+  await page.locator('.detail-screen .content').evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
   const buttonBox = await addTodayNoteButton.boundingBox();
   const timerBox = await restTimer.boundingBox();
   expect(buttonBox).not.toBeNull();
