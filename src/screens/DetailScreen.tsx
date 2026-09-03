@@ -104,16 +104,16 @@ function WorkoutUsageTimer({
   return (
     <div
       className={`workout-usage-timer ${expanded ? 'expanded' : ''}`}
-      aria-label="種目使用時間"
+      aria-label="種目実施時間"
     >
       <button
         className="workout-usage-summary"
         type="button"
         aria-expanded={expanded}
-        aria-label={expanded ? '使用時間タイマーを閉じる' : '使用時間タイマーを操作'}
+        aria-label={expanded ? '実施時間タイマーを閉じる' : '実施時間タイマーを操作'}
         onClick={() => setExpanded((current) => !current)}
       >
-        {expanded && <span>使用時間</span>}
+        {expanded && <span>実施時間</span>}
         <strong aria-live="off">{formatWorkoutUsageTime(elapsed)}</strong>
       </button>
       {!readOnly && expanded && (

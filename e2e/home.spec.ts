@@ -136,14 +136,14 @@ test('種目詳細の末尾がレストタイマーに隠れず、リロード�
   await expect(page.getByRole('button', { name: `${exerciseName}の詳細を開く` })).toBeVisible();
 });
 
-test('種目使用時間を自動開始し、画面移動後も続きから再開できる', async ({ page }) => {
+test('種目実施時間を自動開始し、画面移動後も続きから再開できる', async ({ page }) => {
   await startExercise(page);
 
-  const usageTimer = page.getByLabel('種目使用時間');
+  const usageTimer = page.getByLabel('種目実施時間');
   await expect(usageTimer).toBeVisible();
   await expect(usageTimer.locator('strong')).not.toHaveText('0:00', { timeout: 3_000 });
 
-  await page.getByRole('button', { name: '使用時間タイマーを操作' }).click();
+  await page.getByRole('button', { name: '実施時間タイマーを操作' }).click();
   await page.getByRole('button', { name: '停止', exact: true }).click();
   const stoppedTime = await usageTimer.locator('strong').textContent();
   await page.waitForTimeout(1_100);
@@ -151,9 +151,9 @@ test('種目使用時間を自動開始し、画面移動後も続きから再�
 
   await page.getByRole('button', { name: '戻る' }).click();
   await page.getByRole('button', { name: `${exerciseName}の詳細を開く` }).click();
-  await page.getByRole('button', { name: '使用時間タイマーを操作' }).click();
+  await page.getByRole('button', { name: '実施時間タイマーを操作' }).click();
   await expect(page.getByRole('button', { name: '停止', exact: true })).toBeVisible();
-  await expect(page.getByLabel('種目使用時間').locator('strong')).not.toHaveText(
+  await expect(page.getByLabel('種目実施時間').locator('strong')).not.toHaveText(
     stoppedTime ?? '',
     { timeout: 3_000 },
   );

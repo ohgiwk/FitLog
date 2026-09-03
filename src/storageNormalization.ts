@@ -113,7 +113,7 @@ const stateMigrations: {
 ];
 
 /**
- * 旧ワークアウトへ種目使用時間の初期値を追加する
+ * 旧ワークアウトへ種目実施時間の初期値を追加する
  */
 function migrateWorkoutUsageTimers(state: SavedStateShape): SavedStateShape {
   if (!Array.isArray(state.workouts)) return state;

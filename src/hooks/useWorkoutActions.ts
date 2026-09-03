@@ -274,7 +274,7 @@ export function useWorkoutActions({
   }
 
   /**
-   * 対象種目の使用時間を開始し、他の種目で動作中のタイマーを停止する
+   * 対象種目の実施時間を開始し、他の種目で動作中のタイマーを停止する
    */
   function startWorkoutUsage(workoutId: string) {
     const now = Date.now();
@@ -295,7 +295,7 @@ export function useWorkoutActions({
   }
 
   /**
-   * 対象種目の使用時間を累積値へ確定して停止する
+   * 対象種目の実施時間を累積値へ確定して停止する
    */
   function pauseWorkoutUsage(workoutId: string) {
     const now = Date.now();
@@ -308,7 +308,7 @@ export function useWorkoutActions({
   }
 
   /**
-   * 詳細画面外に残っているすべての種目使用タイマーを停止する
+   * 詳細画面外に残っているすべての種目実施タイマーを停止する
    */
   function pauseAllWorkoutUsage() {
     const now = Date.now();
@@ -319,7 +319,7 @@ export function useWorkoutActions({
   }
 
   /**
-   * 対象種目の使用時間を0秒へ戻して停止する
+   * 対象種目の実施時間を0秒へ戻して停止する
    */
   function resetWorkoutUsage(workoutId: string) {
     saveState((prev) => ({

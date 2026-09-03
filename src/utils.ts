@@ -32,7 +32,7 @@ export const exerciseCategories: { value: ExerciseCategory; label: string }[] = 
 export const defaultExerciseCategory: ExerciseCategory = 'free';
 
 /**
- * 保存済みの累積時間と計測開始日時から、現在の種目使用秒数を求める
+ * 保存済みの累積時間と計測開始日時から、現在の種目実施秒数を求める
  */
 export function workoutUsageElapsedSeconds(workout: Workout, now = Date.now()) {
   const elapsed = Math.max(0, Math.floor(workout.usageElapsedSeconds || 0));
@@ -43,7 +43,7 @@ export function workoutUsageElapsedSeconds(workout: Workout, now = Date.now()) {
 }
 
 /**
- * 種目使用時間を1時間未満は M:SS、1時間以上は H:MM:SS で表示する
+ * 種目実施時間を1時間未満は M:SS、1時間以上は H:MM:SS で表示する
  */
 export function formatWorkoutUsageTime(totalSeconds: number) {
   const seconds = Math.max(0, Math.floor(totalSeconds));
