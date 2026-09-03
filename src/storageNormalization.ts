@@ -23,7 +23,7 @@ import {
 import { defaultExerciseCategory, uid } from './utils';
 
 const REST_PART = 'レスト';
-export const stateSchemaVersion = 2;
+export const stateSchemaVersion = 3;
 const defaultPresets: Preset[] = [
   { id: 'preset-chest-day', name: '胸の日', exerciseIds: [] },
   { id: 'preset-back-day', name: '背中の日', exerciseIds: [] },
@@ -102,7 +102,44 @@ const stateMigrations: {
     version: 2,
     up: (state) => state,
   },
+  {
+    version: 3,
+    up: migrateExerciseNotes,
+  },
 ];
+
+/**
+ * 旧ワークアウトメモの最新値を種目共通メモへ移し、日別メモ欄を空で新設する
+ */
+function migrateExerciseNotes(state: SavedStateShape): SavedStateShape {
+  if (!Array.isArray(state.exercises) || !Array.isArray(state.workouts)) return state;
+  const latestNoteByExercise = new Map<string, { date: string; note: string }>();
+  state.workouts.forEach((value) => {
+    const workout = recordOf(value);
+    if (!workout || typeof workout.exerciseId !== 'string' || typeof workout.note !== 'string') {
+      return;
+    }
+    const note = workout.note.trim();
+    const date = typeof workout.date === 'string' ? workout.date : '';
+    const current = latestNoteByExercise.get(workout.exerciseId);
+    if (note && (!current || date >= current.date)) {
+      latestNoteByExercise.set(workout.exerciseId, { date, note: workout.note });
+    }
+  });
+  return {
+    ...state,
+    exercises: state.exercises.map((value) => {
+      const exercise = recordOf(value);
+      if (!exercise || typeof exercise.id !== 'string') return value;
+      const existingNote = typeof exercise.note === 'string' ? exercise.note : '';
+      return { ...exercise, note: existingNote || latestNoteByExercise.get(exercise.id)?.note || '' };
+    }) as State['exercises'],
+    workouts: state.workouts.map((value) => {
+      const workout = recordOf(value);
+      return workout ? { ...workout, note: '' } : value;
+    }) as State['workouts'],
+  };
+}
 
 export function normalizeState(saved: Partial<State> | null | undefined): State | null {
   if (!saved?.exercises || !saved?.workouts) return null;
@@ -191,7 +228,7 @@ function normalizeRestTimerSeconds(value: unknown): number {
 function normalizeSchemaVersion(value: unknown): number {
   return typeof value === 'number' && Number.isInteger(value) && value > 0
     ? value
-    : stateSchemaVersion;
+    : 1;
 }
 
 function normalizeUpdatedAt(value: unknown): string {
@@ -437,6 +474,7 @@ function normalizeExercises(value: unknown): State['exercises'] {
         id: item.id,
         part: item.part,
         name: item.name,
+        note: typeof item.note === 'string' ? item.note : '',
         measurementType: normalizeMeasurementType(item.measurementType),
         category: normalizeExerciseCategory(item.category, item.part, item.name),
         availableGrips: normalizeGrips(item.availableGrips),

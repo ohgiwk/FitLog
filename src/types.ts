@@ -76,6 +76,7 @@ export type Exercise = {
   id: string;
   part: string;
   name: string;
+  note?: string;
   measurementType: MeasurementType;
   category: ExerciseCategory;
   availableGrips?: GripType[];

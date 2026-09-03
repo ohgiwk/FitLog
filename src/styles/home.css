@@ -34,6 +34,19 @@
   pointer-events: none;
 }
 
+.exercise-today-note {
+  position: relative;
+  z-index: 0;
+  margin: 0 0 12px;
+  border-top: 1px solid var(--border-faint);
+  padding: 8px 12px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 @keyframes exercise-card-remove {
   from {
     opacity: 1;

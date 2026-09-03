@@ -179,6 +179,7 @@ export const starterExercises: Exercise[] = starterCatalog.flatMap(({ part, cate
       id: uid(),
       part,
       name,
+      note: '',
       measurementType: 'reps' as const,
       category,
       availableGrips: [...gripTypes],

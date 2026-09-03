@@ -458,6 +458,29 @@
   border-color: var(--red);
 }
 
+.workout-today-note {
+  margin-top: -8px;
+}
+
+.add-today-note-button {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: -8px 14px 24px;
+  border: 1px dashed var(--input-line);
+  border-radius: 8px;
+  color: var(--text-secondary-strong);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.add-today-note-button svg {
+  width: 17px;
+  height: 17px;
+}
+
 .detail-row {
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr) 62px;

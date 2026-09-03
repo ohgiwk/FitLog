@@ -83,6 +83,27 @@ describe('normalizeState', () => {
     expect(result?.schemaVersion).toBe(stateSchemaVersion);
   });
 
+  it('旧形式の最新ワークアウトメモを種目メモへ移し、日別メモを空にする', () => {
+    const saved = {
+      ...makeValidSaved(),
+      schemaVersion: 2,
+      workouts: [
+        {
+          id: 'w1', exerciseId: 'e1', date: '2026-01-01', name: 'ベンチプレス', part: '胸',
+          measurementType: 'reps', sets: [], note: '古いメモ',
+        },
+        {
+          id: 'w2', exerciseId: 'e1', date: '2026-02-01', name: 'ベンチプレス', part: '胸',
+          measurementType: 'reps', sets: [], note: '最新のメモ',
+        },
+      ],
+    };
+    const result = normalizeState(saved as unknown as Partial<State>);
+
+    expect(result?.exercises[0].note).toBe('最新のメモ');
+    expect(result?.workouts.map((workout) => workout.note)).toEqual(['', '']);
+  });
+
   it('updatedAt が無い旧データには既定日時を補完する', () => {
     const result = normalizeState(makeValidSaved() as unknown as Partial<State>);
     expect(result?.updatedAt).toBe('1970-01-01T00:00:00.000Z');
@@ -266,8 +287,9 @@ describe('normalizeState', () => {
     ]);
   });
 
-  it('種目メモを保持し、旧セットメモは破棄する', () => {
+  it('現行の日別メモを保持し、旧セットメモは破棄する', () => {
     const saved = {
+      schemaVersion: stateSchemaVersion,
       exercises: [{ id: 'e1', part: '胸', name: 'ベンチ', measurementType: 'reps' }],
       workouts: [
         {

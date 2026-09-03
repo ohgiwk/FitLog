@@ -370,6 +370,7 @@ export function useSmithNote() {
       selectPart: ui.selectPart,
       updateExercise: exercise.updateExercise,
       updateExerciseGoal: exercise.updateExerciseGoal,
+      updateExerciseNote: exercise.updateExerciseNote,
       clearGoalAchievement: () => ui.setGoalAchievement(null),
       clearScreenTransition: nav.clearScreenTransition,
       clearToast: core.clearToast,

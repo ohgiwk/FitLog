@@ -50,6 +50,7 @@ function useDetailScreenModel() {
     onAddSet: actions.addSet,
     onCopyWorkoutSetValues: actions.copyWorkoutSetValues,
     onUpdateExerciseGoal: actions.updateExerciseGoal,
+    onUpdateExerciseNote: actions.updateExerciseNote,
   };
 }
 
@@ -515,10 +516,13 @@ export function DetailScreen() {
     onAddSet,
     onCopyWorkoutSetValues,
     onUpdateExerciseGoal,
+    onUpdateExerciseNote,
   } = useDetailScreenModel();
   const [openDeleteSetId, setOpenDeleteSetId] = useState<string | null>(null);
   const [weightInputs, setWeightInputs] = useState<Record<string, string>>({});
   const [recordInputs, setRecordInputs] = useState<Record<string, string>>({});
+  const [showTodayNote, setShowTodayNote] = useState(Boolean(workout?.note));
+  useEffect(() => setShowTodayNote(Boolean(workout?.note)), [workout?.id, workout?.note]);
   if (!workout) return null;
   const currentWorkout = workout;
   const isReps = isRepsMeasurement(workout.measurementType);
@@ -729,17 +733,43 @@ export function DetailScreen() {
             onUpdateGripStyle={onUpdateWorkoutGripStyle}
           />
         )}
-        <label className="workout-note">
-          <span>メモ</span>
-          <textarea
-            maxLength={1000}
-            placeholder="この種目のメモを入力"
-            rows={5}
-            readOnly={readOnly}
-            value={workout.note}
-            onChange={(event) => onUpdateWorkoutNote(workout.id, event.target.value)}
-          />
-        </label>
+        {exercise && (
+          <label className="workout-note">
+            <span>種目メモ</span>
+            <textarea
+              maxLength={1000}
+              placeholder="フォームや器具設定など、次回も引き継ぐメモ"
+              rows={5}
+              readOnly={readOnly}
+              value={exercise.note ?? ''}
+              onChange={(event) => onUpdateExerciseNote(exercise.id, event.target.value)}
+            />
+          </label>
+        )}
+        {(showTodayNote || Boolean(workout.note)) && (
+          <label className="workout-note workout-today-note">
+            <span>本日のメモ</span>
+            <textarea
+              autoFocus={!workout.note}
+              maxLength={1000}
+              placeholder="今日のコンディションや気づきを入力"
+              rows={4}
+              readOnly={readOnly}
+              value={workout.note}
+              onChange={(event) => onUpdateWorkoutNote(workout.id, event.target.value)}
+            />
+          </label>
+        )}
+        {!readOnly && !showTodayNote && !workout.note && (
+          <button
+            className="add-today-note-button"
+            type="button"
+            onClick={() => setShowTodayNote(true)}
+          >
+            <PlusIcon />
+            本日のメモを追加
+          </button>
+        )}
       </div>
     </section>
   );

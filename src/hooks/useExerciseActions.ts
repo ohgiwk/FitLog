@@ -42,6 +42,7 @@ export function useExerciseActions({ state, saveState, showToast }: ExerciseActi
       id: uid(),
       part: trimmedPart,
       name: trimmedName,
+      note: '',
       measurementType,
       category,
       availableGrips,
@@ -135,6 +136,18 @@ export function useExerciseActions({ state, saveState, showToast }: ExerciseActi
   }
 
   /**
+   * 種目をまたいで引き継ぐ共通メモを更新する
+   */
+  function updateExerciseNote(exerciseId: string, note: string) {
+    saveState((prev) => ({
+      ...prev,
+      exercises: prev.exercises.map((exercise) =>
+        exercise.id === exerciseId ? { ...exercise, note } : exercise,
+      ),
+    }));
+  }
+
+  /**
    * 指定部位の種目を、与えられたレイアウト(並び順＋カテゴリ)へ反映する。
    * 部位内の種目だけを並び替え、他部位の種目はマスタ配列内の位置を保つ。
    * カテゴリをまたいでドロップした種目は、移動先のカテゴリへ変更される
@@ -211,6 +224,7 @@ export function useExerciseActions({ state, saveState, showToast }: ExerciseActi
     addExerciseToPart,
     updateExercise,
     updateExerciseGoal,
+    updateExerciseNote,
     reorderPartExercises,
     deleteExercise,
   };

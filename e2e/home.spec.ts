@@ -115,6 +115,25 @@ test('トレーニング開始からセット入力まででき、リロード�
   await expect(reloadedExerciseCard.locator('td.reps').first()).toContainText('10');
 });
 
+test('種目詳細の末尾がレストタイマーに隠れず、リロードしても黒画面にならない', async ({
+  page,
+}) => {
+  await startExercise(page);
+
+  const addTodayNoteButton = page.getByRole('button', { name: '本日のメモを追加' });
+  const restTimer = page.getByLabel('レストタイマー', { exact: true });
+  await addTodayNoteButton.scrollIntoViewIfNeeded();
+  const buttonBox = await addTodayNoteButton.boundingBox();
+  const timerBox = await restTimer.boundingBox();
+  expect(buttonBox).not.toBeNull();
+  expect(timerBox).not.toBeNull();
+  expect(buttonBox!.y + buttonBox!.height).toBeLessThanOrEqual(timerBox!.y);
+
+  await page.reload();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('button', { name: `${exerciseName}の詳細を開く` })).toBeVisible();
+});
+
 test('ホームで種目記録を2件続けて削除しても toast は自動で消える', async ({ page }) => {
   await startExercise(page, exerciseName);
   await fillFirstSet(page, '60', '10', exerciseName);

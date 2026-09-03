@@ -51,6 +51,8 @@ function renderDetailScreen({
   updateSetAchievement = vi.fn(),
   resetSetAchievement = vi.fn(),
   copyWorkoutSetValues = vi.fn(),
+  updateWorkoutNote = vi.fn(),
+  updateExerciseNote = vi.fn(),
   weightUnit = 'kg',
   currentWorkout = workout,
   workouts,
@@ -61,6 +63,8 @@ function renderDetailScreen({
   updateSetAchievement?: ReturnType<typeof vi.fn>;
   resetSetAchievement?: ReturnType<typeof vi.fn>;
   copyWorkoutSetValues?: ReturnType<typeof vi.fn>;
+  updateWorkoutNote?: ReturnType<typeof vi.fn>;
+  updateExerciseNote?: ReturnType<typeof vi.fn>;
   weightUnit?: State['weightUnit'];
   currentWorkout?: Workout;
   workouts?: Workout[];
@@ -83,7 +87,8 @@ function renderDetailScreen({
       updateSet,
       updateSetAchievement,
       resetSetAchievement,
-      updateWorkoutNote: vi.fn(),
+      updateWorkoutNote,
+      updateExerciseNote,
       updateSetIntensity: vi.fn(),
       updateWorkoutGrip: vi.fn(),
       updateWorkoutGripStyle: vi.fn(),
@@ -110,6 +115,22 @@ function detailNumberInputs(container: HTMLElement) {
 }
 
 describe('DetailScreen set inputs', () => {
+  it('種目メモを種目マスタへ保存し、本日のメモは追加後にワークアウトへ保存する', () => {
+    const updateExerciseNote = vi.fn();
+    const updateWorkoutNote = vi.fn();
+    const { container } = renderDetailScreen({ updateExerciseNote, updateWorkoutNote });
+
+    const exerciseNote = within(container).getByLabelText('種目メモ');
+    fireEvent.change(exerciseNote, { target: { value: 'バーの位置を固定' } });
+    expect(updateExerciseNote).toHaveBeenCalledWith('e1', 'バーの位置を固定');
+
+    expect(within(container).queryByLabelText('本日のメモ')).toBeNull();
+    fireEvent.click(within(container).getByRole('button', { name: '本日のメモを追加' }));
+    const todayNote = within(container).getByLabelText('本日のメモ');
+    fireEvent.change(todayNote, { target: { value: '肩に違和感あり' } });
+    expect(updateWorkoutNote).toHaveBeenCalledWith('w1', '肩に違和感あり');
+  });
+
   it('重量入力中の文字列を保ち、保存値は数値へ変換する', () => {
     const updateSet = vi.fn();
     const { container } = renderDetailScreen({ updateSet });

@@ -316,6 +316,7 @@ type Exercise = {
   id: string;
   part: string;          // 部位（例: 胸 / 背中 / 脚 / 肩 / 腕 / その他）
   name: string;          // 種目名
+  note?: string;         // 日付をまたいで引き継ぐ種目共通メモ
   measurementType: MeasurementType; // 記録単位（回数 / 秒数）
   category: ExerciseCategory; // 器具カテゴリ（種目リスト内の小見出し分類）
   availableGrips?: GripType[]; // この種目で選択できる握りの向き
@@ -818,7 +819,8 @@ flowchart TD
   - 入力欄の表示・入力単位は設定に従うが、保存する `WorkoutSet.weight` は kg に換算した値を保持する。
   - reps 種目のみ RM を表示、seconds 種目は `-`。
 - **詳細記録**: セット一覧の下、メモの上に折りたたみ式の「詳細記録」エリアを表示する。見出しを押すと開閉し、「握りの向き」と「握り方」を横並びに表示する。その日の `Workout.grip` / `Workout.gripStyle` として保存し、候補は種目マスタの `availableGrips` / `availableGripStyles` に従う。
-- **メモ**: 詳細記録の下に「メモ」テキストエリアを表示し、その日の種目記録の `Workout.note` として保存する（最大 1000 文字）。
+- **種目メモ**: 詳細記録の下に常設し、フォームや器具設定など日付をまたいで引き継ぐ内容を `Exercise.note` として保存する（最大 1000 文字）。
+- **本日のメモ**: 種目メモの下に「本日のメモを追加」ボタンを表示し、押すと入力欄を追加する。その日の内容を `Workout.note` として保存し、入力済みならホームの種目カードでセット一覧の下にも小さく表示する（最大 1000 文字）。
 - **レストタイマー**（`RestTimer`、後述）。
 - **セット追加ボタン**: セット一覧の最下部にグレーの＋ボタンを表示し、空セットを 1 つ追加する。
 - 詳細を開く際、セットが 5 未満なら 5 まで空セットを補充（`openWorkoutDetail`）。
@@ -1038,7 +1040,7 @@ weight === 0 または reps === 0 → '0.0'
 - `updateSet`: 指定セットの `weight` / `recordValue` を更新。対象セットを含むワークアウトだけを特定し、そのワークアウトとセット配列だけを差し替える。
 - `updateSetAchievement`: 指定セットの `achievement` を保存。未達では現在の `recordValue` を `targetRecordValue` に退避し、実績入力のため `recordValue` を `null` に戻す。
 - `resetSetAchievement`: 指定セットの達成判定を解除。`targetRecordValue` があれば `recordValue` に戻し、`achievement` / `targetRecordValue` / `intensity` を削除する。
-- `updateWorkoutNote`: 指定ワークアウトの種目メモ `note` を更新。
+- `updateWorkoutNote`: 指定ワークアウトの本日のメモ `note` を更新。
 - `updateSetIntensity`: 強度を設定。同じ強度を再タップ、または `undefined` で強度を解除（フィールド削除）。`updateSet` と同じく対象ワークアウトだけを差し替える。
 - `updateWorkoutGrip`: 種目記録の握りの向きを設定。`undefined` で選択を解除（フィールド削除）。
 - `updateWorkoutGripStyle`: 種目記録の握り方を設定。`undefined` で選択を解除（フィールド削除）。
@@ -1047,6 +1049,8 @@ weight === 0 または reps === 0 → '0.0'
 - `moveWorkout`: 選択日内での表示順を 1 つ前後に入れ替え。
 
 ### 8.2 種目マスタ操作（`useExerciseActions`）
+
+- `updateExerciseNote`: 指定種目の日付をまたいで引き継ぐ共通メモを更新。
 
 - `addExerciseToPart(part, name, measurementType, category, availableGrips, availableGripStyles)`: 指定部位に新種目をマスタへ追加（部位は空なら「その他」、種目名は必須）。選択可能な握りの向き・握り方候補も保存する。先頭に追加し、部位が未登録ならパレット色つきで `state.parts` に登録。画面遷移・記録作成はしない。追加できたら `true` を返す。
 - `updateExercise(exerciseId, { part, name, measurementType, category, availableGrips, availableGripStyles })`: 種目の部位・名前・記録単位・カテゴリ・握りの向き候補・握り方候補をまとめて更新（種目名は必須、部位が空なら「その他」）。部位が未登録ならパレット色つきで `state.parts` に登録。改名・部位変更時は既存ワークアウトの `name` / `part` スナップショットも同期。更新できたら `true` を返す。候補から外した値も過去セットの保存値からは削除しない。

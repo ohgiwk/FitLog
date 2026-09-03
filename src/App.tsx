@@ -234,8 +234,12 @@ function AppShell() {
     }
     if (targetScreen === 'select') return <SelectScreen />;
     if (targetScreen === 'exerciseEdit') return <ExerciseEditScreen />;
-    if (targetScreen === 'detail' && currentWorkout) return <DetailScreen />;
-    if (targetScreen === 'exerciseHistory' && currentWorkout) return <ExerciseHistoryScreen />;
+    if (targetScreen === 'detail') {
+      return currentWorkout ? <DetailScreen /> : <Navigate replace to={screenPaths.home} />;
+    }
+    if (targetScreen === 'exerciseHistory') {
+      return currentWorkout ? <ExerciseHistoryScreen /> : <Navigate replace to={screenPaths.home} />;
+    }
     if (targetScreen === 'goalAchievements') return <GoalAchievementScreen />;
     if (targetScreen === 'presetEdit') return <PresetEditScreen />;
     if (targetScreen === 'presetExerciseSelect') return <PresetExerciseSelectScreen />;
@@ -273,7 +277,7 @@ function AppShell() {
 
   return (
     <>
-      <main className="app" ref={appRef}>
+      <main className={`app ${showRestTimerIdle ? 'rest-timer-visible' : ''}`} ref={appRef}>
         <div className={`screen-transition-stage ${transitionFrom ? 'covering' : ''}`}>
           {transitionFrom && (
             <div

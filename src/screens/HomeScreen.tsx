@@ -511,6 +511,7 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
                     ))}
                   </tbody>
                 </table>
+                {workout.note.trim() && <p className="exercise-today-note">{workout.note}</p>}
                 {!page.workoutEndTime && isUnstartedWorkout(workout) && (
                   <div className="new-workout-overlay" aria-hidden="true">
                     <div className="new-workout-overlay-icon">
