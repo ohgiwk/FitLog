@@ -31,6 +31,31 @@ export const exerciseCategories: { value: ExerciseCategory; label: string }[] = 
  */
 export const defaultExerciseCategory: ExerciseCategory = 'free';
 
+/**
+ * 保存済みの累積時間と計測開始日時から、現在の種目使用秒数を求める
+ */
+export function workoutUsageElapsedSeconds(workout: Workout, now = Date.now()) {
+  const elapsed = Math.max(0, Math.floor(workout.usageElapsedSeconds || 0));
+  if (!workout.usageStartedAt) return elapsed;
+  const startedAt = Date.parse(workout.usageStartedAt);
+  if (!Number.isFinite(startedAt)) return elapsed;
+  return elapsed + Math.max(0, Math.floor((now - startedAt) / 1000));
+}
+
+/**
+ * 種目使用時間を1時間未満は M:SS、1時間以上は H:MM:SS で表示する
+ */
+export function formatWorkoutUsageTime(totalSeconds: number) {
+  const seconds = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainder = seconds % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+  }
+  return `${minutes}:${String(remainder).padStart(2, '0')}`;
+}
+
 export const gripOptions: { value: GripType; label: string }[] = [
   { value: 'normal', label: 'ノーマルグリップ' },
   { value: 'reverse', label: 'リバースグリップ' },

@@ -51,6 +51,12 @@ export function useSmithNote() {
     selectedWorkouts: nav.selectedWorkouts,
   });
 
+  useEffect(() => {
+    if (nav.screen === 'detail') return;
+    if (!core.state.workouts.some((item) => item.usageStartedAt)) return;
+    workout.pauseAllWorkoutUsage();
+  }, [core.state.workouts, nav.screen, workout]);
+
   const exercise = useExerciseActions({
     state: core.state,
     saveState: core.saveState,
@@ -379,6 +385,9 @@ export function useSmithNote() {
       updateSetAchievement: workout.updateSetAchievement,
       resetSetAchievement: workout.resetSetAchievement,
       updateWorkoutNote: workout.updateWorkoutNote,
+      startWorkoutUsage: workout.startWorkoutUsage,
+      pauseWorkoutUsage: workout.pauseWorkoutUsage,
+      resetWorkoutUsage: workout.resetWorkoutUsage,
       updateSetIntensity: workout.updateSetIntensity,
       updateWorkoutGrip: workout.updateWorkoutGrip,
       updateWorkoutGripStyle: workout.updateWorkoutGripStyle,

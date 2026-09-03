@@ -14,6 +14,7 @@ const workout: Workout = {
   measurementType: 'reps',
   sets: [{ id: 's1', weight: 50, recordValue: 10 }],
   note: '',
+  usageElapsedSeconds: 0,
 };
 
 const state: State = {
@@ -53,6 +54,9 @@ function renderDetailScreen({
   copyWorkoutSetValues = vi.fn(),
   updateWorkoutNote = vi.fn(),
   updateExerciseNote = vi.fn(),
+  startWorkoutUsage = vi.fn(),
+  pauseWorkoutUsage = vi.fn(),
+  resetWorkoutUsage = vi.fn(),
   weightUnit = 'kg',
   currentWorkout = workout,
   workouts,
@@ -65,6 +69,9 @@ function renderDetailScreen({
   copyWorkoutSetValues?: ReturnType<typeof vi.fn>;
   updateWorkoutNote?: ReturnType<typeof vi.fn>;
   updateExerciseNote?: ReturnType<typeof vi.fn>;
+  startWorkoutUsage?: ReturnType<typeof vi.fn>;
+  pauseWorkoutUsage?: ReturnType<typeof vi.fn>;
+  resetWorkoutUsage?: ReturnType<typeof vi.fn>;
   weightUnit?: State['weightUnit'];
   currentWorkout?: Workout;
   workouts?: Workout[];
@@ -72,6 +79,7 @@ function renderDetailScreen({
   restTimerDefaultSeconds?: number;
 }) {
   const value = {
+    screen: 'detail',
     currentWorkout,
     state: {
       ...state,
@@ -89,6 +97,9 @@ function renderDetailScreen({
       resetSetAchievement,
       updateWorkoutNote,
       updateExerciseNote,
+      startWorkoutUsage,
+      pauseWorkoutUsage,
+      resetWorkoutUsage,
       updateSetIntensity: vi.fn(),
       updateWorkoutGrip: vi.fn(),
       updateWorkoutGripStyle: vi.fn(),
@@ -115,6 +126,52 @@ function detailNumberInputs(container: HTMLElement) {
 }
 
 describe('DetailScreen set inputs', () => {
+  it('表示時に使用時間を開始し、停止・再開・リセットを操作できる', () => {
+    const startWorkoutUsage = vi.fn();
+    const pauseWorkoutUsage = vi.fn();
+    const resetWorkoutUsage = vi.fn();
+    const runningWorkout = {
+      ...workout,
+      usageElapsedSeconds: 62,
+      usageStartedAt: new Date().toISOString(),
+    };
+    const { container, unmount } = renderDetailScreen({
+      currentWorkout: runningWorkout,
+      startWorkoutUsage,
+      pauseWorkoutUsage,
+      resetWorkoutUsage,
+    });
+
+    expect(startWorkoutUsage).toHaveBeenCalledWith('w1');
+    expect(within(container).getByLabelText('種目使用時間').textContent).toContain('1:02');
+    expect(within(container).queryByRole('button', { name: '停止' })).toBeNull();
+    fireEvent.click(within(container).getByRole('button', { name: '使用時間タイマーを操作' }));
+    fireEvent.click(within(container).getByRole('button', { name: '停止' }));
+    expect(pauseWorkoutUsage).toHaveBeenCalledWith('w1');
+    fireEvent.click(within(container).getByRole('button', { name: 'リセット' }));
+    expect(resetWorkoutUsage).toHaveBeenCalledWith('w1');
+
+    unmount();
+    expect(pauseWorkoutUsage).toHaveBeenCalledWith('w1');
+  });
+
+  it('終了済みの詳細では使用時間を表示するだけで自動開始しない', () => {
+    const startWorkoutUsage = vi.fn();
+    const endedWorkout = { ...workout, usageElapsedSeconds: 125 };
+    state.workoutEndTimes[endedWorkout.date] = '12:00';
+    const { container } = renderDetailScreen({
+      currentWorkout: endedWorkout,
+      workouts: [endedWorkout],
+      startWorkoutUsage,
+    });
+
+    expect(within(container).getByLabelText('種目使用時間').textContent).toContain('2:05');
+    fireEvent.click(within(container).getByRole('button', { name: '使用時間タイマーを操作' }));
+    expect(within(container).queryByRole('button', { name: '再開' })).toBeNull();
+    expect(startWorkoutUsage).not.toHaveBeenCalled();
+    delete state.workoutEndTimes[endedWorkout.date];
+  });
+
   it('種目メモを種目マスタへ保存し、本日のメモは追加後にワークアウトへ保存する', () => {
     const updateExerciseNote = vi.fn();
     const updateWorkoutNote = vi.fn();

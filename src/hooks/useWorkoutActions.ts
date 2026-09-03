@@ -8,7 +8,7 @@ import {
   Workout,
   WorkoutSet,
 } from '../types';
-import { formatTimeOfDay, isUnstartedWorkout, newSet } from '../utils';
+import { formatTimeOfDay, isUnstartedWorkout, newSet, workoutUsageElapsedSeconds } from '../utils';
 import { createWorkout } from '../selectors/smithNoteSelectors';
 
 type WorkoutActionsDeps = {
@@ -37,6 +37,16 @@ export function useWorkoutActions({
   setCurrentWorkoutId,
   selectedWorkouts,
 }: WorkoutActionsDeps) {
+  function pauseUsageTimer(workout: Workout, now: number): Workout {
+    if (!workout.usageStartedAt) return workout;
+    const nextWorkout = {
+      ...workout,
+      usageElapsedSeconds: workoutUsageElapsedSeconds(workout, now),
+    };
+    delete nextWorkout.usageStartedAt;
+    return nextWorkout;
+  }
+
   /**
    * 指定日のトレーニングが終了済みか判定する
    */
@@ -78,11 +88,14 @@ export function useWorkoutActions({
     const endTime = formatTimeOfDay(new Date());
     saveState((prev) => ({
       ...prev,
-      workouts: removeUnstartedWorkouts
+      workouts: (removeUnstartedWorkouts
         ? prev.workouts.filter(
             (workout) => workout.date !== selectedDate || !isUnstartedWorkout(workout),
           )
-        : prev.workouts,
+        : prev.workouts
+      ).map((workout) =>
+        workout.date === selectedDate ? pauseUsageTimer(workout, Date.now()) : workout,
+      ),
       workoutEndTimes: {
         ...prev.workoutEndTimes,
         [selectedDate]: endTime,
@@ -261,6 +274,66 @@ export function useWorkoutActions({
   }
 
   /**
+   * 対象種目の使用時間を開始し、他の種目で動作中のタイマーを停止する
+   */
+  function startWorkoutUsage(workoutId: string) {
+    const now = Date.now();
+    const startedAt = new Date(now).toISOString();
+    saveState((prev) => {
+      const target = prev.workouts.find((workout) => workout.id === workoutId);
+      if (!target || prev.workoutEndTimes[target.date]) return prev;
+      return {
+        ...prev,
+        workouts: prev.workouts.map((workout) => {
+          if (workout.id === workoutId) {
+            return workout.usageStartedAt ? workout : { ...workout, usageStartedAt: startedAt };
+          }
+          return pauseUsageTimer(workout, now);
+        }),
+      };
+    });
+  }
+
+  /**
+   * 対象種目の使用時間を累積値へ確定して停止する
+   */
+  function pauseWorkoutUsage(workoutId: string) {
+    const now = Date.now();
+    saveState((prev) => ({
+      ...prev,
+      workouts: prev.workouts.map((workout) =>
+        workout.id === workoutId ? pauseUsageTimer(workout, now) : workout,
+      ),
+    }));
+  }
+
+  /**
+   * 詳細画面外に残っているすべての種目使用タイマーを停止する
+   */
+  function pauseAllWorkoutUsage() {
+    const now = Date.now();
+    saveState((prev) => ({
+      ...prev,
+      workouts: prev.workouts.map((workout) => pauseUsageTimer(workout, now)),
+    }));
+  }
+
+  /**
+   * 対象種目の使用時間を0秒へ戻して停止する
+   */
+  function resetWorkoutUsage(workoutId: string) {
+    saveState((prev) => ({
+      ...prev,
+      workouts: prev.workouts.map((workout) => {
+        if (workout.id !== workoutId || prev.workoutEndTimes[workout.date]) return workout;
+        const nextWorkout = { ...workout, usageElapsedSeconds: 0 };
+        delete nextWorkout.usageStartedAt;
+        return nextWorkout;
+      }),
+    }));
+  }
+
+  /**
    * セットの強度を設定する。未指定(undefined)なら強度を解除する
    */
   function updateSetIntensity(setId: string, intensity?: SetIntensity) {
@@ -413,6 +486,10 @@ export function useWorkoutActions({
     updateSetAchievement,
     resetSetAchievement,
     updateWorkoutNote,
+    startWorkoutUsage,
+    pauseWorkoutUsage,
+    pauseAllWorkoutUsage,
+    resetWorkoutUsage,
     updateSetIntensity,
     updateWorkoutGrip,
     updateWorkoutGripStyle,

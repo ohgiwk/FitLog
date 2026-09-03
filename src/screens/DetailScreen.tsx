@@ -12,6 +12,8 @@ import {
   isRepsMeasurement,
   measurementUnit,
   number,
+  formatWorkoutUsageTime,
+  workoutUsageElapsedSeconds,
   weightUnitLabel,
 } from '../utils';
 import { IntensityIcon } from '../components/IntensityIcon';
@@ -23,7 +25,7 @@ import { GripStyleType, GripType, SetIntensity, WeightUnit, Workout } from '../t
  * 種目詳細画面が必要とする state・操作を Context から組み立てる view-model フック
  */
 function useDetailScreenModel() {
-  const { currentWorkout, state, actions } = useSmithNoteContext();
+  const { currentWorkout, screen, state, actions } = useSmithNoteContext();
   const exercise = currentWorkout
     ? state.exercises.find((item) => item.id === currentWorkout.exerciseId)
     : undefined;
@@ -37,6 +39,7 @@ function useDetailScreenModel() {
     exercise,
     weightUnit: state.weightUnit,
     restTimerSettings: state.restTimerSettings,
+    active: screen === 'detail',
     readOnly: Boolean(currentWorkout && state.workoutEndTimes[currentWorkout.date]),
     onOpenHistory: () => actions.setScreen('exerciseHistory'),
     onUpdateSet: actions.updateSet,
@@ -51,7 +54,83 @@ function useDetailScreenModel() {
     onCopyWorkoutSetValues: actions.copyWorkoutSetValues,
     onUpdateExerciseGoal: actions.updateExerciseGoal,
     onUpdateExerciseNote: actions.updateExerciseNote,
+    onStartWorkoutUsage: actions.startWorkoutUsage,
+    onPauseWorkoutUsage: actions.pauseWorkoutUsage,
+    onResetWorkoutUsage: actions.resetWorkoutUsage,
   };
+}
+
+function WorkoutUsageTimer({
+  workout,
+  active,
+  readOnly,
+  onStart,
+  onPause,
+  onReset,
+}: {
+  workout: Workout;
+  active: boolean;
+  readOnly: boolean;
+  onStart: (workoutId: string) => void;
+  onPause: (workoutId: string) => void;
+  onReset: (workoutId: string) => void;
+}) {
+  const [now, setNow] = useState(Date.now());
+  const [expanded, setExpanded] = useState(false);
+  const actionRef = useRef({ onStart, onPause });
+  actionRef.current = { onStart, onPause };
+
+  useEffect(() => {
+    if (!active || readOnly) return undefined;
+    actionRef.current.onStart(workout.id);
+    return () => actionRef.current.onPause(workout.id);
+  }, [active, readOnly, workout.id]);
+
+  useEffect(() => {
+    if (!workout.usageStartedAt) return undefined;
+    const updateNow = () => setNow(Date.now());
+    updateNow();
+    const intervalId = window.setInterval(updateNow, 1000);
+    document.addEventListener('visibilitychange', updateNow);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', updateNow);
+    };
+  }, [workout.usageStartedAt]);
+
+  const elapsed = workoutUsageElapsedSeconds(workout, now);
+  const running = Boolean(workout.usageStartedAt);
+
+  return (
+    <div
+      className={`workout-usage-timer ${expanded ? 'expanded' : ''}`}
+      aria-label="種目使用時間"
+    >
+      <button
+        className="workout-usage-summary"
+        type="button"
+        aria-expanded={expanded}
+        aria-label={expanded ? '使用時間タイマーを閉じる' : '使用時間タイマーを操作'}
+        onClick={() => setExpanded((current) => !current)}
+      >
+        {expanded && <span>使用時間</span>}
+        <strong aria-live="off">{formatWorkoutUsageTime(elapsed)}</strong>
+      </button>
+      {!readOnly && expanded && (
+        <div className="workout-usage-actions">
+          <button
+            type="button"
+            onClick={() => (running ? onPause(workout.id) : onStart(workout.id))}
+          >
+            {running ? '停止' : '再開'}
+          </button>
+          <button className="secondary" type="button" onClick={() => onReset(workout.id)}>
+            リセット
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function findPreviousWorkout(workouts: Workout[], currentWorkout: Workout) {
@@ -503,6 +582,7 @@ export function DetailScreen() {
     exercise,
     weightUnit,
     restTimerSettings,
+    active,
     readOnly,
     onOpenHistory,
     onUpdateSet,
@@ -517,6 +597,9 @@ export function DetailScreen() {
     onCopyWorkoutSetValues,
     onUpdateExerciseGoal,
     onUpdateExerciseNote,
+    onStartWorkoutUsage,
+    onPauseWorkoutUsage,
+    onResetWorkoutUsage,
   } = useDetailScreenModel();
   const [openDeleteSetId, setOpenDeleteSetId] = useState<string | null>(null);
   const [weightInputs, setWeightInputs] = useState<Record<string, string>>({});
@@ -592,6 +675,14 @@ export function DetailScreen() {
             <HistoryIcon />
           </button>
         }
+      />
+      <WorkoutUsageTimer
+        workout={workout}
+        active={active}
+        readOnly={readOnly}
+        onStart={onStartWorkoutUsage}
+        onPause={onPauseWorkoutUsage}
+        onReset={onResetWorkoutUsage}
       />
       <div className="content">
         {exercise && (

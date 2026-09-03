@@ -21,6 +21,7 @@ const workout: Workout = {
   measurementType: 'reps',
   sets: [],
   note: '',
+  usageElapsedSeconds: 0,
 };
 
 const plans: TrainingPlan[] = [

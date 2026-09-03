@@ -15,6 +15,7 @@ const workout: Workout = {
   measurementType: 'reps',
   sets: [{ id: 's1', weight: 50, recordValue: 10 }],
   note: '',
+  usageElapsedSeconds: 0,
 };
 
 const state: State = {
@@ -83,5 +84,39 @@ describe('useWorkoutActions copyWorkoutSetValues', () => {
     expect(sets).toHaveLength(2);
     expect(sets?.[0]).toMatchObject({ id: 's1', weight: 45, recordValue: 12 });
     expect(sets?.[1]).toMatchObject({ weight: 40, recordValue: 10 });
+  });
+});
+
+describe('useWorkoutActions workout usage timer', () => {
+  it('開始、停止、再開、リセットを保存する', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-06T10:00:00.000Z'));
+    let actions: WorkoutActions | null = null;
+    let latestState: State = state;
+    const view = render(
+      <WorkoutActionsProbe
+        onRender={(nextActions, nextState) => {
+          actions = nextActions;
+          latestState = nextState;
+        }}
+      />,
+    );
+
+    act(() => actions?.startWorkoutUsage(workout.id));
+    expect(latestState.workouts[0].usageStartedAt).toBe('2026-07-06T10:00:00.000Z');
+
+    vi.setSystemTime(new Date('2026-07-06T10:01:05.000Z'));
+    act(() => actions?.pauseWorkoutUsage(workout.id));
+    expect(latestState.workouts[0].usageElapsedSeconds).toBe(65);
+    expect(latestState.workouts[0].usageStartedAt).toBeUndefined();
+
+    act(() => actions?.startWorkoutUsage(workout.id));
+    expect(latestState.workouts[0].usageStartedAt).toBe('2026-07-06T10:01:05.000Z');
+    act(() => actions?.resetWorkoutUsage(workout.id));
+    expect(latestState.workouts[0].usageElapsedSeconds).toBe(0);
+    expect(latestState.workouts[0].usageStartedAt).toBeUndefined();
+
+    view.unmount();
+    vi.useRealTimers();
   });
 });

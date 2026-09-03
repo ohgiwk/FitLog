@@ -507,5 +507,6 @@ export function createWorkout(exercise: Exercise, date: string): Workout {
     measurementType: exercise.measurementType,
     sets: Array.from({ length: 5 }, () => newSet()),
     note: '',
+    usageElapsedSeconds: 0,
   };
 }

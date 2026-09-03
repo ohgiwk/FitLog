@@ -23,7 +23,7 @@ import {
 import { defaultExerciseCategory, uid } from './utils';
 
 const REST_PART = 'レスト';
-export const stateSchemaVersion = 3;
+export const stateSchemaVersion = 4;
 const defaultPresets: Preset[] = [
   { id: 'preset-chest-day', name: '胸の日', exerciseIds: [] },
   { id: 'preset-back-day', name: '背中の日', exerciseIds: [] },
@@ -106,7 +106,27 @@ const stateMigrations: {
     version: 3,
     up: migrateExerciseNotes,
   },
+  {
+    version: 4,
+    up: migrateWorkoutUsageTimers,
+  },
 ];
+
+/**
+ * 旧ワークアウトへ種目使用時間の初期値を追加する
+ */
+function migrateWorkoutUsageTimers(state: SavedStateShape): SavedStateShape {
+  if (!Array.isArray(state.workouts)) return state;
+  return {
+    ...state,
+    workouts: state.workouts.map((value) => {
+      const workout = recordOf(value);
+      return workout && typeof workout.usageElapsedSeconds !== 'number'
+        ? { ...workout, usageElapsedSeconds: 0 }
+        : value;
+    }) as State['workouts'],
+  };
+}
 
 /**
  * 旧ワークアウトメモの最新値を種目共通メモへ移し、日別メモ欄を空で新設する
@@ -534,9 +554,20 @@ function normalizeWorkouts(value: unknown): State['workouts'] {
         gripStyle: normalizeGripStyle(item.gripStyle),
         sets: normalizeSets(item.sets),
         note: typeof item.note === 'string' ? item.note : '',
+        usageElapsedSeconds: normalizeUsageElapsedSeconds(item.usageElapsedSeconds),
+        usageStartedAt: normalizeUsageStartedAt(item.usageStartedAt),
       },
     ];
   });
+}
+
+function normalizeUsageElapsedSeconds(value: unknown) {
+  const seconds = Number(value);
+  return Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
+}
+
+function normalizeUsageStartedAt(value: unknown) {
+  return typeof value === 'string' && Number.isFinite(Date.parse(value)) ? value : undefined;
 }
 
 function normalizeSets(value: unknown): WorkoutSet[] {

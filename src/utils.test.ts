@@ -7,6 +7,7 @@ import {
   formatStoredWeightInput,
   formatWorkoutDuration,
   formatWorkoutTime,
+  formatWorkoutUsageTime,
   formatWeightForStorageInput,
   findExerciseGoalAchievementSet,
   isExerciseGoalAchieved,
@@ -26,6 +27,7 @@ import {
   parseDate,
   prevMonthLabel,
   uid,
+  workoutUsageElapsedSeconds,
 } from './utils';
 import { Exercise, Workout, WorkoutSet } from './types';
 
@@ -42,6 +44,7 @@ function makeWorkout(sets: WorkoutSet[]): Workout {
     measurementType: 'reps',
     sets,
     note: '',
+    usageElapsedSeconds: 0,
   };
 }
 
@@ -74,6 +77,22 @@ describe('number', () => {
 
   it('数値はそのまま返す', () => {
     expect(number(7)).toBe(7);
+  });
+});
+
+describe('workout usage timer', () => {
+  it('保存済み秒数と開始後の実時間を合算する', () => {
+    const workout = {
+      ...makeWorkout([]),
+      usageElapsedSeconds: 30,
+      usageStartedAt: '2026-01-01T00:00:00.000Z',
+    };
+    expect(workoutUsageElapsedSeconds(workout, Date.parse('2026-01-01T00:01:05.000Z'))).toBe(95);
+  });
+
+  it('1時間未満と1時間以上を読みやすく整形する', () => {
+    expect(formatWorkoutUsageTime(522)).toBe('8:42');
+    expect(formatWorkoutUsageTime(4122)).toBe('1:08:42');
   });
 });
 

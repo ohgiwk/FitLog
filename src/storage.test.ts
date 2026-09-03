@@ -104,6 +104,11 @@ describe('normalizeState', () => {
     expect(result?.workouts.map((workout) => workout.note)).toEqual(['', '']);
   });
 
+  it('使用時間が無い旧ワークアウトは0秒として読み込む', () => {
+    const result = normalizeState(makeValidSaved() as unknown as Partial<State>);
+    expect(result?.workouts.every((workout) => workout.usageElapsedSeconds === 0)).toBe(true);
+  });
+
   it('updatedAt が無い旧データには既定日時を補完する', () => {
     const result = normalizeState(makeValidSaved() as unknown as Partial<State>);
     expect(result?.updatedAt).toBe('1970-01-01T00:00:00.000Z');

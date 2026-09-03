@@ -104,6 +104,8 @@ export type Workout = {
   gripStyle?: GripStyleType;
   sets: WorkoutSet[];
   note: string;
+  usageElapsedSeconds: number;
+  usageStartedAt?: string;
 };
 
 export type Preset = {
