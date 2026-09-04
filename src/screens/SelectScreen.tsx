@@ -4,13 +4,15 @@ import { ExercisePicker } from '../components/ExercisePicker';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
 import type { Exercise } from '../types';
+import { frequentExercisesForPart } from '../utils';
 
 type ExerciseListMode = 'select' | 'manage';
 
 function useSelectScreenModel() {
-  const { groupedExercises, partRecentLabels, partColors, activePart, actions } =
+  const { state, groupedExercises, partRecentLabels, partColors, activePart, actions } =
     useSmithNoteContext();
   return {
+    workouts: state.workouts,
     groupedExercises,
     partRecentLabels,
     partColors,
@@ -33,6 +35,9 @@ function ExerciseListScreen({ mode }: { mode: ExerciseListMode }) {
     model.activePart && model.groupedExercises.has(model.activePart)
       ? model.activePart
       : [...model.groupedExercises.keys()][0];
+  const frequentExercises = currentPart
+    ? frequentExercisesForPart(model.groupedExercises.get(currentPart) ?? [], model.workouts)
+    : [];
 
   function requestDeleteExercise(exerciseId: string) {
     const exercise = [...model.groupedExercises.values()]
@@ -70,6 +75,7 @@ function ExerciseListScreen({ mode }: { mode: ExerciseListMode }) {
               : ''
         }
         mode={isManageMode ? 'manage' : 'single'}
+        frequentExercises={isManageMode ? undefined : frequentExercises}
         partColors={model.partColors}
         onDeleteExercise={requestDeleteExercise}
         onEditExercise={model.onOpenExerciseEditor}

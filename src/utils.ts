@@ -32,6 +32,31 @@ export const exerciseCategories: { value: ExerciseCategory; label: string }[] = 
 export const defaultExerciseCategory: ExerciseCategory = 'free';
 
 /**
+ * 選択中の部位から、記録回数と最終実施日を基準によく行う種目を抽出する
+ */
+export function frequentExercisesForPart(exercises: Exercise[], workouts: Workout[], limit = 6) {
+  const stats = new Map<string, { count: number; lastDate: string }>();
+  workouts.forEach((workout) => {
+    if (!workout.sets.some(isRecordedSet)) return;
+    const current = stats.get(workout.exerciseId);
+    stats.set(workout.exerciseId, {
+      count: (current?.count ?? 0) + 1,
+      lastDate: current && current.lastDate > workout.date ? current.lastDate : workout.date,
+    });
+  });
+  return exercises
+    .filter((exercise) => stats.has(exercise.id))
+    .sort((left, right) => {
+      const leftStats = stats.get(left.id)!;
+      const rightStats = stats.get(right.id)!;
+      return (
+        rightStats.count - leftStats.count || rightStats.lastDate.localeCompare(leftStats.lastDate)
+      );
+    })
+    .slice(0, limit);
+}
+
+/**
  * 保存済みの累積時間と計測開始日時から、現在の種目実施秒数を求める
  */
 export function workoutUsageElapsedSeconds(workout: Workout, now = Date.now()) {

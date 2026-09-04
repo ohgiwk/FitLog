@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SmithNoteContext, SmithNoteContextValue } from '../hooks/useSmithNoteContext';
-import type { Exercise } from '../types';
+import type { Exercise, Workout } from '../types';
+import { frequentExercisesForPart } from '../utils';
 import { ExerciseManageScreen } from './SelectScreen';
 
 const exercise: Exercise = {
@@ -16,6 +17,7 @@ describe('ExerciseManageScreen', () => {
   it('確認ダイアログで了承した後に種目を削除する', () => {
     const deleteExercise = vi.fn();
     const value = {
+      state: { workouts: [] },
       groupedExercises: new Map([['胸', [exercise]]]),
       partRecentLabels: new Map(),
       partColors: new Map([['胸', '#ef4444']]),
@@ -52,5 +54,38 @@ describe('ExerciseManageScreen', () => {
     expect(deleteExercise).toHaveBeenCalledWith('e1');
     expect(deleteExercise).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});
+
+describe('frequentExercisesForPart', () => {
+  it('記録の多い順に最大6種目を返し、未記録セットは数えない', () => {
+    const exercises = Array.from({ length: 7 }, (_, index) => ({
+      ...exercise,
+      id: `e${index + 1}`,
+      name: `種目${index + 1}`,
+    }));
+    const workouts = exercises.flatMap((item, index) =>
+      Array.from({ length: index + 1 }, (_, workoutIndex) => ({
+        id: `${item.id}-${workoutIndex}`,
+        exerciseId: item.id,
+        date: `2026-08-${String(workoutIndex + 1).padStart(2, '0')}`,
+        sets: [{ id: 'set', weight: 10, recordValue: 10 }],
+      })),
+    ) as Workout[];
+    workouts.push({
+      id: 'blank',
+      exerciseId: 'e1',
+      date: '2026-09-01',
+      sets: [{ id: 'blank-set', weight: null, recordValue: null }],
+    } as Workout);
+
+    expect(frequentExercisesForPart(exercises, workouts).map((item) => item.id)).toEqual([
+      'e7',
+      'e6',
+      'e5',
+      'e4',
+      'e3',
+      'e2',
+    ]);
   });
 });
