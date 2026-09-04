@@ -1,6 +1,6 @@
 import { MouseEvent, PointerEvent, useEffect, useRef, useState } from 'react';
 import { PlusIcon, TrashIcon } from '../icons';
-import { Workout } from '../types';
+import { Preset, Workout } from '../types';
 import {
   calculateWorkoutDurationMinutes,
   formatWorkoutDuration,
@@ -44,6 +44,95 @@ type HomeDayPage = {
   workoutStartTime: string | undefined;
   workoutEndTime: string | undefined;
 };
+
+type PresetDropdownProps = {
+  presets: Preset[];
+  value: string;
+  onChange: (value: string) => void;
+};
+
+function PresetDropdown({ presets, value, onChange }: PresetDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const selectedPreset = presets.find((preset) => preset.id === value);
+  const selectedName = selectedPreset?.name || '[新規作成]';
+  const selectedStatus = selectedPreset
+    ? selectedPreset.exerciseIds.length
+      ? `${selectedPreset.exerciseIds.length}種目`
+      : '未設定'
+    : '';
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeFromOutside = (event: globalThis.PointerEvent) => {
+      if (!dropdownRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const closeFromEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', closeFromOutside);
+    document.addEventListener('keydown', closeFromEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeFromOutside);
+      document.removeEventListener('keydown', closeFromEscape);
+    };
+  }, [open]);
+
+  function select(valueToSelect: string) {
+    onChange(valueToSelect);
+    setOpen(false);
+  }
+
+  return (
+    <div className="workout-menu-dropdown" ref={dropdownRef}>
+      <button
+        className="workout-menu-dropdown-trigger"
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>{selectedName}</span>
+        <small>{selectedStatus}</small>
+        <span className="workout-menu-dropdown-chevron" aria-hidden="true">
+          {open ? '▲' : '▼'}
+        </span>
+      </button>
+      {open && (
+        <div
+          className="workout-menu-dropdown-list"
+          role="listbox"
+          aria-label="トレーニングメニューを選択"
+        >
+          {presets.map((preset) => (
+            <button
+              className="workout-menu-dropdown-option"
+              type="button"
+              role="option"
+              aria-selected={preset.id === value}
+              key={preset.id}
+              onClick={() => select(preset.id)}
+            >
+              <span>{preset.name}</span>
+              <small>
+                {preset.exerciseIds.length ? `${preset.exerciseIds.length}種目` : '未設定'}
+              </small>
+            </button>
+          ))}
+          <button
+            className="workout-menu-dropdown-option new-preset"
+            type="button"
+            role="option"
+            aria-selected={value === newPresetOptionValue}
+            onClick={() => select(newPresetOptionValue)}
+          >
+            <span>[新規作成]</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function moveDateByDays(date: string, days: number) {
   const next = parseDate(date);
@@ -430,23 +519,15 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
                     今日の予定: {page.scheduledPresets.map((preset) => preset.name).join(' / ')}
                   </span>
                 )}
-                <select
-                  aria-label="トレーニングメニューを選択"
+                <PresetDropdown
+                  presets={presets}
                   value={selectedPresetValue}
-                  onChange={(event) => {
-                    const presetId = event.target.value;
+                  onChange={(presetId) => {
                     setSelectedPresetValue(presetId);
                     setPresetExercisesOpen(true);
                     if (presetId !== newPresetOptionValue) onSelectPreset(presetId);
                   }}
-                >
-                  {presets.map((preset) => (
-                    <option key={preset.id} value={preset.id}>
-                      {preset.name}
-                    </option>
-                  ))}
-                  <option value={newPresetOptionValue}>[新規作成]</option>
-                </select>
+                />
                 {selectedPreset && !!selectedPresetExercises.length && (
                   <div className="workout-start-exercise-list">
                     <button
