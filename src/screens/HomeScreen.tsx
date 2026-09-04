@@ -185,6 +185,7 @@ function useHomeScreenModel() {
   return {
     selectedDate,
     workouts: state.workouts,
+    exercises: state.exercises,
     selectedWorkouts,
     presets: state.presets,
     currentPreset,
@@ -234,6 +235,7 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
   const {
     selectedDate,
     workouts,
+    exercises,
     selectedWorkouts,
     presets,
     currentPreset,
@@ -268,8 +270,15 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
   const [selectedPresetValue, setSelectedPresetValue] = useState(
     currentPreset?.id || newPresetOptionValue,
   );
+  const [presetExercisesOpen, setPresetExercisesOpen] = useState(true);
   const isNewPresetSelected = selectedPresetValue === newPresetOptionValue;
   const selectedPreset = presets.find((preset) => preset.id === selectedPresetValue) || null;
+  const selectedPresetExercises = selectedPreset
+    ? selectedPreset.exerciseIds.flatMap((exerciseId) => {
+        const exercise = exercises.find((item) => item.id === exerciseId);
+        return exercise ? [exercise] : [];
+      })
+    : [];
   const currentPresetIsEmpty = !!selectedPreset && selectedPreset.exerciseIds.length === 0;
   const [dayTransition, setDayTransition] = useState<'fade' | 'none'>('fade');
   const homeDayClassName = dayTransition === 'fade' ? 'home-day-fade' : '';
@@ -427,6 +436,7 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
                   onChange={(event) => {
                     const presetId = event.target.value;
                     setSelectedPresetValue(presetId);
+                    setPresetExercisesOpen(true);
                     if (presetId !== newPresetOptionValue) onSelectPreset(presetId);
                   }}
                 >
@@ -437,6 +447,29 @@ export function HomeScreen({ onOverlayStateChange }: HomeScreenProps) {
                   ))}
                   <option value={newPresetOptionValue}>[新規作成]</option>
                 </select>
+                {selectedPreset && !!selectedPresetExercises.length && (
+                  <div className="workout-start-exercise-list">
+                    <button
+                      className="workout-start-exercise-toggle"
+                      type="button"
+                      aria-expanded={presetExercisesOpen}
+                      onClick={() => setPresetExercisesOpen((open) => !open)}
+                    >
+                      <span>種目一覧（{selectedPresetExercises.length}種目）</span>
+                      <span aria-hidden="true">{presetExercisesOpen ? '−' : '＋'}</span>
+                    </button>
+                    {presetExercisesOpen && (
+                      <ul>
+                        {selectedPresetExercises.map((exercise) => (
+                          <li key={exercise.id}>
+                            <span>{exercise.part}</span>
+                            <strong>{exercise.name}</strong>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
                 <button
                   className="primary workout-start-primary"
                   type="button"
