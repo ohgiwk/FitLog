@@ -20,8 +20,8 @@ import {
   updateCloudPassword,
 } from '../cloudBackup';
 import { getDeviceId } from '../device';
-import { parseImportedState } from '../storage';
-import { normalizeState } from '../storageNormalization';
+import { corruptStoreKey, parseImportedState, storeKey } from '../storage';
+import { createDefaultState, normalizeState } from '../storageNormalization';
 import { State } from '../types';
 import { localDate } from '../utils';
 
@@ -51,9 +51,40 @@ export type PendingImport = {
 };
 
 export type CloudSyncStatus = 'idle' | 'pending' | 'syncing' | 'synced' | 'error' | 'conflict';
+export type CloudConflictKind = 'conflict' | 'restore';
 
 const cloudResolutionKey = (userId: string) =>
   `smithnote-cloud-resolution:${userId}:${getDeviceId()}`;
+
+export function hasLocalData(state: State) {
+  const defaults = createDefaultState();
+  return JSON.stringify({ ...state, updatedAt: defaults.updatedAt }) !== JSON.stringify(defaults);
+}
+
+export function restoredSelectedDate(state: State, today = localDate(new Date())) {
+  return (
+    state.workouts.reduce(
+      (latest, workout) => (workout.date > latest ? workout.date : latest),
+      '',
+    ) || today
+  );
+}
+
+export function wouldOverwriteWithEmptyState(state: State, backups: CloudBackup[]) {
+  const currentBackup = backups.find(
+    (backup) => backup.source === 'account' && backup.id === 'current',
+  );
+  if (!currentBackup) return false;
+  const defaults = createDefaultState();
+  return (
+    (currentBackup.workoutCount > 0 && state.workouts.length === 0) ||
+    (currentBackup.goalAchievementCount > 0 && state.goalAchievements.length === 0) ||
+    (currentBackup.exerciseCount > defaults.exercises.length &&
+      state.exercises.length <= defaults.exercises.length) ||
+    (currentBackup.presetCount > defaults.presets.length &&
+      state.presets.length <= defaults.presets.length)
+  );
+}
 
 /**
  * データのエクスポート(バックアップ)とインポート(復元)を担うフック
@@ -78,9 +109,12 @@ export function useBackup({
   const [cloudSyncError, setCloudSyncError] = useState<string | null>(null);
   const [cloudLastSyncedAt, setCloudLastSyncedAt] = useState<string | null>(null);
   const [cloudConflict, setCloudConflict] = useState<CloudBackup | null>(null);
+  const [cloudConflictKind, setCloudConflictKind] = useState<CloudConflictKind>('conflict');
   const [cloudSyncAllowed, setCloudSyncAllowed] = useState(false);
   const [retryVersion, setRetryVersion] = useState(0);
   const lastSyncedStateUpdatedAtRef = useRef<string | null>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
 
   /**
@@ -145,7 +179,10 @@ export function useBackup({
     if (!pendingImport) return;
     const previousState = state;
     const nextState = pendingImport.state;
-    downloadStateBackup(previousState, `smithnote-before-local-import-${localDate(new Date())}.json`);
+    downloadStateBackup(
+      previousState,
+      `smithnote-before-local-import-${localDate(new Date())}.json`,
+    );
     setState(nextState);
     setCurrentWorkoutId(null);
     setCurrentPresetId(nextState.presets[0]?.id || null);
@@ -316,9 +353,9 @@ export function useBackup({
   }
 
   /**
-   * クラウドからログアウトする。ローカルデータは残す
+   * クラウドからログアウトし、選択された場合は端末内のデータを初期化する
    */
-  async function signOut() {
+  async function signOut(deleteLocalData = false) {
     setCloudLoading(true);
     try {
       await signOutCloud();
@@ -327,8 +364,19 @@ export function useBackup({
       setCloudBackups([]);
       setCloudSyncAllowed(false);
       setCloudConflict(null);
+      setCloudConflictKind('conflict');
       setCloudSyncStatus('idle');
-      showToast('ログアウトしました');
+      if (deleteLocalData) {
+        localStorage.removeItem(storeKey);
+        localStorage.removeItem(corruptStoreKey);
+        setState(createDefaultState());
+        setSelectedDate(localDate(new Date()));
+        setCurrentWorkoutId(null);
+        setCurrentPresetId(null);
+      }
+      showToast(
+        deleteLocalData ? 'ローカルデータを削除してログアウトしました' : 'ログアウトしました',
+      );
     } catch {
       showToast('ログアウトに失敗しました');
     } finally {
@@ -347,11 +395,10 @@ export function useBackup({
         showToast('復元できるデータが見つかりません');
         return;
       }
-      downloadStateBackup(state, `smithnote-before-cloud-restore-${localDate(new Date())}.json`);
       setState(normalized);
       setCurrentWorkoutId(null);
       setCurrentPresetId(normalized.presets[0]?.id || null);
-      setSelectedDate(localDate(new Date()));
+      setSelectedDate(restoredSelectedDate(normalized));
       showToast('クラウドバックアップを復元しました');
     } catch (error) {
       console.error('Cloud restore failed', error);
@@ -407,14 +454,17 @@ export function useBackup({
       const backups = await listCloudBackups();
       setCloudBackups(backups);
       const resolved = localStorage.getItem(cloudResolutionKey(session.user.uid)) === 'resolved';
-      if (backups.length > 0 && !resolved) {
+      const localDataExists = hasLocalData(stateRef.current);
+      if (backups.length > 0 && (!localDataExists || !resolved)) {
         setCloudConflict(backups[0]);
+        setCloudConflictKind(localDataExists ? 'conflict' : 'restore');
         setCloudSyncAllowed(false);
         setCloudSyncStatus('conflict');
         return;
       }
       if (!resolved) localStorage.setItem(cloudResolutionKey(session.user.uid), 'resolved');
       setCloudConflict(null);
+      setCloudConflictKind('conflict');
       setCloudSyncAllowed(true);
       setCloudSyncStatus('pending');
     },
@@ -432,18 +482,20 @@ export function useBackup({
         const cloudState = await fetchCloudBackupState(cloudConflict.id, cloudConflict.source);
         const normalized = normalizeState(cloudState);
         if (!normalized) throw new Error('Backup is invalid');
-        downloadStateBackup(state, `smithnote-before-cloud-restore-${localDate(new Date())}.json`);
         setState(normalized);
         setCurrentWorkoutId(null);
         setCurrentPresetId(normalized.presets[0]?.id || null);
-        setSelectedDate(localDate(new Date()));
+        setSelectedDate(restoredSelectedDate(normalized));
         lastSyncedStateUpdatedAtRef.current = normalized.updatedAt;
       }
       localStorage.setItem(cloudResolutionKey(cloudUserId), 'resolved');
       setCloudConflict(null);
+      setCloudConflictKind('conflict');
       setCloudSyncAllowed(true);
       setCloudSyncStatus(choice === 'cloud' ? 'synced' : 'pending');
-      showToast(choice === 'cloud' ? 'クラウドデータを復元しました' : 'この端末のデータを使用します');
+      showToast(
+        choice === 'cloud' ? 'クラウドデータを復元しました' : 'この端末のデータを使用します',
+      );
     } catch (error) {
       console.error('Cloud conflict resolution failed', error);
       showToast(cloudBackupErrorMessage(error));
@@ -479,6 +531,7 @@ export function useBackup({
         setCloudBackups([]);
         setCloudSyncAllowed(false);
         setCloudConflict(null);
+        setCloudConflictKind('conflict');
         setCloudSyncStatus('idle');
       }
       setCloudAuthReady(true);
@@ -505,6 +558,14 @@ export function useBackup({
     if (lastSyncedStateUpdatedAtRef.current === state.updatedAt) return undefined;
     setCloudSyncStatus('pending');
     const timer = window.setTimeout(async () => {
+      if (wouldOverwriteWithEmptyState(state, cloudBackups)) {
+        const message =
+          'ローカルデータの消失を検知したため、既存のクラウドバックアップを保護しました';
+        setCloudSyncError(message);
+        setCloudSyncStatus('error');
+        showToast(message);
+        return;
+      }
       setCloudSyncStatus('syncing');
       setCloudSyncError(null);
       flushState();
@@ -521,7 +582,17 @@ export function useBackup({
       }
     }, 3000);
     return () => window.clearTimeout(timer);
-  }, [cloudConflict, cloudEnabled, cloudSyncAllowed, cloudUserId, flushState, retryVersion, state]);
+  }, [
+    cloudBackups,
+    cloudConflict,
+    cloudEnabled,
+    cloudSyncAllowed,
+    cloudUserId,
+    flushState,
+    retryVersion,
+    showToast,
+    state,
+  ]);
 
   useEffect(() => {
     const retry = () => setRetryVersion((current) => current + 1);
@@ -546,6 +617,7 @@ export function useBackup({
       syncError: cloudSyncError,
       lastSyncedAt: cloudLastSyncedAt,
       conflict: cloudConflict,
+      conflictKind: cloudConflictKind,
       signUp,
       signIn,
       googleSignIn,

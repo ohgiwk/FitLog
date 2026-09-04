@@ -153,12 +153,6 @@ function AppShell() {
         return;
       }
 
-      const canScroll = app.scrollHeight > app.clientHeight + 1;
-      if (screen === 'home' && !canScroll) {
-        setFabFaded(false);
-        return;
-      }
-
       const fabRect = fab.getBoundingClientRect();
       const targetRect = target.getBoundingClientRect();
       const margin = 12;
@@ -238,7 +232,11 @@ function AppShell() {
       return currentWorkout ? <DetailScreen /> : <Navigate replace to={screenPaths.home} />;
     }
     if (targetScreen === 'exerciseHistory') {
-      return currentWorkout ? <ExerciseHistoryScreen /> : <Navigate replace to={screenPaths.home} />;
+      return currentWorkout ? (
+        <ExerciseHistoryScreen />
+      ) : (
+        <Navigate replace to={screenPaths.home} />
+      );
     }
     if (targetScreen === 'goalAchievements') return <GoalAchievementScreen />;
     if (targetScreen === 'presetEdit') return <PresetEditScreen />;
@@ -300,13 +298,15 @@ function AppShell() {
         </div>
       </main>
 
-      {screen !== 'auth' && <RestTimer
-        defaultSeconds={state.restTimerSettings.defaultSeconds}
-        autoStartOnIntensity={state.restTimerSettings.autoStartOnIntensity}
-        showIdle={showRestTimerIdle}
-        onChangeDefaultSeconds={actions.setRestTimerDefaultSeconds}
-        onChangeAutoStart={actions.setRestTimerAutoStart}
-      />}
+      {screen !== 'auth' && (
+        <RestTimer
+          defaultSeconds={state.restTimerSettings.defaultSeconds}
+          autoStartOnIntensity={state.restTimerSettings.autoStartOnIntensity}
+          showIdle={showRestTimerIdle}
+          onChangeDefaultSeconds={actions.setRestTimerDefaultSeconds}
+          onChangeAutoStart={actions.setRestTimerAutoStart}
+        />
+      )}
       {drawerOverlayVisible && (
         <div className={`home-app-backdrop ${drawerOverlayClass}`} aria-hidden="true" />
       )}
@@ -341,10 +341,21 @@ function AppShell() {
       </div>
       {cloud.conflict && (
         <div className="dialog-backdrop" role="presentation">
-          <div className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="cloud-conflict-title">
-            <div className="confirm-title" id="cloud-conflict-title">使用する記録を選択</div>
+          <div
+            className="confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cloud-conflict-title"
+          >
+            <div className="confirm-title" id="cloud-conflict-title">
+              {cloud.conflictKind === 'restore'
+                ? 'クラウドから復元しますか？'
+                : '使用する記録を選択'}
+            </div>
             <p>
-              クラウドに既存のバックアップがあります。自動バックアップを始める前に、使用するデータを選んでください。
+              {cloud.conflictKind === 'restore'
+                ? 'この端末にはローカルデータがありません。クラウドに保存されているデータを復元できます。'
+                : 'クラウドに既存のバックアップがあります。自動バックアップを始める前に、使用するデータを選んでください。'}
             </p>
             <div className="confirm-actions cloud-conflict-actions">
               <button
@@ -353,15 +364,15 @@ function AppShell() {
                 disabled={cloud.loading}
                 onClick={() => void cloud.resolveConflict('device')}
               >
-                この端末を優先
+                {cloud.conflictKind === 'restore' ? '復元しない' : 'この端末を優先'}
               </button>
               <button
-                className="primary-button"
+                className={cloud.conflictKind === 'restore' ? 'danger-button' : 'primary-button'}
                 type="button"
                 disabled={cloud.loading}
                 onClick={() => void cloud.resolveConflict('cloud')}
               >
-                クラウドから復元
+                {cloud.conflictKind === 'restore' ? '復元する' : 'クラウドから復元'}
               </button>
             </div>
           </div>

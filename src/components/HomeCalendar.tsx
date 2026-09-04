@@ -5,6 +5,7 @@ import { useHomeCalendar } from '../hooks/useHomeCalendar';
 import { localDate, weekdayLabels } from '../utils';
 import { Workout } from '../types';
 import { useSmithNoteContext } from '../hooks/useSmithNoteContext';
+import { ConfirmDialog } from './ConfirmDialog';
 
 type CloudActions = ReturnType<typeof useSmithNoteContext>['actions']['cloud'];
 
@@ -40,6 +41,7 @@ export function HomeCalendar({
 }: HomeCalendarProps) {
   const [drawerState, setDrawerState] = useState<'closed' | 'open' | 'closing'>('closed');
   const [backdropState, setBackdropState] = useState<'closed' | 'open' | 'closing'>('closed');
+  const [logoutConfirmationOpen, setLogoutConfirmationOpen] = useState(false);
   const pendingDrawerActionRef = useRef<(() => void) | null>(null);
   const calendar = useHomeCalendar(selectedDate, onSelectDate);
   const trainedDates = useMemo(() => new Set(workouts.map((workout) => workout.date)), [workouts]);
@@ -165,7 +167,7 @@ export function HomeCalendar({
                 className="drawer-logout"
                 type="button"
                 disabled={cloud.loading}
-                onClick={() => closeDrawer(() => void cloud.signOut())}
+                onClick={() => closeDrawer(() => setLogoutConfirmationOpen(true))}
               >
                 ログアウト
               </button>
@@ -308,6 +310,37 @@ export function HomeCalendar({
           </div>
         </div>
       </header>
+      {logoutConfirmationOpen && (
+        <ConfirmDialog
+          title="ローカルデータを削除しますか？"
+          labelledBy="logout-local-data-title"
+          onClose={() => setLogoutConfirmationOpen(false)}
+        >
+          <p>この端末に保存されているトレーニング記録と設定を削除できます。</p>
+          <div className="confirm-actions">
+            <button
+              className="small-outline"
+              type="button"
+              onClick={() => {
+                setLogoutConfirmationOpen(false);
+                void cloud.signOut(false);
+              }}
+            >
+              いいえ
+            </button>
+            <button
+              className="danger-button"
+              type="button"
+              onClick={() => {
+                setLogoutConfirmationOpen(false);
+                void cloud.signOut(true);
+              }}
+            >
+              はい
+            </button>
+          </div>
+        </ConfirmDialog>
+      )}
     </>
   );
 }

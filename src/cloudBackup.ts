@@ -41,6 +41,8 @@ export type CloudBackup = {
   deviceName: string | null;
   exerciseCount: number;
   workoutCount: number;
+  presetCount: number;
+  goalAchievementCount: number;
   lastWorkoutDate: string | null;
 };
 
@@ -311,6 +313,8 @@ export function summarizeState(state: State) {
   return {
     exerciseCount: state.exercises.length,
     workoutCount: state.workouts.length,
+    presetCount: state.presets.length,
+    goalAchievementCount: state.goalAchievements.length,
     lastWorkoutDate: workoutDates[workoutDates.length - 1] ?? null,
   };
 }
