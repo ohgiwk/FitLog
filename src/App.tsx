@@ -328,6 +328,14 @@ function AppShell() {
                 {toast.actionLabel || '元に戻す'}
               </button>
             )}
+            <button
+              className="toast-close"
+              type="button"
+              aria-label="通知を閉じる"
+              onClick={actions.clearToast}
+            >
+              ×
+            </button>
           </div>
         )}
       </div>
